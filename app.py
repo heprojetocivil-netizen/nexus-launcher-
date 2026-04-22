@@ -291,7 +291,7 @@ else:
         
         if atual < metas_ideais[canal]:
             st.markdown(f"""<div class='warning-box'>⚠️ <b>Cuidado:</b> Você ainda não atingiu a meta ideal. 
-            Você pode estar antecipando a venda, o que reduz a conversão. Prossiga por conta própria or foque em Atração.</div>""", unsafe_allow_html=True)
+            Você pode estar antecipando a venda, o que reduz a conversão. Prossiga por conta própria ou foque em Atração.</div>""", unsafe_allow_html=True)
         
         tab_atracao, tab_engaja = st.tabs(["🧲 MENTOR DE ATRAÇÃO", "🤝 MENTOR DE CONTEÚDO"])
         
