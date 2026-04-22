@@ -89,6 +89,15 @@ st.markdown(f"""
         margin-bottom: 20px;
     }}
 
+    .tip-box {{
+        background-color: #E0F2FE;
+        color: #0369A1;
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid #BAE6FD;
+        margin-top: 15px;
+    }}
+
     .chat-bubble-user {{ background: #E0F7FA; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 5px solid {cor_tema}; color: #000; }}
     .chat-bubble-ai {{ background: #F0F2F6; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 5px solid #333; color: #000; }}
     </style>
@@ -256,12 +265,17 @@ else:
             st.session_state.etapa = 3; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- ETAPA 3: CRIAÇÃO DO PRODUTO (REINTEGRADO) ---
+    # --- ETAPA 3: CRIAÇÃO DO PRODUTO (REINTEGRADO COM PREÇO E DICAS) ---
     elif st.session_state.etapa == 3:
         st.title("🧩 3. CRIAÇÃO DO PRODUTO")
         st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-        p_nome = st.text_input("Qual será o nome do seu produto?", value=st.session_state.memoria.get('nome_produto', ''))
-        st.session_state.memoria['nome_produto'] = p_nome
+        col_p1, col_p2 = st.columns([2, 1])
+        with col_p1:
+            p_nome = st.text_input("Qual será o nome do seu produto?", value=st.session_state.memoria.get('nome_produto', ''))
+            st.session_state.memoria['nome_produto'] = p_nome
+        with col_p2:
+            p_preco = st.text_input("Preço do Produto (Ex: R$ 97,00):", value=st.session_state.memoria.get('preco_produto', ''))
+            st.session_state.memoria['preco_produto'] = p_preco
         
         # Módulos específicos por canal (E-mail e YouTube)
         if st.session_state.memoria['canal_escolhido'] == "E-mail Marketing":
@@ -272,14 +286,14 @@ else:
                     st.session_state.memoria['isca'] = nexus_ai(f"Crie o título e a ideia de conteúdo para um E-book grátis no nicho {st.session_state.memoria['nicho']}.", "Escritor", st.session_state.api_key)
             with col_e2:
                 if st.button("TEXTOS PARA LANDING PAGE"):
-                    st.session_state.memoria['lp_text'] = nexus_ai(f"Gere Headline e textos de benefícios para uma Landing Page de {p_nome}.", "Copywriter", st.session_state.api_key)
+                    st.session_state.memoria['lp_text'] = nexus_ai(f"Gere Headline e textos de benefícios para uma Landing Page de {p_nome} custando {p_preco}.", "Copywriter", st.session_state.api_key)
             st.write(st.session_state.memoria.get('isca', ''))
             st.write(st.session_state.memoria.get('lp_text', ''))
 
         elif st.session_state.memoria['canal_escolhido'] == "YouTube":
             st.markdown("#### ▶️ Módulo YouTube")
             if st.button("ESTRATÉGIA DE SHORTS/ANÚNCIOS"):
-                st.session_state.memoria['yt_strat'] = nexus_ai(f"Gere ideias de Shorts para crescer inscritos no nicho {st.session_state.memoria['nicho']}.", "YouTube Expert", st.session_state.api_key)
+                st.session_state.memoria['yt_strat'] = nexus_ai(f"Gere ideias de Shorts para vender {p_nome} por {p_preco} no nicho {st.session_state.memoria['nicho']}.", "YouTube Expert", st.session_state.api_key)
             st.write(st.session_state.memoria.get('yt_strat', ''))
 
         # Módulo Geral de Criação de Conteúdo do Produto
@@ -289,15 +303,17 @@ else:
         
         with tab_eb:
             if st.button("GERAR CONTEÚDO PARA GAMMA.APP (60 CARTÕES)"):
-                prompt_eb = f"Crie o conteúdo do produto {p_nome} dividido em 60 cartões numerados para o Gamma.app no nicho {st.session_state.memoria['nicho']}."
+                prompt_eb = f"Crie o conteúdo do produto {p_nome} dividido em 60 cartões numerados para o Gamma.app no nicho {st.session_state.memoria['nicho']}. O valor final de venda é {p_preco}."
                 st.session_state.memoria['ebook_content'] = nexus_ai(prompt_eb, "Escritor de Infoprodutos", st.session_state.api_key)
             st.text_area("Cópia para Gamma:", value=st.session_state.memoria.get('ebook_content', ''), height=200)
+            st.markdown(f"""<div class='tip-box'>💡 <b>Dica de Design:</b> Copie o conteúdo acima e cole no <a href='https://gamma.app' target='_blank'><b>Gamma.app</b></a> para gerar seu e-book visual em segundos.</div>""", unsafe_allow_html=True)
             
         with tab_heygen:
             if st.button("GERAR ROTEIROS PARA AVATAR HEYGEN"):
-                prompt_hg = f"Crie 6 roteiros de aulas para o produto {p_nome} focados em Avatares de IA."
+                prompt_hg = f"Crie 6 roteiros de aulas para o produto {p_nome} focados em Avatares de IA. Mencione que o investimento é de apenas {p_preco}."
                 st.session_state.memoria['heygen_scripts'] = nexus_ai(prompt_hg, "Roteirista", st.session_state.api_key)
             st.text_area("Scripts HeyGen:", value=st.session_state.memoria.get('heygen_scripts', ''), height=200)
+            st.markdown(f"""<div class='tip-box'>🎥 <b>Dica de Vídeo:</b> Use esses roteiros no <a href='https://www.heygen.com' target='_blank'><b>HeyGen</b></a> para criar um apresentador de IA profissional sem precisar aparecer.</div>""", unsafe_allow_html=True)
 
         if st.button("PRODUTO DEFINIDO 👉"):
             st.session_state.etapa = 4; salvar_progresso(); st.rerun()
@@ -309,14 +325,14 @@ else:
         st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
         
         if st.button("GERAR SEQUÊNCIA DE DOUTRINAÇÃO (ESTILO CURIOSIDADE)"):
-            sys = "Você cria mensagens de curiosidade disruptiva (ex: caso da carne cultivada). Não venda ainda, intrigue."
-            prompt = f"Gere 3 mensagens de curiosidade profunda para o nicho {st.session_state.memoria['nicho']} para aquecer a audiência."
+            sys = "Você cria mensagens de curiosidade disruptiva. Não venda ainda, intrigue."
+            prompt = f"Gere 3 mensagens de curiosidade profunda para o nicho {st.session_state.memoria['nicho']} para aquecer a audiência sobre o produto {st.session_state.memoria['nome_produto']}."
             st.session_state.memoria['doutrinacao'] = nexus_ai(prompt, sys, st.session_state.api_key)
         st.write(st.session_state.memoria.get('doutrinacao', ''))
         
         if st.button("GERAR SCRIPT DE VENDAS (VSL)"):
             sys = "Você é um Copywriter de Elite focado em VSL."
-            prompt = f"Crie um script de VSL para o produto {st.session_state.memoria['nome_produto']} com Promessa, História e Oferta."
+            prompt = f"Crie um script de VSL para o produto {st.session_state.memoria['nome_produto']} com valor de {st.session_state.memoria.get('preco_produto', 'Preço sob consulta')}."
             st.session_state.memoria['vsl'] = nexus_ai(prompt, sys, st.session_state.api_key)
         st.write(st.session_state.memoria.get('vsl', ''))
 
@@ -331,7 +347,7 @@ else:
         st.write(f"**Plano para {st.session_state.memoria['canal_escolhido']}**")
         st.checkbox("Dias 1-7: Atração massiva (Shorts/Ads/Ganchos).")
         st.checkbox("Dias 8-12: Doutrinação (Curiosidades/Autoridade).")
-        st.checkbox("Dias 13-15: Oferta VSL e Fechamento.")
+        st.checkbox(f"Dias 13-15: Oferta VSL e Fechamento no valor de {st.session_state.memoria.get('preco_produto', '')}.")
         if st.button("FINALIZAR OPERAÇÃO"):
             st.session_state.etapa = 6; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
