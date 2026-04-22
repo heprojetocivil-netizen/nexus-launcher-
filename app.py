@@ -1,8 +1,3 @@
-Com essa clareza, o NEXUS deixa de ser apenas um assistente e passa a ser o seu Diretor de Produção. O foco agora é fornecer o "pacote pronto" para execução: o script para o vídeo, a estrutura exata da página e o conteúdo completo para o WhatsApp.
-
-Aqui está o código final refinado com essa profundidade de detalhes:
-
-Python
 import streamlit as st
 from groq import Groq
 
@@ -117,7 +112,7 @@ elif st.session_state.etapa == 2:
     if st.button("PREPARAR A LIVE DE VENDA 👉"): st.session_state.etapa = 3; st.rerun()
 
 elif st.session_state.etapa == 3:
-    st.title("🎤 3. A LIVE E A OFERTA")
+    st.title("🎤 3. LIVE DE VENDA & ORATÓRIA")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
@@ -140,4 +135,4 @@ elif st.session_state.etapa == 3:
 if st.session_state.etapa > 0:
     if st.button("⬅ VOLTAR"): st.session_state.etapa -= 1; st.rerun()
 
-st.markdown(f'<div class="footer">NEXUS — O CAMINHO MAIS CURTO ENTRE O ANÚNCIO E O PIX</div>',
+st.markdown(f'<div class="footer">NEXUS — O CAMINHO MAIS CURTO ENTRE O ANÚNCIO E O PIX</div>', unsafe_allow_html=True)
