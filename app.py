@@ -119,6 +119,17 @@ st.markdown(f"""
         margin-top: 15px;
     }}
 
+    /* FAIXA AZUL DE ORIENTAÇÃO PEDIDA */
+    .orientacao-anuncio {{
+        background-color: #007BFF;
+        color: #FFFFFF !important;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+        font-weight: bold;
+        border-left: 8px solid #0056b3;
+    }}
+
     .chat-bubble-user {{ background: #E0F7FA; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 5px solid {cor_tema}; color: #000; }}
     .chat-bubble-ai {{ background: #F0F2F6; padding: 15px; border-radius: 15px; margin-bottom: 10px; border-left: 5px solid #333; color: #000; }}
     </style>
@@ -251,6 +262,13 @@ else:
         
         metas_ideais = {"WhatsApp": 800, "YouTube": 1000, "Facebook": 2000, "E-mail Marketing": 1000}
         unidade = {"WhatsApp": "Membros", "YouTube": "Inscritos", "Facebook": "Seguidores", "E-mail Marketing": "Leads"}
+        # Onde anunciar baseado no canal
+        onde_anunciar = {
+            "WhatsApp": "Instagram Ads (Stories) e Facebook Ads focados em conversão para grupo.",
+            "YouTube": "YouTube Discovery e In-Stream focado em visualizações e inscritos.",
+            "Facebook": "Facebook Ads com objetivo de Engajamento e Curtidas na Página.",
+            "E-mail Marketing": "Google Search Ads e Meta Ads direcionando para Landing Page de captura."
+        }
         
         col_m1, col_m2 = st.columns(2)
         with col_m1:
@@ -273,7 +291,16 @@ else:
                 sys = "Você é um Mentor de Atração focado em ganchos virais e promessas fortes."
                 prompt = f"Gere um anúncio completo e 3 ganchos virais para levar pessoas ao {canal} no nicho {st.session_state.memoria['nicho']}."
                 st.session_state.memoria['atracao_msg'] = nexus_ai(prompt, sys, st.session_state.api_key)
-            st.write(st.session_state.memoria.get('atracao_msg', ''))
+            
+            if 'atracao_msg' in st.session_state.memoria:
+                st.write(st.session_state.memoria.get('atracao_msg', ''))
+                # FAIXA AZUL DE ORIENTAÇÃO
+                st.markdown(f"""
+                    <div class='orientacao-anuncio'>
+                        📍 <b>ONDE ANUNCIAR:</b> {onde_anunciar[canal]}<br>
+                        📸 <b>FORMATO SUGERIDO:</b> Vídeo curto (Reels/Shorts) ou Imagem estática com cores contrastantes.
+                    </div>
+                """, unsafe_allow_html=True)
             
         with tab_engaja:
             if st.button("GERAR CONTEÚDO DE ENGAJAMENTO"):
