@@ -13,7 +13,7 @@ cores_canais = {
     "WhatsApp": "#25D366",
     "YouTube": "#FF0000",
     "Facebook": "#1877F2",
-    "E-mail Marketing": "#1F2937",
+    "E-mail Marketing": "#D1D5DB", # Alterado de #1F2937 para cinza claro
     "Padrão": "#00BFFF"
 }
 cor_tema = cores_canais.get(canal_selecionado, "#00BFFF")
@@ -291,7 +291,7 @@ else:
         
         if atual < metas_ideais[canal]:
             st.markdown(f"""<div class='warning-box'>⚠️ <b>Cuidado:</b> Você ainda não atingiu a meta ideal. 
-            Você pode estar antecipando a venda, o que reduz a conversão. Prossiga por conta própria ou foque em Atração.</div>""", unsafe_allow_html=True)
+            Você pode estar antecipando a venda, o que reduz a conversão. Prossiga por conta própria or foque em Atração.</div>""", unsafe_allow_html=True)
         
         tab_atracao, tab_engaja = st.tabs(["🧲 MENTOR DE ATRAÇÃO", "🤝 MENTOR DE CONTEÚDO"])
         
