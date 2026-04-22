@@ -13,7 +13,7 @@ cores_canais = {
     "WhatsApp": "#25D366",
     "YouTube": "#FF0000",
     "Facebook": "#1877F2",
-    "E-mail Marketing": "#D1D5DB", 
+    "E-mail Marketing": "#1F2937", # Estilo Dark para E-mail
     "Padrão": "#00BFFF"
 }
 cor_tema = cores_canais.get(canal_selecionado, "#00BFFF")
@@ -23,218 +23,142 @@ st.markdown(f"""
     [data-testid="stSidebar"] {{ display: none; }}
     header {{ visibility: hidden; }}
     .stApp {{ background-color: #FFFFFF; color: #000000; padding-bottom: 100px; }}
-    
-    h1, h2, h3, h4, p, span, label, .stMarkdown, .stMarkdown p {{ 
-        color: #000000 !important; 
-        font-family: 'Inter', sans-serif; 
-    }}
-    
+    h1, h2, h3, h4, p, span, label, .stMarkdown, .stMarkdown p {{ color: #000000 !important; font-family: 'Inter', sans-serif; }}
     .stProgress > div > div > div > div {{ background-color: {cor_tema}; }}
-
-    .nexus-card, .stTabs [data-baseweb="tab-panel"] {{
+    
+    .nexus-card {{
         background: #F0F2F6 !important;
         border: 2px solid {cor_tema};
-        padding: 30px;
+        padding: 25px;
         border-radius: 20px;
         margin-bottom: 20px;
-        color: #000000 !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }}
     
-    .stTabs [data-baseweb="tab-list"] {{ 
-        background-color: #F0F2F6 !important; 
-        border-radius: 10px 10px 0 0; 
-        gap: 10px;
-    }}
-    
-    .stTabs [data-baseweb="tab"] {{ 
-        background-color: #E5E7EB !important;
-        color: #000000 !important; 
-        font-weight: bold; 
-        border-radius: 5px 5px 0 0;
-        padding: 10px 20px;
-    }}
-
-    .stTabs [aria-selected="true"] {{ 
-        background-color: #D1D5DB !important;
-        color: #000000 !important;
-        border-bottom: 3px solid {cor_tema} !important;
-    }}
-
     .stButton > button {{
         background: {cor_tema} !important;
         color: #FFFFFF !important;
-        border: none !important;
-        padding: 15px 30px !important;
-        font-size: 16px !important;
+        padding: 12px 20px !important;
         font-weight: bold !important;
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         width: 100% !important;
-        transition: all 0.3s ease;
         text-transform: uppercase;
+        border: none;
     }}
     
-    .stButton > button:hover {{ transform: translateY(-2px); box-shadow: 0 5px 15px {cor_tema}55; }}
-
-    .footer {{
-        position: fixed; left: 0; bottom: 0; width: 100%;
-        background-color: {cor_tema}; color: #FFFFFF;
-        text-align: center; padding: 15px; font-weight: bold; z-index: 1000;
-    }}
-    
-    .orientacao-anuncio {{
-        background-color: #007BFF;
-        color: #FFFFFF !important;
+    .instruction-box {{
+        background-color: #F8FAFC;
+        border-left: 5px solid #007BFF;
         padding: 15px;
-        border-radius: 10px;
-        margin-top: 20px;
-        font-weight: bold;
-        border-left: 8px solid #0056b3;
+        border-radius: 8px;
+        margin: 10px 0;
     }}
+    
+    .footer {{ position: fixed; left: 0; bottom: 0; width: 100%; background-color: {cor_tema}; color: #FFFFFF; text-align: center; padding: 10px; z-index: 1000; }}
     </style>
     """, unsafe_allow_html=True)
 
-def nexus_ai(prompt, system_role, api_key, history=None):
+# --- 2. LÓGICA DE INTELIGÊNCIA ---
+def nexus_ai(prompt, system_role, api_key):
     try:
         client = Groq(api_key=api_key)
-        messages = [{"role": "system", "content": system_role}]
-        if history: messages.extend(history)
-        messages.append({"role": "user", "content": prompt})
-        completion = client.chat.completions.create(messages=messages, model="llama-3.3-70b-versatile")
+        completion = client.chat.completions.create(
+            messages=[{"role": "system", "content": system_role}, {"role": "user", "content": prompt}],
+            model="llama-3.3-70b-versatile"
+        )
         return completion.choices[0].message.content
     except Exception as e:
-        return f"Erro na conexão Nexus: {str(e)}"
+        return f"Erro: {str(e)}"
 
-if 'etapa' not in st.session_state: st.session_state.etapa = -1 
-if 'nome_user' not in st.session_state: st.session_state.nome_user = ""
+# --- 3. ESTADO E NAVEGAÇÃO ---
+if 'etapa' not in st.session_state: st.session_state.etapa = 0
 if 'api_key' not in st.session_state: st.session_state.api_key = "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"
-if 'meus_produtos' not in st.session_state: st.session_state.meus_produtos = []
-if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 
-def salvar_progresso(status="Em rascunho"):
-    nome_prod = st.session_state.memoria.get('nome_produto', 'Produto Sem Nome')
-    st.session_state.meus_produtos = [p for p in st.session_state.meus_produtos if p['nome'] != nome_prod]
-    st.session_state.meus_produtos.append({
-        "nome": nome_prod, "data": datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "status": status, "etapa_salva": st.session_state.etapa, "conteudo": st.session_state.memoria.copy()
-    })
+# --- 4. INTERFACE ---
 
-def ir_para_home():
-    if st.session_state.etapa > 0: salvar_progresso("Pausado")
-    st.session_state.etapa = 0; st.rerun()
+if st.session_state.etapa == 0:
+    st.title("🧠 NEXUS LAUNCHER")
+    st.write("### O Mentor Estratégico para seu Próximo Lançamento")
+    if st.button("INICIAR OPERAÇÃO"):
+        st.session_state.etapa = 1; st.rerun()
 
-def voltar_etapa():
-    if st.session_state.etapa > 1: st.session_state.etapa -= 1; st.rerun()
+elif st.session_state.etapa == 1:
+    st.title("🎯 1. DEFINIÇÃO DE NICHO")
+    st.session_state.memoria['nicho'] = st.text_input("Qual o nicho do projeto?", value=st.session_state.memoria.get('nicho', ''))
+    if st.button("AVANÇAR"): st.session_state.etapa = 2; st.rerun()
 
-def iniciar_nova_operacao():
-    st.session_state.memoria = {}; st.session_state.etapa = 1; st.session_state.chat_history = []; st.rerun()
-
-st.markdown(f'<div class="footer">Acesse <a href="http://www.quizmaispremios.com.br" style="color: #FFF; text-decoration: underline;">www.quizmaispremios.com.br</a> e ganhe prêmios!</div>', unsafe_allow_html=True)
-
-if st.session_state.etapa == -1:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("<div class='nexus-card' style='text-align:center;'>", unsafe_allow_html=True)
-        st.title("Nexus Launcher")
-        nome = st.text_input("👤 Nome do Estrategista:")
-        chave_input = st.text_input("🔑 Chave Groq API:", type="password", value=st.session_state.api_key)
-        if st.button("ATIVAR NEXUS"):
-            if nome and chave_input:
-                st.session_state.nome_user, st.session_state.api_key = nome, chave_input
-                st.session_state.etapa = 0; st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-else:
-    if st.session_state.etapa != 0:
-        c_nav1, c_nav2, c_nav3 = st.columns(3)
-        with c_nav1: 
-            if st.button("⬅ VOLTAR"): voltar_etapa()
-        with c_nav2:
-            if st.button("➕ NOVO PROJETO"): iniciar_nova_operacao()
-        with c_nav3:
-            if st.button("🏠 DASHBOARD"): ir_para_home()
-
-    if st.session_state.etapa == 0:
-        st.title(f"🚀 Dashboard, {st.session_state.nome_user}")
-        tab_new, tab_list = st.tabs(["CRIAR NOVO", "MEUS PROJETOS"])
-        with tab_new:
-            if st.button("INICIAR CRIAÇÃO DE PRODUTO"): iniciar_nova_operacao()
-        with tab_list:
-            for i, p in enumerate(st.session_state.meus_produtos):
-                if st.button(f"Retomar: {p['nome']} ({p['status']})", key=f"retomar_{i}"):
-                    st.session_state.memoria = p['conteudo']; st.session_state.etapa = p['etapa_salva']; st.rerun()
-
-    elif st.session_state.etapa == 1:
-        st.title("🎯 1. DEFINIÇÃO DO NICHO")
-        p_nicho = st.text_input("Qual o nicho de mercado?", value=st.session_state.memoria.get('nicho', ''))
-        if st.button("AVANÇAR"):
-            st.session_state.memoria['nicho'] = p_nicho
-            st.session_state.etapa = 2; st.rerun()
-
-    elif st.session_state.etapa == 2:
-        st.title(f"👥 2. CANAL E ATRAÇÃO")
-        canal = st.selectbox("Canal principal:", ["WhatsApp", "E-mail Marketing", "YouTube", "Facebook"], 
-                             index=["WhatsApp", "E-mail Marketing", "YouTube", "Facebook"].index(st.session_state.memoria.get('canal_escolhido', 'WhatsApp')))
-        st.session_state.memoria['canal_escolhido'] = canal
+elif st.session_state.etapa == 2:
+    st.title("🧲 2. MENTOR DE ATRAÇÃO & GERAÇÃO DE LEADS")
+    canal = st.selectbox("Canal de Aquisição:", ["E-mail Marketing", "WhatsApp", "YouTube"], index=0)
+    st.session_state.memoria['canal_escolhido'] = canal
+    
+    st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
+    tab1, tab2 = st.tabs(["🚀 GERAR AUDIÊNCIA (LEADS)", "🤝 CONTEÚDO DE ENTRADA"])
+    
+    with tab1:
+        st.subheader("Fábrica de Leads")
+        col_a, col_b, col_c = st.columns(3)
         
-        tab_atracao, tab_engaja = st.tabs(["🧲 MENTOR DE ATRAÇÃO", "🤝 MENTOR DE CONTEÚDO"])
+        with col_a:
+            if st.button("🎁 GERAR E-BOOK ISCA"):
+                p = f"Crie um E-book simples de 5 cartões para isca digital no nicho {st.session_state.memoria['nicho']}. Inclua Título, Promessa e o conteúdo dos 5 cartões."
+                st.session_state.memoria['isca_txt'] = nexus_ai(p, "Escritor de Iscas", st.session_state.api_key)
         
-        with tab_atracao:
-            if st.button("GERAR TEXTO DE ATRAÇÃO"):
-                sys = "Você é um Mentor de Atração. Gere um anúncio e ganchos."
-                prompt = f"Gere um anúncio para atrair leads para {canal} no nicho {st.session_state.memoria['nicho']}."
-                st.session_state.memoria['atracao_msg'] = nexus_ai(prompt, sys, st.session_state.api_key)
-            
-            if 'atracao_msg' in st.session_state.memoria:
-                st.write(st.session_state.memoria['atracao_msg'])
-                
-                # --- NOVAS ALTERAÇÕES SOLICITADAS ---
-                st.markdown("---")
-                col_eb, col_an, col_lp = st.columns(3)
-                
-                with col_eb:
-                    if st.button("🎁 GERAR E-BOOK ISCA (5 CARTÕES)"):
-                        prompt_isca = f"Crie um E-book simples de isca digital com 5 cartões/tópicos rápidos sobre {st.session_state.memoria['nicho']} para quem deixar e-mail ou entrar no WhatsApp."
-                        st.session_state.memoria['isca_pdf'] = nexus_ai(prompt_isca, "Escritor de Iscas", st.session_state.api_key)
-                
-                with col_an:
-                    if st.button("📢 ONDE ANUNCIAR"):
-                        st.session_state.memoria['onde_anunciar'] = """
-                        ### 📍 Onde Anunciar seu E-book:
-                        1. **Meta Ads (Instagram/Facebook):** Use o objetivo de 'Engajamento' para WhatsApp ou 'Conversão' para Landing Page. Foque em Stories e Reels.
-                        2. **Google Ads:** Use 'Rede de Pesquisa' com palavras-chave do seu nicho.
-                        3. **TikTok Ads:** Excelente para públicos mais jovens e consumo rápido de conteúdo.
-                        """
-                
-                with col_lp:
-                    if st.button("🌐 COMO FAZER LANDING PAGE"):
-                        st.session_state.memoria['como_lp'] = """
-                        ### 🏗️ Estrutura da Landing Page de Alta Conversão:
-                        1. **Headline:** Promessa forte baseada no E-book.
-                        2. **Visual:** Imagem 3D do seu E-book (mockup).
-                        3. **Mecanismo de Captura:** Campo de E-mail + Botão de WhatsApp (API link).
-                        4. **Call to Action:** 'Baixar E-book Grátis Agora'.
-                        *Ferramentas recomendadas: GreatPages, Elementor ou Canva Websites.*
-                        """
-                
-                if 'isca_pdf' in st.session_state.memoria: st.info(st.session_state.memoria['isca_pdf'])
-                if 'onde_anunciar' in st.session_state.memoria: st.markdown(st.session_state.memoria['onde_anunciar'])
-                if 'como_lp' in st.session_state.memoria: st.markdown(st.session_state.memoria['como_lp'])
+        with col_b:
+            if st.button("🌐 TEXTOS LANDING PAGE"):
+                p = f"Crie a copy para uma Landing Page de captura focada no e-book: {st.session_state.memoria.get('isca_txt', 'Isca Digital')}. Preciso de Headline, Subheadline e CTA."
+                st.session_state.memoria['lp_copy'] = nexus_ai(p, "Copywriter de LP", st.session_state.api_key)
+        
+        with col_c:
+            if st.button("📈 ANÚNCIO GOOGLE/META"):
+                p = f"Crie um anúncio de alta conversão para Google Search e Meta Ads focados em baixar o e-book do nicho {st.session_state.memoria['nicho']}."
+                st.session_state.memoria['ads_txt'] = nexus_ai(p, "Gestor de Tráfego AI", st.session_state.api_key)
 
-        with tab_engaja:
-            st.write("Conteúdo de engajamento para manter a audiência quente.")
+        # Exibição dos resultados e Orientações
+        if 'isca_txt' in st.session_state.memoria:
+            st.markdown("### 📘 Seu E-book Isca")
+            st.info(st.session_state.memoria['isca_txt'])
+            st.markdown("<div class='instruction-box'><b>COMO FAZER:</b> Use o Canva ou Gamma.app. Crie 5 slides simples com esses textos. Cada slide é um 'cartão' do conhecimento.</div>", unsafe_allow_html=True)
 
-        if st.button("AVANÇAR PARA O PRODUTO 👉"):
-            st.session_state.etapa = 3; st.rerun()
+        if 'lp_copy' in st.session_state.memoria:
+            st.markdown("### 🌐 Copy da Landing Page")
+            st.success(st.session_state.memoria['lp_copy'])
+            st.markdown("<div class='instruction-box'><b>ONDE CRIAR:</b> Use GreatPages ou o próprio Canva (Websites). Insira o campo de E-mail/WhatsApp integrado para entregar o E-book após o cadastro.</div>", unsafe_allow_html=True)
 
-    elif st.session_state.etapa == 3:
-        st.title("🧩 3. PRODUTO")
-        st.write("Defina os detalhes finais do seu infoproduto aqui.")
-        if st.button("PRODUTO DEFINIDO 👉"):
-            st.session_state.etapa = 4; salvar_progresso(); st.rerun()
+        if 'ads_txt' in st.session_state.memoria:
+            st.markdown("### 📢 Script de Anúncio")
+            st.warning(st.session_state.memoria['ads_txt'])
+            st.markdown("<div class='instruction-box'><b>COMO ANUNCIAR:</b> No Google Ads, use a rede de pesquisa. No Meta, anuncie para Stories e Reels focando na dor que esse e-book resolve.</div>", unsafe_allow_html=True)
 
-    # (As demais etapas 4, 5, 6 e 7 seguem a mesma lógica do seu código original)
-    elif st.session_state.etapa >= 4:
-        st.write(f"Etapa {st.session_state.etapa} em desenvolvimento com base no seu fluxo.")
-        if st.button("FINALIZAR"): st.session_state.etapa = 6; st.rerun()
+    with tab2:
+        if st.button("GERAR GANCHOS VIRAIS"):
+            st.write(nexus_ai(f"Gere 5 ganchos virais para {canal} no nicho {st.session_state.memoria['nicho']}.", "Expert em Viralização", st.session_state.api_key))
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    if st.button("IR PARA O PRODUTO 👉"): st.session_state.etapa = 3; st.rerun()
+
+elif st.session_state.etapa == 3:
+    st.title("🧩 3. MATERIALIZAÇÃO DO PRODUTO")
+    st.session_state.memoria['nome_produto'] = st.text_input("Nome do Produto Final:", value=st.session_state.memoria.get('nome_produto', ''))
+    
+    st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
+    tab_ebook, tab_video = st.tabs(["📄 PRODUTO E-BOOK (60 CARTÕES)", "🎥 VÍDEO AULAS"])
+    
+    with tab_ebook:
+        if st.button("ESTRUTURAR E-BOOK COMPLETO"):
+            p = f"Crie a estrutura de 60 cartões de conteúdo para o produto {st.session_state.memoria['nome_produto']}."
+            st.session_state.memoria['prod_ebook'] = nexus_ai(p, "Info-produtor Senior", st.session_state.api_key)
+        st.text_area("Conteúdo do Produto:", value=st.session_state.memoria.get('prod_ebook', ''), height=300)
+    
+    with tab_video:
+        if st.button("GERAR ROTEIROS HEYGEN"):
+            p = f"Crie 6 roteiros para o produto {st.session_state.memoria['nome_produto']}."
+            st.write(nexus_ai(p, "Roteirista de IA", st.session_state.api_key))
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    if st.button("AVANÇAR PARA DOUTRINAÇÃO 👉"): st.session_state.etapa = 4; st.rerun()
+
+# Botão de Voltar Geral
+if st.session_state.etapa > 0:
+    if st.button("⬅ VOLTAR"): st.session_state.etapa -= 1; st.rerun()
+
+st.markdown(f'<div class="footer">NEXUS SYSTEM — Atrai, Engaja e Vende Automático</div>', unsafe_allow_html=True)
