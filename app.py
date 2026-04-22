@@ -66,73 +66,80 @@ api_key = "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"
 if st.session_state.etapa == 0:
     st.title("🧠 NEXUS: SISTEMA DE LANÇAMENTO DIRETO")
     st.write("### Anúncio → Landing Page → Grupo → Live")
-    st.session_state.memoria['nicho'] = st.text_input("Qual o seu Nicho?", placeholder="Ex: Emagrecimento, Marketing, etc.")
+    st.session_state.memoria['nicho'] = st.text_input("Qual o seu Nicho?", placeholder="Ex: Marketing para Dentistas")
     if st.button("INICIAR ESTRATÉGIA"):
         if st.session_state.memoria['nicho']: st.session_state.etapa = 1; st.rerun()
 
 elif st.session_state.etapa == 1:
-    st.title("📢 1. ANÚNCIO EM VÍDEO & LANDING PAGE")
-    st.markdown("<div class='instruction-box'><b>ORIENTAÇÃO:</b> O anúncio deve ser você falando. O lead clica e cai na Landing Page para entrar no Grupo.</div>", unsafe_allow_html=True)
-    
+    st.title("📢 1. CAPTAÇÃO (VÍDEO E PÁGINA)")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         if st.button("🎬 GERAR SCRIPT DO VÍDEO"):
-            p = f"Crie um roteiro detalhado para um anúncio em vídeo de 60s convidando para um minicurso de {st.session_state.memoria['nicho']}. Inclua orientações de cenário e tom de voz."
+            p = f"Crie um roteiro de 60s para anúncio em vídeo. Eu convidando para um minicurso de {st.session_state.memoria['nicho']}. Foque em dor e chamada para ação."
             st.session_state.memoria['script_video'] = nexus_ai(p, "Diretor de Criativos", api_key)
     with c2:
         if st.button("🌐 ESTRUTURA DA LANDING PAGE"):
-            p = f"Crie todos os textos para a Landing Page do evento no nicho {st.session_state.memoria['nicho']}: Headline, Promessa, 3 Benefícios e texto do botão para o Grupo WhatsApp."
+            p = f"Crie Headline, Promessa e 3 Benefícios para a página de captura do nicho {st.session_state.memoria['nicho']}."
             st.session_state.memoria['txt_lp'] = nexus_ai(p, "Copywriter Senior", api_key)
 
-    if 'script_video' in st.session_state.memoria:
-        st.markdown("### 🎥 Script para Gravação")
-        st.info(st.session_state.memoria['script_video'])
-    if 'txt_lp' in st.session_state.memoria:
-        st.markdown("### 🌐 Conteúdo da Landing Page")
-        st.success(st.session_state.memoria['txt_lp'])
+    if 'script_video' in st.session_state.memoria: st.info(st.session_state.memoria['script_video'])
+    if 'txt_lp' in st.session_state.memoria: st.success(st.session_state.memoria['txt_lp'])
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("CONFIGURAR COMANDO DO GRUPO 👉"): st.session_state.etapa = 2; st.rerun()
+    if st.button("CRIAR O PRODUTO E AQUECIMENTO 👉"): st.session_state.etapa = 2; st.rerun()
 
 elif st.session_state.etapa == 2:
-    st.title("📲 2. COMANDO DO GRUPO (WHATSAPP)")
-    st.markdown("<div class='instruction-box'><b>OBJETIVO:</b> Definir a cara do grupo e o que será falado nele.</div>", unsafe_allow_html=True)
-    
+    st.title("📦 2. PRODUTOS E MENSAGENS")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-    if st.button("GERAR DESCRIÇÃO E MENSAGENS DO GRUPO"):
-        p = f"Gere: 1) Descrição do Grupo VIP de {st.session_state.memoria['nicho']}. 2) Mensagem de Boas-vindas imediata. 3) 3 Mensagens de aquecimento (Dia 1, Dia 2 e Dia da Live)."
-        st.session_state.memoria['txt_grupo_completo'] = nexus_ai(p, "Expert em WhatsApp", api_key)
     
-    if 'txt_grupo_completo' in st.session_state.memoria:
-        st.markdown("### 📝 Textos para o WhatsApp")
-        st.write(st.session_state.memoria['txt_grupo_completo'])
+    tab_prod, tab_whats = st.tabs(["🎁 CRIAÇÃO DOS PRODUTOS", "📲 COMANDO DO WHATSAPP"])
+    
+    with tab_prod:
+        st.subheader("Conteúdo para entregar")
+        col_eb, col_aula = st.columns(2)
+        with col_eb:
+            if st.button("📄 E-BOOK ISCA (5 CARTÕES)"):
+                p = f"Crie o conteúdo de um E-book isca de 5 cartões para entregar no grupo de {st.session_state.memoria['nicho']}."
+                st.session_state.memoria['isca_pdf'] = nexus_ai(p, "Escritor", api_key)
+        with col_aula:
+            if st.button("🎥 EMENTA DO CURSO PRINCIPAL"):
+                p = f"Crie a ementa de 6 módulos para o curso pago de {st.session_state.memoria['nicho']} que será vendido na live."
+                st.session_state.memoria['ementa_curso'] = nexus_ai(p, "Infoprodutor", api_key)
+        
+        if 'isca_pdf' in st.session_state.memoria: st.info(st.session_state.memoria['isca_pdf'])
+        if 'ementa_curso' in st.session_state.memoria: st.success(st.session_state.memoria['ementa_curso'])
+
+    with tab_whats:
+        st.subheader("Textos do Grupo")
+        if st.button("GERAR DESCRIÇÃO E MENSAGENS"):
+            p = f"Gere a descrição do grupo VIP e 3 mensagens de aquecimento para o nicho {st.session_state.memoria['nicho']}."
+            st.session_state.memoria['txt_whats'] = nexus_ai(p, "Expert em WhatsApp", api_key)
+        if 'txt_whats' in st.session_state.memoria: st.write(st.session_state.memoria['txt_whats'])
+        
     st.markdown("</div>", unsafe_allow_html=True)
-    
     if st.button("PREPARAR A LIVE DE VENDA 👉"): st.session_state.etapa = 3; st.rerun()
 
 elif st.session_state.etapa == 3:
-    st.title("🎤 3. LIVE DE VENDA & ORATÓRIA")
+    st.title("🎤 3. LIVE E FECHAMENTO")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
+    c1, c2 = st.columns(2)
+    with c1:
         if st.button("🧠 ORIENTAÇÃO DE ORATÓRIA"):
-            p = f"Dê orientações práticas de como se comportar na live de {st.session_state.memoria['nicho']}. Fale sobre como lidar com o chat e manter a energia alta."
-            st.session_state.memoria['oratoria'] = nexus_ai(p, "Coach de Oratória", api_key)
-    with col2:
-        if st.button("💰 SCRIPT DA VENDA"):
-            p = f"Crie o roteiro do fechamento da live (O Pitch). Como oferecer o curso e onde o link de pagamento deve ser enviado."
-            st.session_state.memoria['pitch'] = nexus_ai(p, "Especialista em Vendas", api_key)
+            p = f"Dê dicas de postura e oratória para a live de {st.session_state.memoria['nicho']}."
+            st.session_state.memoria['oratoria'] = nexus_ai(p, "Coach", api_key)
+    with c2:
+        if st.button("💰 SCRIPT DO PITCH"):
+            p = f"Crie o roteiro da oferta final para vender o curso pago na live."
+            st.session_state.memoria['pitch'] = nexus_ai(p, "Vendedor Senior", api_key)
     
     if 'oratoria' in st.session_state.memoria: st.info(st.session_state.memoria['oratoria'])
     if 'pitch' in st.session_state.memoria: st.success(st.session_state.memoria['pitch'])
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("FINALIZAR E EXECUTAR"):
-        st.balloons()
-        st.success("Tudo pronto! Siga o roteiro e boas vendas.")
+    if st.button("FINALIZAR"): st.balloons(); st.success("Lançamento configurado!")
 
 if st.session_state.etapa > 0:
     if st.button("⬅ VOLTAR"): st.session_state.etapa -= 1; st.rerun()
 
-st.markdown(f'<div class="footer">NEXUS — O CAMINHO MAIS CURTO ENTRE O ANÚNCIO E O PIX</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="footer">NEXUS — SISTEMA COMPLETO ATIVADO</div>', unsafe_allow_html=True)
