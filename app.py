@@ -36,8 +36,29 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }}
     
-    .stTabs [data-baseweb="tab-list"] {{ background-color: #F0F2F6 !important; border-radius: 10px 10px 0 0; }}
-    .stTabs [data-baseweb="tab"] {{ color: #000000 !important; font-weight: bold; }}
+    /* AJUSTE DAS ABAS (TABS) PARA CINZA CLARO COM TEXTO PRETO */
+    .stTabs [data-baseweb="tab-list"] {{ 
+        background-color: #F0F2F6 !important; 
+        border-radius: 10px 10px 0 0; 
+        gap: 10px;
+    }}
+    
+    .stTabs [data-baseweb="tab"] {{ 
+        background-color: #E5E7EB !important; /* Cinza claro */
+        color: #000000 !important; 
+        font-weight: bold; 
+        border-radius: 5px 5px 0 0;
+        padding: 10px 20px;
+    }}
+
+    .stTabs [data-baseweb="tab"]:hover {{
+        color: {cor_tema} !important;
+    }}
+
+    .stTabs [aria-selected="true"] {{ 
+        background-color: #D1D5DB !important; /* Cinza um pouco mais escuro para a selecionada */
+        border-bottom: 3px solid {cor_tema} !important;
+    }}
 
     .stButton > button {{
         background: {cor_tema} !important;
@@ -265,7 +286,7 @@ else:
             st.session_state.etapa = 3; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # --- ETAPA 3: CRIAÇÃO DO PRODUTO (REINTEGRADO COM PREÇO E DICAS) ---
+    # --- ETAPA 3: CRIAÇÃO DO PRODUTO ---
     elif st.session_state.etapa == 3:
         st.title("🧩 3. CRIAÇÃO DO PRODUTO")
         st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
@@ -277,7 +298,7 @@ else:
             p_preco = st.text_input("Preço do Produto (Ex: R$ 97,00):", value=st.session_state.memoria.get('preco_produto', ''))
             st.session_state.memoria['preco_produto'] = p_preco
         
-        # Módulos específicos por canal (E-mail e YouTube)
+        # Módulos específicos por canal
         if st.session_state.memoria['canal_escolhido'] == "E-mail Marketing":
             st.markdown("#### 📧 Módulo E-mail Marketing")
             col_e1, col_e2 = st.columns(2)
