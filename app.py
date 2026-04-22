@@ -1,8 +1,9 @@
 import streamlit as st
 from groq import Groq
+from datetime import datetime, timedelta
 
 # --- 1. CONFIGURAÇÃO E DESIGN "NEXUS" ---
-st.set_page_config(page_title="NEXUS LAUNCHER", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="NEXUS: DIRETOR DE LANÇAMENTO", page_icon="🧠", layout="wide")
 
 if 'memoria' not in st.session_state: st.session_state.memoria = {}
 cor_tema = "#00BFFF" 
@@ -13,35 +14,9 @@ st.markdown(f"""
     header {{ visibility: hidden; }}
     .stApp {{ background-color: #FFFFFF; color: #000000; padding-bottom: 100px; }}
     h1, h2, h3, h4, p, span, label, .stMarkdown, .stMarkdown p {{ color: #000000 !important; font-family: 'Inter', sans-serif; }}
-    
-    .nexus-card {{
-        background: #F8FAFC !important;
-        border: 2px solid {cor_tema};
-        padding: 25px;
-        border-radius: 20px;
-        margin-bottom: 20px;
-    }}
-    
-    .stButton > button {{
-        background: {cor_tema} !important;
-        color: #FFFFFF !important;
-        padding: 15px 25px !important;
-        font-weight: bold !important;
-        border-radius: 12px !important;
-        width: 100% !important;
-        text-transform: uppercase;
-        border: none;
-    }}
-
-    .instruction-box {{
-        background-color: #F1F5F9;
-        border-left: 5px solid {cor_tema};
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-        font-size: 0.9em;
-    }}
-    
+    .nexus-card {{ background: #F8FAFC !important; border: 2px solid {cor_tema}; padding: 25px; border-radius: 20px; margin-bottom: 20px; }}
+    .stButton > button {{ background: {cor_tema} !important; color: #FFFFFF !important; padding: 15px 25px !important; font-weight: bold !important; border-radius: 12px !important; width: 100% !important; text-transform: uppercase; border: none; }}
+    .instruction-box {{ background-color: #F1F5F9; border-left: 5px solid {cor_tema}; padding: 15px; border-radius: 8px; margin: 10px 0; font-size: 0.9em; }}
     .footer {{ position: fixed; left: 0; bottom: 0; width: 100%; background-color: {cor_tema}; color: #FFFFFF; text-align: center; padding: 10px; z-index: 1000; }}
     </style>
     """, unsafe_allow_html=True)
@@ -64,82 +39,92 @@ api_key = "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"
 # --- 4. FLUXO NEXUS ---
 
 if st.session_state.etapa == 0:
-    st.title("🧠 NEXUS: SISTEMA DE LANÇAMENTO DIRETO")
-    st.write("### Anúncio → Landing Page → Grupo → Live")
-    st.session_state.memoria['nicho'] = st.text_input("Qual o seu Nicho?", placeholder="Ex: Marketing para Dentistas")
-    if st.button("INICIAR ESTRATÉGIA"):
+    st.title("🧠 NEXUS: SISTEMA DIRETOR DE LANÇAMENTO")
+    st.write("### Estratégia: Criação do E-book → Captação → Distribuição → Live de Venda")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.session_state.memoria['nicho'] = st.text_input("Nicho do E-book:", placeholder="Ex: Marketing Digital")
+        st.session_state.memoria['data_inicio'] = datetime.now().strftime("%d/%m/%Y")
+    with col2:
+        st.session_state.memoria['data_live'] = st.date_input("Data da Live de Venda:")
+    
+    if st.button("INICIAR PRODUÇÃO"):
         if st.session_state.memoria['nicho']: st.session_state.etapa = 1; st.rerun()
 
 elif st.session_state.etapa == 1:
-    st.title("📢 1. CAPTAÇÃO (VÍDEO E PÁGINA)")
+    st.title("📄 1. O PRODUTO E MONETIZZE")
+    st.markdown("<div class='instruction-box'><b>Ação:</b> Crie os 60 cartões e cadastre na Monetizze para obter o seu link de vendas.</div>", unsafe_allow_html=True)
+    
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("🎬 GERAR SCRIPT DO VÍDEO"):
-            p = f"Crie um roteiro de 60s para anúncio em vídeo. Eu convidando para um minicurso de {st.session_state.memoria['nicho']}. Foque em dor e chamada para ação."
-            st.session_state.memoria['script_video'] = nexus_ai(p, "Diretor de Criativos", api_key)
-    with c2:
-        if st.button("🌐 ESTRUTURA DA LANDING PAGE"):
-            p = f"Crie Headline, Promessa e 3 Benefícios para a página de captura do nicho {st.session_state.memoria['nicho']}."
-            st.session_state.memoria['txt_lp'] = nexus_ai(p, "Copywriter Senior", api_key)
-
-    if 'script_video' in st.session_state.memoria: st.info(st.session_state.memoria['script_video'])
-    if 'txt_lp' in st.session_state.memoria: st.success(st.session_state.memoria['txt_lp'])
+    if st.button("🧠 GERAR CONTEÚDO: E-BOOK (60 CARTÕES)"):
+        p = f"Crie um roteiro de 60 cartões educativos sobre {st.session_state.memoria['nicho']}. Cada cartão deve ser prático."
+        st.session_state.memoria['ebook_60'] = nexus_ai(p, "Escritor de Infoprodutos", api_key)
+    
+    if 'ebook_60' in st.session_state.memoria:
+        st.info(st.session_state.memoria['ebook_60'])
+        st.markdown("---")
+        st.subheader("🛠️ ORIENTAÇÃO MONETIZZE")
+        st.write("1. Cadastre o produto como **E-book (PDF)**.\n2. No checkout, defina o preço.\n3. Copie o **Link da Página de Venda/Checkout** para usar na live.")
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("CRIAR O PRODUTO E AQUECIMENTO 👉"): st.session_state.etapa = 2; st.rerun()
+    if st.button("GERAR ANÚNCIO E PÁGINA 👉"): st.session_state.etapa = 2; st.rerun()
 
 elif st.session_state.etapa == 2:
-    st.title("📦 2. PRODUTOS E MENSAGENS")
-    st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-    
-    tab_prod, tab_whats = st.tabs(["🎁 CRIAÇÃO DOS PRODUTOS", "📲 COMANDO DO WHATSAPP"])
-    
-    with tab_prod:
-        st.subheader("Conteúdo para entregar")
-        col_eb, col_aula = st.columns(2)
-        with col_eb:
-            if st.button("📄 E-BOOK ISCA (5 CARTÕES)"):
-                p = f"Crie o conteúdo de um E-book isca de 5 cartões para entregar no grupo de {st.session_state.memoria['nicho']}."
-                st.session_state.memoria['isca_pdf'] = nexus_ai(p, "Escritor", api_key)
-        with col_aula:
-            if st.button("🎥 EMENTA DO CURSO PRINCIPAL"):
-                p = f"Crie a ementa de 6 módulos para o curso pago de {st.session_state.memoria['nicho']} que será vendido na live."
-                st.session_state.memoria['ementa_curso'] = nexus_ai(p, "Infoprodutor", api_key)
-        
-        if 'isca_pdf' in st.session_state.memoria: st.info(st.session_state.memoria['isca_pdf'])
-        if 'ementa_curso' in st.session_state.memoria: st.success(st.session_state.memoria['ementa_curso'])
-
-    with tab_whats:
-        st.subheader("Textos do Grupo")
-        if st.button("GERAR DESCRIÇÃO E MENSAGENS"):
-            p = f"Gere a descrição do grupo VIP e 3 mensagens de aquecimento para o nicho {st.session_state.memoria['nicho']}."
-            st.session_state.memoria['txt_whats'] = nexus_ai(p, "Expert em WhatsApp", api_key)
-        if 'txt_whats' in st.session_state.memoria: st.write(st.session_state.memoria['txt_whats'])
-        
-    st.markdown("</div>", unsafe_allow_html=True)
-    if st.button("PREPARAR A LIVE DE VENDA 👉"): st.session_state.etapa = 3; st.rerun()
-
-elif st.session_state.etapa == 3:
-    st.title("🎤 3. LIVE E FECHAMENTO")
+    st.title("📢 2. ATRAÇÃO E ESTRUTURA")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("🧠 ORIENTAÇÃO DE ORATÓRIA"):
-            p = f"Dê dicas de postura e oratória para a live de {st.session_state.memoria['nicho']}."
-            st.session_state.memoria['oratoria'] = nexus_ai(p, "Coach", api_key)
+        if st.button("🎬 SCRIPT VÍDEO (1 MINUTO)"):
+            p = f"Crie um roteiro de 1 minuto para vídeo de anúncio. O produtor deve falar direto para a câmera convidando para a live sobre {st.session_state.memoria['nicho']} no dia {st.session_state.memoria['data_live']}."
+            st.session_state.memoria['script_ads'] = nexus_ai(p, "Diretor de Criativos", api_key)
     with c2:
-        if st.button("💰 SCRIPT DO PITCH"):
-            p = f"Crie o roteiro da oferta final para vender o curso pago na live."
-            st.session_state.memoria['pitch'] = nexus_ai(p, "Vendedor Senior", api_key)
+        if st.button("🌐 DADOS DA LANDING PAGE"):
+            p = f"Gere Headline, Promessa e o texto completo para a página de inscrição focada em levar o lead para o WhatsApp."
+            st.session_state.memoria['copy_lp'] = nexus_ai(p, "Copywriter", api_key)
     
-    if 'oratoria' in st.session_state.memoria: st.info(st.session_state.memoria['oratoria'])
-    if 'pitch' in st.session_state.memoria: st.success(st.session_state.memoria['pitch'])
+    if 'script_ads' in st.session_state.memoria: st.info(st.session_state.memoria['script_ads'])
+    if 'copy_lp' in st.session_state.memoria: st.success(st.session_state.memoria['copy_lp'])
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    if st.button("DISTRIBUIÇÃO NO WHATSAPP 👉"): st.session_state.etapa = 3; st.rerun()
+
+elif st.session_state.etapa == 3:
+    st.title("📲 3. CALENDÁRIO E WHATSAPP")
+    st.markdown(f"<div class='instruction-box'><b>Cronograma:</b> De {st.session_state.memoria['data_inicio']} até {st.session_state.memoria['data_live']}.</div>", unsafe_allow_html=True)
+    
+    st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
+    if st.button("📅 GERAR DESCRIÇÃO E MENSAGENS AGENDADAS"):
+        p = f"Gere a descrição do grupo VIP e 5 mensagens de aquecimento para serem distribuídas entre hoje e o dia da live ({st.session_state.memoria['data_live']})."
+        st.session_state.memoria['whats_cronograma'] = nexus_ai(p, "Estrategista de Grupos", api_key)
+    
+    if 'whats_cronograma' in st.session_state.memoria:
+        st.write(st.session_state.memoria['whats_cronograma'])
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    if st.button("TREINAMENTO PARA A LIVE 👉"): st.session_state.etapa = 4; st.rerun()
+
+elif st.session_state.etapa == 4:
+    st.title("🔴 4. MENTORIA DE ORATÓRIA E DESCRIÇÃO DO VÍDEO")
+    st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🎤 MENTORIA DE ORATÓRIA"):
+            p = f"Crie um guia de oratória para a live. Como manter a energia, como olhar para a câmera e como fazer as pausas certas para gerar desejo no e-book."
+            st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Oratória", api_key)
+    with col2:
+        if st.button("📝 DESCRIÇÃO DO VÍDEO + LINK"):
+            p = f"Crie a copy da descrição para o vídeo da live. Deve conter resumo do que será ensinado e o LINK DE COMPRA DO E-BOOK em destaque."
+            st.session_state.memoria['desc_video'] = nexus_ai(p, "Copywriter de Vendas", api_key)
+
+    if 'mentor_ora' in st.session_state.memoria: st.info(st.session_state.memoria['mentor_ora'])
+    if 'desc_video' in st.session_state.memoria: st.success(st.session_state.memoria['desc_video'])
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("FINALIZAR"): st.balloons(); st.success("Lançamento configurado!")
+    if st.button("CONCLUIR LANÇAMENTO"):
+        st.balloons()
+        st.success("Lançamento Totalmente Estruturado!")
 
 if st.session_state.etapa > 0:
     if st.button("⬅ VOLTAR"): st.session_state.etapa -= 1; st.rerun()
 
-st.markdown(f'<div class="footer">NEXUS — SISTEMA COMPLETO ATIVADO</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="footer">NEXUS — DO ANÚNCIO AO LINK NA DESCRIÇÃO</div>', unsafe_allow_html=True)
