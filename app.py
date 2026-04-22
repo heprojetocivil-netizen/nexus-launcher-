@@ -23,7 +23,13 @@ st.markdown(f"""
     [data-testid="stSidebar"] {{ display: none; }}
     header {{ visibility: hidden; }}
     .stApp {{ background-color: #FFFFFF; color: #000000; padding-bottom: 100px; }}
-    h1, h2, h3, h4, p, span, label, .stMarkdown {{ color: #000000 !important; font-family: 'Inter', sans-serif; }}
+    
+    /* FORÇAR TEXTO PRETO EM TODO O APP E ELEMENTOS DE MARKDOWN */
+    h1, h2, h3, h4, p, span, label, .stMarkdown, .stMarkdown p {{ 
+        color: #000000 !important; 
+        font-family: 'Inter', sans-serif; 
+    }}
+    
     .stProgress > div > div > div > div {{ background-color: {cor_tema}; }}
 
     .nexus-card, .stTabs [data-baseweb="tab-panel"] {{
@@ -36,7 +42,7 @@ st.markdown(f"""
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }}
     
-    /* AJUSTE DAS ABAS (TABS) PARA CINZA CLARO COM TEXTO PRETO */
+    /* AJUSTE DAS ABAS (TABS) PARA MANTER VISIBILIDADE NO E-MAIL MARKETING */
     .stTabs [data-baseweb="tab-list"] {{ 
         background-color: #F0F2F6 !important; 
         border-radius: 10px 10px 0 0; 
@@ -44,7 +50,7 @@ st.markdown(f"""
     }}
     
     .stTabs [data-baseweb="tab"] {{ 
-        background-color: #E5E7EB !important; /* Cinza claro */
+        background-color: #E5E7EB !important; /* Cinza claro fixo */
         color: #000000 !important; 
         font-weight: bold; 
         border-radius: 5px 5px 0 0;
@@ -56,7 +62,8 @@ st.markdown(f"""
     }}
 
     .stTabs [aria-selected="true"] {{ 
-        background-color: #D1D5DB !important; /* Cinza um pouco mais escuro para a selecionada */
+        background-color: #D1D5DB !important; /* Destaque cinza para aba ativa */
+        color: #000000 !important;
         border-bottom: 3px solid {cor_tema} !important;
     }}
 
@@ -82,7 +89,11 @@ st.markdown(f"""
         font-size: 12px !important;
     }}
 
-    textarea {{ border: 1px solid {cor_tema} !important; border-radius: 15px !important; }}
+    textarea {{ 
+        border: 1px solid {cor_tema} !important; 
+        border-radius: 15px !important; 
+        color: #000000 !important; 
+    }}
 
     .badge-recompensa {{
         background: {cor_tema}22;
@@ -119,7 +130,6 @@ st.markdown(f"""
         margin-top: 15px;
     }}
 
-    /* FAIXA AZUL DE ORIENTAÇÃO PEDIDA */
     .orientacao-anuncio {{
         background-color: #007BFF;
         color: #FFFFFF !important;
@@ -262,7 +272,6 @@ else:
         
         metas_ideais = {"WhatsApp": 800, "YouTube": 1000, "Facebook": 2000, "E-mail Marketing": 1000}
         unidade = {"WhatsApp": "Membros", "YouTube": "Inscritos", "Facebook": "Seguidores", "E-mail Marketing": "Leads"}
-        # Onde anunciar baseado no canal
         onde_anunciar = {
             "WhatsApp": "Instagram Ads (Stories) e Facebook Ads focados em conversão para grupo.",
             "YouTube": "YouTube Discovery e In-Stream focado em visualizações e inscritos.",
@@ -294,7 +303,6 @@ else:
             
             if 'atracao_msg' in st.session_state.memoria:
                 st.write(st.session_state.memoria.get('atracao_msg', ''))
-                # FAIXA AZUL DE ORIENTAÇÃO
                 st.markdown(f"""
                     <div class='orientacao-anuncio'>
                         📍 <b>ONDE ANUNCIAR:</b> {onde_anunciar[canal]}<br>
@@ -325,7 +333,6 @@ else:
             p_preco = st.text_input("Preço do Produto (Ex: R$ 97,00):", value=st.session_state.memoria.get('preco_produto', ''))
             st.session_state.memoria['preco_produto'] = p_preco
         
-        # Módulos específicos por canal
         if st.session_state.memoria['canal_escolhido'] == "E-mail Marketing":
             st.markdown("#### 📧 Módulo E-mail Marketing")
             col_e1, col_e2 = st.columns(2)
@@ -333,8 +340,9 @@ else:
                 if st.button("GERAR ISCA DIGITAL (E-BOOK GRÁTIS)"):
                     st.session_state.memoria['isca'] = nexus_ai(f"Crie o título e a ideia de conteúdo para um E-book grátis no nicho {st.session_state.memoria['nicho']}.", "Escritor", st.session_state.api_key)
             with col_e2:
-                if st.button("TEXTOS PARA LANDING PAGE"):
-                    st.session_state.memoria['lp_text'] = nexus_ai(f"Gere Headline e textos de benefícios para uma Landing Page de {p_nome} custando {p_preco}.", "Copywriter", st.session_state.api_key)
+                if st.button("GERAR SCRIPT DAS 6 VIDEO AULAS"):
+                    prompt_video = f"Crie 6 roteiros de videoaulas para o curso {p_nome}. O apresentador é um Avatar de IA que orienta o aluno passo a passo sobre o conteúdo do curso no nicho {st.session_state.memoria['nicho']}."
+                    st.session_state.memoria['lp_text'] = nexus_ai(prompt_video, "Roteirista de Cursos", st.session_state.api_key)
             st.write(st.session_state.memoria.get('isca', ''))
             st.write(st.session_state.memoria.get('lp_text', ''))
 
@@ -344,7 +352,6 @@ else:
                 st.session_state.memoria['yt_strat'] = nexus_ai(f"Gere ideias de Shorts para vender {p_nome} por {p_preco} no nicho {st.session_state.memoria['nicho']}.", "YouTube Expert", st.session_state.api_key)
             st.write(st.session_state.memoria.get('yt_strat', ''))
 
-        # Módulo Geral de Criação de Conteúdo do Produto
         st.markdown("---")
         st.subheader("Conteúdo Interno do Produto")
         tab_eb, tab_heygen = st.tabs(["📄 E-BOOK (60 CARTÕES)", "🎥 VIDEO AULAS (HEYGEN)"])
