@@ -75,11 +75,11 @@ elif st.session_state.etapa == 2:
     c1, c2 = st.columns(2)
     with c1:
         if st.button("🎬 SCRIPT VÍDEO (1 MINUTO)"):
-            p = f"Crie um roteiro de 1 minuto para vídeo de anúncio. O produtor deve falar direto para a câmera convidando para a live sobre {st.session_state.memoria['nicho']} no dia {st.session_state.memoria['data_live']}."
+            p = f"Crie um roteiro de 1 minuto para vídeo de anúncio para o nicho {st.session_state.memoria['nicho']}."
             st.session_state.memoria['script_ads'] = nexus_ai(p, "Diretor de Criativos", api_key)
     with c2:
         if st.button("🌐 DADOS DA LANDING PAGE"):
-            p = f"Gere Headline, Promessa e o texto completo para a página de inscrição focada em levar o lead para o WhatsApp."
+            p = f"Gere Headline, Promessa e texto para página de captura de WhatsApp."
             st.session_state.memoria['copy_lp'] = nexus_ai(p, "Copywriter", api_key)
     
     if 'script_ads' in st.session_state.memoria: st.info(st.session_state.memoria['script_ads'])
@@ -94,7 +94,7 @@ elif st.session_state.etapa == 3:
     
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
     if st.button("📅 GERAR DESCRIÇÃO E MENSAGENS AGENDADAS"):
-        p = f"Gere a descrição do grupo VIP e 5 mensagens de aquecimento para serem distribuídas entre hoje e o dia da live ({st.session_state.memoria['data_live']})."
+        p = f"Gere descrição de grupo e mensagens de aquecimento para {st.session_state.memoria['nicho']}."
         st.session_state.memoria['whats_cronograma'] = nexus_ai(p, "Estrategista de Grupos", api_key)
     
     if 'whats_cronograma' in st.session_state.memoria:
@@ -110,18 +110,18 @@ elif st.session_state.etapa == 4:
     
     with col1:
         if st.button("🎤 MENTORIA DE ORATÓRIA"):
-            p = f"Dê apenas dicas e orientações técnicas de oratória para a live de {st.session_state.memoria['nicho']}. Foque em postura, tom de voz, energia e como manter a autoridade diante da câmera. Não inclua roteiros de fala."
+            p = f"Dê apenas dicas técnicas de oratória para a live de {st.session_state.memoria['nicho']}. Foque em postura, voz, olhar para câmera e energia. NÃO escreva scripts ou falas de venda aqui."
             st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Oratória", api_key)
             
     with col2:
         if st.button("🎬 SCRIPT DO VÍDEO (LIVE)"):
-            p = f"Crie apenas o script de fala para a live de {st.session_state.memoria['nicho']}. O texto DEVE obrigatoriamente começar com 'Olá pessoal...' e terminar com uma chamada de ação clara anunciando que o link para a compra do e-book está disponível na descrição do vídeo."
-            st.session_state.memoria['script_live'] = nexus_ai(p, "Estrategista de Vendas", api_key)
+            p = f"Escreva apenas o script de fala para a live de {st.session_state.memoria['nicho']}. Comece obrigatoriamente com 'Olá pessoal...' e termine anunciando que o link para a venda do e-book está na descrição. NÃO inclua dicas de oratória aqui."
+            st.session_state.memoria['script_live'] = nexus_ai(p, "Roteirista de Vendas", api_key)
             
     with col3:
         if st.button("📝 DESCRIÇÃO + LINK"):
-            p = f"Crie apenas o texto da descrição do vídeo para {st.session_state.memoria['nicho']}. A primeira linha DEVE conter o aviso: 'Clique no link para acessar o e-book: [LINK]'. Em seguida, forneça um resumo persuasivo do conteúdo para reforçar a venda."
-            st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Copywriter de Vendas", api_key)
+            p = f"Crie apenas o texto da descrição do vídeo da live. Coloque na PRIMEIRA LINHA: 'Clique no link para acessar o e-book: [LINK]'. Adicione um resumo persuasivo abaixo. NÃO inclua scripts de fala ou dicas de oratória."
+            st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Copywriter", api_key)
 
     if 'mentor_ora' in st.session_state.memoria: 
         st.subheader("🎤 Mentoria de Oratória")
