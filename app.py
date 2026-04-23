@@ -110,18 +110,21 @@ elif st.session_state.etapa == 4:
     
     with col1:
         if st.button("🎤 MENTORIA DE ORATÓRIA"):
-            p = f"Aja apenas como Mentor de Oratória. Dê dicas técnicas exclusivas sobre postura, voz e energia para a live de {st.session_state.memoria['nicho']}. É PROIBIDO escrever roteiros ou o que falar. Foque apenas no comportamento."
-            st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Performance Humana", api_key)
+            # PROMPT REFORÇADO PARA ISOLAMENTO
+            p = f"Dê apenas dicas técnicas de oratória para a live de {st.session_state.memoria['nicho']}. Foque em postura e voz. É PROIBIDO escrever roteiros de fala ou o que dizer. Retorne apenas orientações comportamentais."
+            st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Performance e Linguagem Corporal", api_key)
             
     with col2:
         if st.button("🎬 SCRIPT DO VÍDEO (LIVE)"):
-            p = f"Aja apenas como Roteirista. Escreva o script de fala para a live de {st.session_state.memoria['nicho']}. Comece obrigatoriamente com 'Olá pessoal...' e termine anunciando o link para o e-book na descrição. É PROIBIDO dar dicas técnicas de oratória. Escreva apenas o texto da live."
-            st.session_state.memoria['script_live'] = nexus_ai(p, "Roteirista de Vendas Profissional", api_key)
+            # PROMPT REFORÇADO PARA ISOLAMENTO
+            p = f"Escreva apenas o roteiro de fala para a live de {st.session_state.memoria['nicho']}. O texto DEVE obrigatoriamente começar com 'Olá pessoal...' e terminar com o link na descrição. É PROIBIDO dar dicas de oratória. Retorne apenas o script pronto para leitura."
+            st.session_state.memoria['script_live'] = nexus_ai(p, "Roteirista Profissional de Teleprompter", api_key)
             
     with col3:
         if st.button("📝 DESCRIÇÃO + LINK"):
-            p = f"Aja apenas como Copywriter de YouTube. Crie o texto da descrição do vídeo. PRIMEIRA LINHA: 'Clique no link para acessar o e-book: [LINK]'. Em seguida, resumo persuasivo. É PROIBIDO escrever o script da live ou dar dicas de oratória."
-            st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Especialista em Descrições de Vídeo", api_key)
+            # PROMPT REFORÇADO PARA ISOLAMENTO
+            p = f"Crie apenas o texto da descrição do vídeo. A PRIMEIRA LINHA deve ser: 'Clique no link para acessar o e-book: [LINK]'. É PROIBIDO escrever scripts de fala ou dar dicas de oratória. Retorne apenas o texto descritivo."
+            st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Especialista em Metadados e SEO de YouTube", api_key)
 
     if 'mentor_ora' in st.session_state.memoria: 
         st.subheader("🎤 Mentoria de Oratória")
