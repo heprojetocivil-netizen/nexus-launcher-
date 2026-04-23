@@ -77,7 +77,7 @@ elif st.session_state.etapa == 2:
         if st.button("🎬 SCRIPT VÍDEO (1 MINUTO)"):
             p = f"Crie um roteiro de 1 minuto para vídeo de anúncio. O produtor deve falar direto para a câmera convidando para a live sobre {st.session_state.memoria['nicho']} no dia {st.session_state.memoria['data_live']}."
             st.session_state.memoria['script_ads'] = nexus_ai(p, "Diretor de Criativos", api_key)
-    with c2:
+    with col2:
         if st.button("🌐 DADOS DA LANDING PAGE"):
             p = f"Gere Headline, Promessa e o texto completo para a página de inscrição focada em levar o lead para o WhatsApp."
             st.session_state.memoria['copy_lp'] = nexus_ai(p, "Copywriter", api_key)
@@ -113,11 +113,11 @@ elif st.session_state.etapa == 4:
             st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Oratória", api_key)
     with col2:
         if st.button("🎬 SCRIPT DA LIVE"):
-            p = f"Crie um roteiro completo de fala para a live de {st.session_state.memoria['nicho']}. Deve começar com 'Olá pessoal, eu sou [Seu Nome]...', ensinar o conteúdo e no final oferecer o e-book reforçando que o link de compra está na descrição do vídeo."
+            p = f"Crie um roteiro completo de fala para a live de {st.session_state.memoria['nicho']}. Deve começar com 'Olá pessoal, eu sou [Seu Nome]...', ensinar o conteúdo prático e no final oferecer o e-book oficial reforçando que o link está logo abaixo na descrição."
             st.session_state.memoria['script_fala_live'] = nexus_ai(p, "Estrategista de Vendas", api_key)
     with col3:
         if st.button("📝 DESCRIÇÃO DO VÍDEO"):
-            p = f"Crie uma descrição para o vídeo da live de {st.session_state.memoria['nicho']}. Use este formato EXATO: Primeira linha: 'Clique no link para acessar o e-book: [LINK]'. Segunda linha em diante: Explique por que o conteúdo desse e-book é o 'marketing perfeito' para quem quer resultados com importação da China ou o nicho escolhido, usando argumentos fortes de venda e pressão."
+            p = f"Crie a descrição para o vídeo de {st.session_state.memoria['nicho']}. O texto DEVE seguir este padrão: Linha 1: 'Clique no link para acessar o e-book: [LINK]'. Linha 2 em diante: Explicar por que este é o 'marketing perfeito' para dominar a importação da China e o nicho, criando forte pressão de venda e urgência."
             st.session_state.memoria['desc_video'] = nexus_ai(p, "Copywriter de Vendas", api_key)
 
     if 'mentor_ora' in st.session_state.memoria: 
