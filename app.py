@@ -104,20 +104,37 @@ elif st.session_state.etapa == 3:
     if st.button("TREINAMENTO PARA A LIVE 👉"): st.session_state.etapa = 4; st.rerun()
 
 elif st.session_state.etapa == 4:
-    st.title("🔴 4. MENTORIA DE ORATÓRIA E DESCRIÇÃO DO VÍDEO")
+    st.title("🔴 4. MENTORIA, SCRIPT E DESCRIÇÃO")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
         if st.button("🎤 MENTORIA DE ORATÓRIA"):
-            p = f"Crie um guia de oratória para a live. Como manter a energia, como olhar para a câmera e como fazer as pausas certas para gerar desejo no e-book."
+            p = f"Crie apenas as orientações técnicas de oratória para a live de {st.session_state.memoria['nicho']}. Foque em postura, energia e como olhar para a câmera."
             st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Oratória", api_key)
+            
     with col2:
-        if st.button("📝 DESCRIÇÃO DO VÍDEO + LINK"):
-            p = f"Crie a copy da descrição para o vídeo da live. Deve conter resumo do que será ensinado e o LINK DE COMPRA DO E-BOOK em destaque."
-            st.session_state.memoria['desc_video'] = nexus_ai(p, "Copywriter de Vendas", api_key)
+        if st.button("🎬 SCRIPT DA LIVE"):
+            p = f"Crie o roteiro de fala para a live de {st.session_state.memoria['nicho']}. Deve começar com 'Olá pessoal, eu sou [Seu Nome]...', entregar o conteúdo prometido e, no final, anunciar que o link para a venda do e-book está na descrição."
+            st.session_state.memoria['script_live'] = nexus_ai(p, "Estrategista de Vendas", api_key)
+            
+    with col3:
+        if st.button("📝 DESCRIÇÃO + LINK"):
+            p = f"Crie apenas a descrição para o vídeo da live de {st.session_state.memoria['nicho']}. Coloque o LINK DE COMPRA em destaque na primeira linha e um resumo persuasivo abaixo."
+            st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Copywriter de Vendas", api_key)
 
-    if 'mentor_ora' in st.session_state.memoria: st.info(st.session_state.memoria['mentor_ora'])
-    if 'desc_video' in st.session_state.memoria: st.success(st.session_state.memoria['desc_video'])
+    if 'mentor_ora' in st.session_state.memoria: 
+        st.subheader("🎤 Mentoria de Oratória")
+        st.info(st.session_state.memoria['mentor_ora'])
+        
+    if 'script_live' in st.session_state.memoria: 
+        st.subheader("🎬 Script da Live")
+        st.write(st.session_state.memoria['script_live'])
+        
+    if 'desc_video_final' in st.session_state.memoria: 
+        st.subheader("📝 Descrição + Link")
+        st.success(st.session_state.memoria['desc_video_final'])
+        
     st.markdown("</div>", unsafe_allow_html=True)
 
     if st.button("CONCLUIR LANÇAMENTO"):
