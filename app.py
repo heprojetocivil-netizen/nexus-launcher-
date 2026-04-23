@@ -45,7 +45,7 @@ def chat_continuo(pergunta, key):
         mensagens = [{"role": "system", "content": "Você é o LaunchBot, especialista em lançamentos digitais de alta conversão. Seja direto e ajude o usuário com estratégias de vendas."}]
         for q, a in st.session_state.chat_hist:
             mensagens.append({"role": "user", "content": q})
-            mensagens.append({"role": "assistant", "content": a})
+            messages.append({"role": "assistant", "content": a})
         mensagens.append({"role": "user", "content": pergunta})
         
         response = client.chat.completions.create(
@@ -101,7 +101,6 @@ def navegação(voltar_para, avancar_para):
 if st.session_state.etapa == "Login":
     st.title("NEXUS LAUNCER")
     st.subheader("USO RESTRITO À ASSOCIADOS QUIZ MAIS PRÊMIOS")
-    st.info("Não coloque senha do site, só a chave api_key")
     nome_usuario = st.text_input("Nome")
     chave_api = st.text_input("Chave", type="password")
     if st.button("ENTRAR"):
