@@ -72,19 +72,25 @@ elif st.session_state.etapa == 1:
 elif st.session_state.etapa == 2:
     st.title("📢 2. ATRAÇÃO E ESTRUTURA")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("🎬 SCRIPT VÍDEO CONVITE (1 MINUTO)"):
-            data_formatada = st.session_state.memoria['data_live'].strftime("%d/%m/%Y")
-            p = f"Crie um roteiro de 1 minuto para vídeo de convite para a live de {st.session_state.memoria['nicho']} que acontecerá no dia {data_formatada}. Use gatilhos de urgência e antecipação."
-            st.session_state.memoria['script_ads'] = nexus_ai(p, "Diretor de Criativos", api_key)
-    with c2:
-        if st.button("🌐 DADOS DA LANDING PAGE"):
-            p = f"Gere Headline impactante, Promessa e texto para uma landing page focada em levar o lead para o grupo de WhatsApp do nicho {st.session_state.memoria['nicho']}."
-            st.session_state.memoria['copy_lp'] = nexus_ai(p, "Copywriter", api_key)
     
-    if 'script_ads' in st.session_state.memoria: st.info(st.session_state.memoria['script_ads'])
-    if 'copy_lp' in st.session_state.memoria: st.success(st.session_state.memoria['copy_lp'])
+    if st.button("🎬 GERAR SCRIPT DE VÍDEO + DADOS DA LANDING PAGE"):
+        data_formatada = st.session_state.memoria['data_live'].strftime("%d/%m/%Y")
+        
+        # Script do Vídeo Convite
+        p_video = f"Crie um roteiro de 1 minuto para vídeo de convite para a live de {st.session_state.memoria['nicho']} que acontecerá no dia {data_formatada}. Use gatilhos de urgência."
+        st.session_state.memoria['script_ads'] = nexus_ai(p_video, "Diretor de Criativos", api_key)
+        
+        # Dados da Landing Page
+        p_lp = f"Gere Headline impactante, Promessa e texto para uma landing page focada em levar o lead para o grupo de WhatsApp do nicho {st.session_state.memoria['nicho']}."
+        st.session_state.memoria['copy_lp'] = nexus_ai(p_lp, "Copywriter de Alta Conversão", api_key)
+    
+    if 'script_ads' in st.session_state.memoria:
+        st.subheader("🎥 Script do Vídeo Convite")
+        st.info(st.session_state.memoria['script_ads'])
+        
+        st.subheader("🌐 Dados da Landing Page (WhatsApp)")
+        st.success(st.session_state.memoria['copy_lp'])
+        
     st.markdown("</div>", unsafe_allow_html=True)
     
     if st.button("DISTRIBUIÇÃO NO WHATSAPP 👉"): st.session_state.etapa = 3; st.rerun()
@@ -112,34 +118,19 @@ elif st.session_state.etapa == 4:
         role_script = """Você é um Roteirista de Elite especialista na 'Jornada do Herói'.
         Seu objetivo é adaptar um roteiro de live em 12 passos para o nicho do usuário.
         ESTRUTURA OBRIGATÓRIA:
-        1. Mundo Comum (Antes da transformação)
-        2. O Chamado à Aventura (Despertar da ideia)
-        3. A Recusa do Chamado (Dúvidas e medos)
-        4. Encontro com o Mentor (Descobrindo o método)
-        5. Travessia do Primeiro Limiar (A decisão)
-        6. Provas e Obstáculos
-        7. Aproximação da Caverna (Quase desistir)
-        8. A Provação (O teste final)
-        9. A Recompensa (Conquista)
-        10. Caminho de Volta (De aprendiz a guia)
-        11. Ressurreição (Autoridade e resultados)
-        12. Retorno com Elixir (Oferta do E-book)
-        
-        Use linguagem persuasiva, gatilhos de prova social e autoridade. O texto deve soar natural para fala."""
+        1. Mundo Comum, 2. Chamado, 3. Recusa, 4. Mentor, 5. Travessia, 6. Provas, 7. Caverna, 8. Provação, 9. Recompensa, 10. Caminho de Volta, 11. Ressurreição, 12. Elixir (Oferta).
+        Use linguagem persuasiva. O texto deve soar natural para fala."""
         
         p_script = f"Crie o roteiro completo da live para o nicho {st.session_state.memoria['nicho']} seguindo rigorosamente os 12 passos da Jornada do Herói. Comece com 'Olá pessoal...' e termine anunciando que o link de compra está na descrição."
         st.session_state.memoria['script_live'] = nexus_ai(p_script, role_script, api_key)
         
-        # Geração da Descrição
-        p_desc = f"Crie apenas o texto da descrição do vídeo para o nicho {st.session_state.memoria['nicho']}. A PRIMEIRA LINHA deve ser: 'Clique no link para acessar o e-book: [LINK]'. Adicione um resumo persuasivo abaixo."
+        p_desc = f"Crie apenas o texto da descrição do vídeo para o nicho {st.session_state.memoria['nicho']}. A PRIMEIRA LINHA deve ser: 'Clique no link para acessar o e-book: [LINK]'."
         st.session_state.memoria['desc_video_final'] = nexus_ai(p_desc, "Especialista em Copywriting", api_key)
 
     if 'script_live' in st.session_state.memoria: 
         st.subheader("🎬 Script da Live (Jornada do Herói)")
         st.write(st.session_state.memoria['script_live'])
-        
         st.markdown("---")
-        
         st.subheader("📝 Descrição + Link")
         st.success(st.session_state.memoria['desc_video_final'])
         
