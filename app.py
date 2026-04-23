@@ -1,5 +1,6 @@
 import streamlit as st
 from groq import Groq
+from datetime import timedelta
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="NEXUS LAUNCER", layout="wide")
@@ -38,25 +39,21 @@ def chamar_ia(prompt, system_prompt, key):
     except Exception as e:
         return f"Erro na API: Verifique sua chave. {e}"
 
-# --- FUNÇÃO CHAT CONTÍNUO (MEMÓRIA ATIVA) ---
+# --- FUNÇÃO CHAT CONTÍNUO ---
 def chat_continuo(pergunta, key):
     try:
         client = Groq(api_key=key)
-        mensagens = [{"role": "system", "content": "Você é o LaunchBot, especialista em lançamentos digitais de alta conversão. Seja direto e ajude o usuário com estratégias de vendas."}]
+        mensagens = [{"role": "system", "content": "Você é o LaunchBot, especialista em lançamentos digitais de alta conversão."}]
         for q, a in st.session_state.chat_hist:
             mensagens.append({"role": "user", "content": q})
             mensagens.append({"role": "assistant", "content": a})
         mensagens.append({"role": "user", "content": pergunta})
-        
-        response = client.chat.completions.create(
-            messages=mensagens,
-            model="llama-3.3-70b-versatile",
-        )
+        response = client.chat.completions.create(messages=mensagens, model="llama-3.3-70b-versatile")
         return response.choices[0].message.content
     except Exception as e:
         return f"Erro no chat: {e}"
 
-# --- COMPONENTES REUTILIZÁVEIS ---
+# --- COMPONENTES ---
 def barra_topo():
     if st.session_state.etapa != "Login":
         col_new, col_proj = st.columns(2)
@@ -67,8 +64,7 @@ def barra_topo():
                 st.rerun()
         with col_proj:
             with st.expander("📂 MEUS PROJETOS"):
-                if not st.session_state.projetos:
-                    st.write("Nenhum projeto salvo.")
+                if not st.session_state.projetos: st.write("Nenhum projeto salvo.")
                 for nome in list(st.session_state.projetos.keys()):
                     col_p_abrir, col_p_del = st.columns([3, 1])
                     with col_p_abrir:
@@ -113,13 +109,17 @@ if st.session_state.etapa == "Login":
 elif st.session_state.etapa == "Formulario":
     barra_topo()
     st.title("PREENCHA FORMULÁRIO")
-    nicho = st.text_input("Nicho (ex: Prática de Yoga)")
+    nicho = st.text_input("Nicho (ex: ioga)")
     nome_eb = st.text_input("Nome do e-book")
     dor = st.text_input("Qual dor ele resolve")
     preco = st.text_input("Preço")
-    data_lancto = st.text_input("Data do lançamento (ex: 6 de março)")
+    data_sel = st.date_input("Selecione a data do lançamento (Liberação)")
     if st.button("AVANÇAR"):
-        st.session_state.dados.update({"nicho": nicho, "nome_eb": nome_eb, "dor": dor, "preco": preco, "data_lancto": data_lancto})
+        st.session_state.dados.update({
+            "nicho": nicho, "nome_eb": nome_eb, "dor": dor, 
+            "preco": preco, "data_obj": data_sel,
+            "data_lancto": data_sel.strftime('%d/%m/%Y')
+        })
         st.session_state.etapa = "Ebook_Gerar"
         st.rerun()
 
@@ -129,7 +129,6 @@ elif st.session_state.etapa == "Ebook_Gerar":
     if st.button("GERAR CONTEUDO – 60 CARTÕES"):
         prompt = f"Gere 60 cartões de conteúdo para o eBook '{st.session_state.dados['nome_eb']}' no nicho {st.session_state.dados['nicho']} focado em resolver a dor: {st.session_state.dados['dor']}."
         st.session_state.dados['eb_conteudo'] = chamar_ia(prompt, "Você é um especialista em criação de eBooks.", st.session_state.api_key)
-    
     if 'eb_conteudo' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['eb_conteudo']}</div>", unsafe_allow_html=True)
         navegação("Formulario", "VSL_Gerar")
@@ -138,10 +137,9 @@ elif st.session_state.etapa == "VSL_Gerar":
     barra_topo()
     st.title("🎬 1. VSL DO ANÚNCIO")
     if st.button("GERAR ROTEIRO"):
-        sys_vsl = "Você deve personalizar o texto para o nicho do usuário sem simplificá-lo. Mantenha os parágrafos. Oriente também sobre as imagens e onde encaixá-las de forma 100% personalizada."
-        prompt_vsl = f"Nicho: {st.session_state.dados['nicho']}. Texto base: Se você quer [RESULTADO], mas sente que está perdido... provavelmente não é falta de esforço. É falta de direção. A maioria das pessoas comete um erro simples... e por isso continua tentando e não sai do lugar. E o pior: nem percebem onde estão errando. Eu organizei um caminho direto pra resolver isso... e vou mostrar dentro de um grupo fechado. Sem complicação. É gratuito. Clica em SAIBA MAIS para entrar"
+        sys_vsl = "Você deve personalizar o texto para o nicho do usuário sem simplificá-lo. Mantenha os parágrafos."
+        prompt_vsl = f"Nicho: {st.session_state.dados['nicho']}. Gere um roteiro focado em convidar para o grupo de WhatsApp."
         st.session_state.dados['vsl_roteiro'] = chamar_ia(prompt_vsl, sys_vsl, st.session_state.api_key)
-    
     if 'vsl_roteiro' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['vsl_roteiro']}</div>", unsafe_allow_html=True)
         navegação("Ebook_Gerar", "LP_Gerar")
@@ -151,38 +149,7 @@ elif st.session_state.etapa == "LP_Gerar":
     st.title("🌐 2. LANDING PAGE")
     if st.button("GERAR ROTEIRO"):
         nicho = st.session_state.dados['nicho']
-        usuario = st.session_state.usuario
-        st.session_state.dados['lp_roteiro'] = f"""Headline: Um caminho simples para {nicho}, mesmo começando do zero
-
-Eu sou {usuario}
-Já estive exatamente onde você está…
-
-tentando várias coisas… sem resultado.
-Até começar a estudar e aplicar o que realmente funciona…
-
-e identificar um padrão simples
-
-que muda completamente o jogo.
-Depois de aplicar isso na prática…
-
-eu percebi que o problema nunca foi esforço —
-
-foi direção.
-
-Se você sente que está tentando…
-
-mas não sai do lugar…
-
-provavelmente está passando por isso também.
-
-Eu criei um grupo onde vou te mostrar isso de forma direta.
-
-- O erro que te mantém travado 
-- O caminho mais simples 
-- O que realmente funciona na prática 
-
-ENTRAR NO GRUPO"""
-    
+        st.session_state.dados['lp_roteiro'] = f"Headline: Um caminho simples para {nicho}...\n\nClique para entrar no grupo."
     if 'lp_roteiro' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_roteiro']}</div>", unsafe_allow_html=True)
         navegação("VSL_Gerar", "MSG_Gerar")
@@ -194,20 +161,22 @@ elif st.session_state.etapa == "MSG_Gerar":
         nicho = st.session_state.dados['nicho']
         ebook = st.session_state.dados['nome_eb']
         dor = st.session_state.dados['dor']
-        data = st.session_state.dados['data_lancto']
+        data_f = st.session_state.dados['data_obj']
+        data_anterior = (data_f - timedelta(days=1)).strftime('%d/%m/%Y')
+        data_venda = data_f.strftime('%d/%m/%Y')
         
         st.session_state.dados['msg_grupo'] = f"""🔥 1ª MENSAGEM
 Se você deseja {nicho}, mas sente que está perdido na busca por uma prática de {nicho} eficaz... provavelmente não é falta de esforço. É falta de direção. A maioria das pessoas que começam a praticar {nicho} comete um erro simples: não têm um plano claro e personalizado para alcançar seus objetivos. E por isso, continuam tentando e não saem do lugar. E o pior: nem percebem onde estão errando.
-Eu organizei um caminho direto para resolver isso... um material que eu preparei e vou liberar o acesso para todos os membros desse grupo no dia {data}. Fiquem ligados e atentos as mensagens. Até…
+Eu organizei um caminho direto para resolver isso... um material que eu preparei e vou liberar o acesso para todos os membros desse grupo no dia {data_venda}. Fiquem ligados e atentos as mensagens. Até…
 
-🔥 2ª MENSAGEM
+🔥 2ª MENSAGEM - DIA {data_anterior}
 Amanhã é o dia.
 Depois de tanto tempo tentando encontrar uma prática de {nicho} que realmente funcione para você, talvez o que faltava não era mais esforço… era apenas um caminho mais claro.
 Muita gente insiste, muda de vídeo, muda de sequência, mas continua sem evolução real — porque segue sem direção definida.
 E isso vai mudar a partir de amanhã. Quando será liberado o acesso ao material que eu organizei especialmente para te mostrar um caminho simples, direto e estruturado para evoluir na prática.
 Até amanhã, abraços
 
-🔥 3ª MENSAGEM (LIBERAÇÃO)
+🔥 3ª MENSAGEM - DIA {data_venda} (LIBERAÇÃO)
 Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… em um e-book que você poderá acessar hoje com 30% de desconto. 
 O método “{ebook}” ele foi pensado para “{dor}”. 
 Clique no link agora e garanta o seu. Essa promoção irá acabar a qualquer momento. Obrigado por estar comigo até agora."""
@@ -219,47 +188,10 @@ Clique no link agora e garanta o seu. Essa promoção irá acabar a qualquer mom
 elif st.session_state.etapa == "Visualizacao":
     barra_topo()
     st.title(f"PROJETO: {st.session_state.dados.get('nome_eb')}")
-    
-    with st.expander("📚 E-BOOK", expanded=False): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('eb_conteudo')}</div>", True)
-    with st.expander("🎬 1. VSL DO ANÚNCIO", expanded=False): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('vsl_roteiro')}</div>", True)
-    with st.expander("🌐 2. LANDING PAGE", expanded=False): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('lp_roteiro')}</div>", True)
-    with st.expander("📌 3. MENSAGENS", expanded=False): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo')}</div>", True)
-    with st.expander("📅 APLICAÇÃO", expanded=False):
-        st.markdown("""<div class='caixa-texto'>🚀 Sistema de lançamento simplificado
-📘 1. Criação do produto
-- Gere o seu eBook usando o Gamma AI
-- Cadastre o produto na plataforma Monetizze 
-- Estruture o material de forma simples e direta para venda 
-
-🎬 2. VSL (Vídeo de Vendas)
-- Crie o vídeo do anúncio e o vídeo de vendas na plataforma Heygen e suba no Youtube
-- Crie a LP usando o Gamma e insira o link do grupo
-- Insira o link da Monetizze na descrição do vídeo de vendas
-
-👥 4. Estrutura do grupo
-- Crie o grupo na segunda-feira 
-- Segunda a sexta: Anuncie e preencha o grupo
-
-🔥 5. Sequência de vendas
-- Siga a sequência das 3 mensagens personalizadas
-- Finalize levando para a oferta na Monetizze</div>""", True)
-
+    with st.expander("📌 MENSAGENS", expanded=True): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo')}</div>", True)
     if st.button("💾 SALVAR PROJETO"):
         st.session_state.projetos[st.session_state.dados['nome_eb']] = st.session_state.dados
-        st.success("Projeto salvo com sucesso!")
-
-    st.divider()
-    st.subheader("💬 LaunchBot")
-    st.write("Eu sou o LaunchBot, especialista em lançamentos digitais de alta conversão")
-    
-    msg_chat = st.text_input("Digite a sua dúvida e aperte Enter", key="chat_input")
-    if msg_chat:
-        resp = chat_continuo(msg_chat, st.session_state.api_key)
-        st.session_state.chat_hist.append((msg_chat, resp))
-    
-    for q, a in reversed(st.session_state.chat_hist):
-        st.markdown(f"**Você:** {q}")
-        st.markdown(f"<div class='chat-bubble'>{a}</div>", unsafe_allow_html=True)
+        st.success("Projeto salvo!")
 
 # --- RODAPÉ ---
-st.markdown(f"<div class='footer'>© 2026 Nexus Launcer Lançamento inteligente de produtos digitais</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='footer'>© 2026 Nexus Launcer Lançamento inteligente</div>", unsafe_allow_html=True)
