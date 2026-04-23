@@ -45,7 +45,7 @@ def chat_continuo(pergunta, key):
         mensagens = [{"role": "system", "content": "Você é o LaunchBot, especialista em lançamentos digitais de alta conversão. Seja direto e ajude o usuário com estratégias de vendas."}]
         for q, a in st.session_state.chat_hist:
             mensagens.append({"role": "user", "content": q})
-            messages.append({"role": "assistant", "content": a})
+            mensagens.append({"role": "assistant", "content": a})
         mensagens.append({"role": "user", "content": pergunta})
         
         response = client.chat.completions.create(
@@ -200,14 +200,13 @@ Não é teoria… é algo direto.
 Fica até o final.
 
 🔥 DIA 1
-Deixa eu te fazer uma pergunta direta:
-Você sente que está no caminho certo… ou só tentando coisas e esperando dar certo?
+Deixa eu te fazer uma pergunta direta: Você sente que está no caminho certo… "{nicho}" ou só tentando coisas e esperando dar certo?
 
 🔥 DIA 2
 A maioria das pessoas não falha por falta de esforço… falha porque está andando na direção errada. E o pior: só percebe depois de muito tempo.
 
 🔥 DIA 3
-Existe um ponto simples que separa quem consegue resultado… de quem continua tentando. E não tem nada a ver com trabalhar mais.
+Existe um ponto simples que separa quem consegue resultado "{nicho}" … de quem continua tentando. E não tem nada a ver com trabalhar mais.
 
 🔥 DIA 4
 Quando você entende isso… você para de perder tempo com o que não funciona. E começa a focar no que realmente dá resultado.
@@ -216,11 +215,7 @@ Quando você entende isso… você para de perder tempo com o que não funciona.
 Eu poderia explicar tudo aqui… mas a maioria das pessoas não aplicaria. Então amanhã eu vou te mostrar isso de forma diferente.
 
 🔥 DIA 6
-Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… em um e-book qe você poderá acessar hoje com 30% de desconto.
-O método “{ebook}” ele foi pensado para “{dor}”
-Clique no link e agora e garanto o seu.
-Essa promoção irá acabar a qualquer momento
-Obrigado por estar comigo até agora"""
+Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… em um e-book qe você poderá acessar hoje com 30% de desconto. O método “{ebook}” ele foi pensado para “{dor}” Clique no link e agora e garanto o seu. Essa promoção irá acabar a qualquer momento Obrigado por estar comigo até agora."""
 
     if 'msg_grupo' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['msg_grupo']}</div>", unsafe_allow_html=True)
