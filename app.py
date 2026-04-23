@@ -74,12 +74,13 @@ elif st.session_state.etapa == 2:
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("🎬 SCRIPT VÍDEO (1 MINUTO)"):
-            p = f"Crie um roteiro de 1 minuto para vídeo de anúncio para o nicho {st.session_state.memoria['nicho']}."
+        if st.button("🎬 SCRIPT VÍDEO CONVITE (1 MINUTO)"):
+            data_formatada = st.session_state.memoria['data_live'].strftime("%d/%m/%Y")
+            p = f"Crie um roteiro de 1 minuto para vídeo de convite para a live de {st.session_state.memoria['nicho']} que acontecerá no dia {data_formatada}. Use gatilhos de urgência e antecipação."
             st.session_state.memoria['script_ads'] = nexus_ai(p, "Diretor de Criativos", api_key)
     with c2:
         if st.button("🌐 DADOS DA LANDING PAGE"):
-            p = f"Gere Headline, Promessa e texto para página de captura de WhatsApp."
+            p = f"Gere Headline impactante, Promessa e texto para uma landing page focada em levar o lead para o grupo de WhatsApp do nicho {st.session_state.memoria['nicho']}."
             st.session_state.memoria['copy_lp'] = nexus_ai(p, "Copywriter", api_key)
     
     if 'script_ads' in st.session_state.memoria: st.info(st.session_state.memoria['script_ads'])
@@ -101,14 +102,13 @@ elif st.session_state.etapa == 3:
         st.write(st.session_state.memoria['whats_cronograma'])
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("TREINAMENTO PARA A LIVE 👉"): st.session_state.etapa = 4; st.rerun()
+    if st.button("Ir para a live 👉"): st.session_state.etapa = 4; st.rerun()
 
 elif st.session_state.etapa == 4:
     st.title("🔴 4. MATERIAL FINAL DA LIVE")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
     
-    if st.button("🚀 GERAR ROTEIRO E DESCRIÇÃO"):
-        # ROLE DE SISTEMA COM A JORNADA DO HERÓI INTEGRADA
+    if st.button("🚀 GERAR ROTEIRO JORNADA DO HERÓI"):
         role_script = """Você é um Roteirista de Elite especialista na 'Jornada do Herói'.
         Seu objetivo é adaptar um roteiro de live em 12 passos para o nicho do usuário.
         ESTRUTURA OBRIGATÓRIA:
