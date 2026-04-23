@@ -108,16 +108,34 @@ elif st.session_state.etapa == 4:
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
     
     if st.button("🚀 GERAR ROTEIRO E DESCRIÇÃO"):
-        # Geração do Script
-        p_script = f"Escreva apenas o roteiro de fala para a live de {st.session_state.memoria['nicho']}. O texto DEVE obrigatoriamente começar com 'Olá pessoal...' e terminar com o link na descrição. É PROIBIDO dar dicas de oratória."
-        st.session_state.memoria['script_live'] = nexus_ai(p_script, "Roteirista Profissional", api_key)
+        # ROLE DE SISTEMA COM A JORNADA DO HERÓI INTEGRADA
+        role_script = """Você é um Roteirista de Elite especialista na 'Jornada do Herói'.
+        Seu objetivo é adaptar um roteiro de live em 12 passos para o nicho do usuário.
+        ESTRUTURA OBRIGATÓRIA:
+        1. Mundo Comum (Antes da transformação)
+        2. O Chamado à Aventura (Despertar da ideia)
+        3. A Recusa do Chamado (Dúvidas e medos)
+        4. Encontro com o Mentor (Descobrindo o método)
+        5. Travessia do Primeiro Limiar (A decisão)
+        6. Provas e Obstáculos
+        7. Aproximação da Caverna (Quase desistir)
+        8. A Provação (O teste final)
+        9. A Recompensa (Conquista)
+        10. Caminho de Volta (De aprendiz a guia)
+        11. Ressurreição (Autoridade e resultados)
+        12. Retorno com Elixir (Oferta do E-book)
+        
+        Use linguagem persuasiva, gatilhos de prova social e autoridade. O texto deve soar natural para fala."""
+        
+        p_script = f"Crie o roteiro completo da live para o nicho {st.session_state.memoria['nicho']} seguindo rigorosamente os 12 passos da Jornada do Herói. Comece com 'Olá pessoal...' e termine anunciando que o link de compra está na descrição."
+        st.session_state.memoria['script_live'] = nexus_ai(p_script, role_script, api_key)
         
         # Geração da Descrição
-        p_desc = f"Crie apenas o texto da descrição do vídeo. A PRIMEIRA LINHA deve ser: 'Clique no link para acessar o e-book: [LINK]'. Adicione um resumo persuasivo abaixo."
+        p_desc = f"Crie apenas o texto da descrição do vídeo para o nicho {st.session_state.memoria['nicho']}. A PRIMEIRA LINHA deve ser: 'Clique no link para acessar o e-book: [LINK]'. Adicione um resumo persuasivo abaixo."
         st.session_state.memoria['desc_video_final'] = nexus_ai(p_desc, "Especialista em Copywriting", api_key)
 
     if 'script_live' in st.session_state.memoria: 
-        st.subheader("🎬 Script do Vídeo")
+        st.subheader("🎬 Script da Live (Jornada do Herói)")
         st.write(st.session_state.memoria['script_live'])
         
         st.markdown("---")
