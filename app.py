@@ -148,4 +148,3 @@ elif st.session_state.etapa == "Versao Final":
     for m in reversed(st.session_state.chat_history): st.write(m)
 
 st.markdown('<div style="text-align:center; padding:10px; color:#00BFFF; font-weight:bold;">NEXUS LANCEUR - QUIZ MAIS PRÊMIOS</div>', unsafe_allow_html=True)
-🎯 O que mudou?
