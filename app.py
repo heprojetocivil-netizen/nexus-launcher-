@@ -1,39 +1,30 @@
 import streamlit as st
 from groq import Groq
 
-# --- CONFIGURAÇÃO NEXUS LANCEUR ---
-st.set_page_config(page_title="NEXUS LANCEUR", page_icon="🚀", layout="wide")
+# --- CONFIGURAÇÃO INICIAL ---
+st.set_page_config(page_title="NEXUS LANCEUR", page_icon="🚀", layout="centered")
 
-# --- SISTEMA DE CHAVE DE ACESSO (O SITE TRAVA AQUI) ---
+# --- ESTILO PERSONALIZADO ---
+st.markdown("""
+    <style>
+    .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; background-color: #00BFFF !important; color: white !important; font-weight: bold; border: none; }
+    .resumo-ia { background-color: #F8FAFC; padding: 20px; border-radius: 15px; border: 1px solid #E2E8F0; margin-top: 20px; }
+    .footer { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #00BFFF; color: white; text-align: center; padding: 5px; font-weight: bold; }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- CHAVE DE ACESSO ---
 CHAVE_MESTRA = "NEXUS-PRO-2026"
 
-if 'autenticado' not in st.session_state:
-    st.session_state.autenticado = False
-
-if not st.session_state.autenticado:
-    st.title("🔐 ACESSO RESTRITO - NEXUS LANCEUR")
-    st.markdown("---")
-    chave_input = st.text_input("Insira sua Chave de Ativação:", type="password")
-    if st.button("ATIVAR SISTEMA"):
-        if chave_input == CHAVE_MESTRA:
-            st.session_state.autenticado = True
-            st.success("Acesso Liberado! Carregando...")
-            st.rerun()
-        else:
-            st.error("Chave inválida. Fale com Orlando Rousseau.")
-    st.stop()
-
-# --- INICIALIZAÇÃO DE ESTADOS ---
-if 'projetos' not in st.session_state: st.session_state.projetos = {}
-if 'etapa' not in st.session_state: st.session_state.etapa = "Novo Projeto"
+if 'autenticado' not in st.session_state: st.session_state.autenticado = False
+if 'etapa' not in st.session_state: st.session_state.etapa = "Login"
 if 'dados' not in st.session_state: st.session_state.dados = {}
 if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 
-# --- CONFIGURAÇÃO DA IA (GROQ) ---
-# SUBSTITUA ABAIXO PELA SUA CHAVE gsk_...
-api_key = "COLOQUE_SUA_CHAVE_AQUI"
+# --- FUNÇÃO IA ---
+api_key = "SUA_CHAVE_AQUI" # <--- COLOQUE SUA CHAVE GSK AQUI
 
-def gerar_ia(prompt, system="Você é o NEXUS LANCEUR, mestre em lançamentos e copywriter de elite."):
+def gerar_ia(prompt, system="Você é o NEXUS LANCEUR, especialista em lançamentos do Quiz Mais Prêmios."):
     try:
         client = Groq(api_key=api_key)
         response = client.chat.completions.create(
@@ -41,133 +32,123 @@ def gerar_ia(prompt, system="Você é o NEXUS LANCEUR, mestre em lançamentos e 
             model="llama-3.3-70b-versatile"
         )
         return response.choices[0].message.content
-    except Exception as e: return f"Erro na IA: {e}"
+    except Exception as e: return f"Erro: Verifique sua chave API. {e}"
 
-# --- ESTILO VISUAL ---
-st.markdown("""
-    <style>
-    .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; background-color: #00BFFF !important; color: white !important; font-weight: bold; }
-    .resumo-ia { background-color: #F1F5F9; padding: 20px; border-radius: 10px; border-left: 5px solid #00BFFF; margin-bottom: 20px; color: #1E293B; }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- SIDEBAR ---
-with st.sidebar:
-    st.title("📂 NEXUS LANCEUR")
-    st.info(f"Usuário: Orlando Rousseau")
-    st.markdown("---")
-    st.subheader("MEUS PROJETOS")
-    for p_nome in list(st.session_state.projetos.keys()):
-        if st.button(f"📌 {p_nome}"):
-            st.session_state.dados = st.session_state.projetos[p_nome]
-            st.session_state.etapa = "Projeto Final"
-            st.rerun()
-    st.markdown("---")
-    if st.button("➕ NOVO PROJETO"):
-        st.session_state.etapa = "Novo Projeto"
-        st.session_state.dados = {}
-        st.session_state.chat_history = []
-        st.rerun()
-
-# --- FLUXO DE ETAPAS ---
-
-# 1. FORMULÁRIO (PARTE 1)
-if st.session_state.etapa == "Novo Projeto":
-    st.title("🚀 FORMULÁRIO INTELIGENTE NEXUS")
-    with st.form("f1"):
-        col1, col2 = st.columns(2)
-        with col1:
-            n_p = st.text_input("Nome do Projeto")
-            nicho = st.text_input("Nicho do Produto")
-            publico = st.text_input("Público-alvo")
-            tipo = st.text_input("Tipo de Produto (eBook, Guia, etc)")
-        with col2:
-            objetivo = st.text_input("Objetivo Principal")
-            experiencia = st.selectbox("Nível de experiência", ["Iniciante", "Já testei", "Já tive resultados"])
-            preco = st.text_input("Preço do Produto")
-            garantia = st.text_input("Garantia (ex: 7 dias)")
-        
-        if st.form_submit_button("AVANÇAR"):
-            with st.spinner("🤖 Gerando Estratégia de IA (Parte 2)..."):
-                p = f"Nicho: {nicho}, Público: {publico}. Crie: 1. Dor central REAL, 2. Objeções específicas, 3. Desejo emocional profundo, 4. Promessa forte, 5. Mecanismo único (Dê um nome), 6. Ângulo de ataque."
-                st.session_state.dados = {
-                    "nome": n_p, "nicho": nicho, "publico": publico, "tipo": tipo, 
-                    "objetivo": objetivo, "analise_ia": gerar_ia(p), "preco": preco, "garantia": garantia
-                }
-                st.session_state.etapa = "Confeccao Ebook"
+# --- 1. TELA DE LOGIN (NEXUS LANCEUR) ---
+if not st.session_state.autenticado:
+    st.title("🚀 NEXUS LANCEUR")
+    st.subheader("Área restrita para associados do Quiz Mais Prêmios")
+    
+    with st.container():
+        nome = st.text_input("Seu nome:")
+        chave = st.text_input("Chave de ativação:", type="password")
+        if st.button("ENTRAR"):
+            if chave == CHAVE_MESTRA and nome:
+                st.session_state.autenticado = True
+                st.session_state.usuario = nome
+                st.session_state.etapa = "Formulario"
                 st.rerun()
+            else:
+                st.error("Chave inválida ou nome não preenchido.")
+    st.stop()
 
-# 2. EBOOK
-elif st.session_state.etapa == "Confeccao Ebook":
+# --- 2. FORMULÁRIO INTELIGENTE ---
+if st.session_state.etapa == "Formulario":
+    st.title("🚀 FORMULÁRIO INTELIGENTE DE FUNIL")
+    st.write(f"Bem-vindo, {st.session_state.usuario}!")
+    
+    with st.form("form_parte1"):
+        nicho = st.text_input("1. Nicho do produto (ex: dinheiro online, emagrecimento)")
+        publico = st.text_input("2. Público-alvo (ex: iniciantes, frustrados)")
+        st.info("3. Produto: E-books (Padrão)")
+        objetivo = st.text_input("4. Objetivo principal (O resultado final)")
+        promessa = st.text_input("5. Promessa do produto (Opcional)")
+        preco = st.text_input("6. Preço do produto")
+        
+        gerar_analise = st.form_submit_button("GERAR INTELIGÊNCIA ESTRATÉGICA")
+        
+    if gerar_analise:
+        with st.spinner("IA processando Parte 2..."):
+            prompt = f"Com base no nicho {nicho} e público {publico}, gere: 1. Dor principal, 2. Objeções prováveis, 3. Desejo emocional, 4. Promessa forte, 5. Mecanismo único."
+            st.session_state.dados = {
+                "nicho": nicho, "publico": publico, "objetivo": objetivo, "preco": preco, 
+                "promessa": promessa, "parte2": gerar_ia(prompt)
+            }
+
+    if "parte2" in st.session_state.dados:
+        st.markdown("### 🧠 PARTE 2 — IA GERA AUTOMATICAMENTE")
+        st.markdown(f"<div class='resumo-ia'>{st.session_state.dados['parte2']}</div>", unsafe_allow_html=True)
+        if st.button("AVANÇAR PARA E-BOOK ➡️"):
+            st.session_state.etapa = "Ebook"
+            st.rerun()
+
+# --- 3. CONFECCÃO E-BOOK ---
+elif st.session_state.etapa == "Ebook":
     st.title("📦 GERE SEU E-BOOK PROFISSIONAL")
-    st.markdown(f"<div class='resumo-ia'><b>ESTRATÉGIA DEFINIDA:</b><br>{st.session_state.dados['analise_ia']}</div>", unsafe_allow_html=True)
-    if st.button("✨ GERAR 60 CARTÕES"):
-        st.session_state.dados['ebook'] = gerar_ia(f"Crie um roteiro de 60 cartões rápidos para um {st.session_state.dados['tipo']} de {st.session_state.dados['nicho']} focado em {st.session_state.dados['objetivo']}.")
+    if st.button("GERAR OS 60 CARTÕES"):
+        with st.spinner("Escrevendo..."):
+            st.session_state.dados['ebook'] = gerar_ia(f"Crie um roteiro de 60 cartões rápidos para um eBook de {st.session_state.dados['nicho']} focado em {st.session_state.dados['objetivo']}.")
     
     if 'ebook' in st.session_state.dados:
-        st.text_area("Roteiro do E-book:", st.session_state.dados['ebook'], height=300)
-        if st.button("AVANÇAR PARA O ANÚNCIO ➡️"):
-            st.session_state.etapa = "Gere Anuncio"
+        st.text_area("Conteúdo Gerado:", st.session_state.dados['ebook'], height=300)
+        if st.button("AVANÇAR PARA ANÚNCIO ➡️"):
+            st.session_state.etapa = "Anuncio"
             st.rerun()
 
-# 3. ANÚNCIO GOOGLE
-elif st.session_state.etapa == "Gere Anuncio":
-    st.title("🎬 ANÚNCIO (GOOGLE ADS)")
-    if st.button("✨ GERAR SCRIPT DE ANÚNCIO"):
-        st.session_state.dados['anuncio'] = gerar_ia(f"Crie um script de VSL curta para anúncio no Google Ads para o nicho {st.session_state.dados['nicho']}. Termine com: 'CLIQUE EM SABER MAIS'.")
+# --- 4. ANÚNCIO VSL ---
+elif st.session_state.etapa == "Anuncio":
+    st.title("🎬 GERE O ANÚNCIO EM VSL")
+    if st.button("GERAR ANÚNCIO"):
+        st.session_state.dados['anuncio'] = gerar_ia(f"Crie um script de VSL curta para Google Ads (Nicho: {st.session_state.dados['nicho']}). Termine com: 'CLIQUE EM SABER MAIS'.")
     
     if 'anuncio' in st.session_state.dados:
         st.text_area("Script:", st.session_state.dados['anuncio'], height=250)
         if st.button("AVANÇAR PARA LANDING PAGE ➡️"):
-            st.session_state.etapa = "Gere LP"
+            st.session_state.etapa = "LP"
             st.rerun()
 
-# 4. LANDING PAGE
-elif st.session_state.etapa == "Gere LP":
-    st.title("🌐 LANDING PAGE")
-    if st.button("✨ GERAR TEXTO DA PÁGINA"):
-        st.session_state.dados['lp'] = gerar_ia(f"Crie uma LP de captura para {st.session_state.dados['nicho']} focada em converter {st.session_state.dados['publico']}.")
+# --- 5. LANDING PAGE ---
+elif st.session_state.etapa == "LP":
+    st.title("🌐 GERE SUA LANDING PAGE")
+    if st.button("GERAR PÁGINA"):
+        st.session_state.dados['lp'] = gerar_ia(f"Crie uma LP de alta conversão para {st.session_state.dados['nicho']}.")
     
     if 'lp' in st.session_state.dados:
-        st.text_area("Conteúdo LP:", st.session_state.dados['lp'], height=250)
-        if st.button("AVANÇAR PARA MENSAGENS ➡️"):
-            st.session_state.etapa = "Sequencia Mensagens"
+        st.text_area("Texto da LP:", st.session_state.dados['lp'], height=250)
+        if st.button("AVANÇAR PARA LANÇAMENTO ➡️"):
+            st.session_state.etapa = "Lancamento"
             st.rerun()
 
-# 5. MENSAGENS E VSL FINAL
-elif st.session_state.etapa == "Sequencia Mensagens":
-    st.title("📌 LANÇAMENTO + VSL FINAL")
-    if st.button("✨ GERAR SEQUÊNCIA COMPLETA"):
-        vsl_template = f"""
-        Personalize este roteiro: 'Você percebeu que... nada muda? O erro é fazer mais do mesmo. 
-        Eu organizei o método 👉 [NOME DO MECANISMO]. Sem enrolação. Teste por {st.session_state.dados['garantia']}. 
-        Acesso agora por apenas {st.session_state.dados['preco']}. Clique no link da descrição.'
-        """
-        st.session_state.dados['mensagens'] = gerar_ia(f"Gere 6 mensagens de aquecimento e o roteiro da VSL final baseado nisto: {vsl_template}")
+# --- 6. SEQUÊNCIA DE MENSAGENS ---
+elif st.session_state.etapa == "Lancamento":
+    st.title("📅 SEQUÊNCIA DE LANÇAMENTO")
+    if st.button("GERAR SEQUÊNCIA + VSL FINAL"):
+        template = f"Gere a descrição do grupo, mensagens do Dia 1 ao 6 e no Dia 7 o script VSL final para {st.session_state.dados['nicho']} custando {st.session_state.dados['preco']}."
+        st.session_state.dados['final'] = gerar_ia(template)
     
-    if 'mensagens' in st.session_state.dados:
-        st.text_area("Lançamento Completo:", st.session_state.dados['mensagens'], height=300)
-        if st.button("💾 SALVAR E FINALIZAR PROJETO"):
-            st.session_state.projetos[st.session_state.dados['nome']] = st.session_state.dados
-            st.session_state.etapa = "Projeto Final"
+    if 'final' in st.session_state.dados:
+        st.text_area("Conteúdo Completo:", st.session_state.dados['final'], height=300)
+        if st.button("💾 SALVAR PROJETO"):
+            st.session_state.etapa = "Visualizacao"
             st.rerun()
 
-# 6. VISUALIZAÇÃO FINAL
-elif st.session_state.etapa == "Projeto Final":
+# --- 7. VISUALIZAÇÃO FINAL ---
+elif st.session_state.etapa == "Visualizacao":
+    st.title("🚀 FUNIL COMPLETO (VERSÃO FINAL)")
     d = st.session_state.dados
-    st.title(f"🚀 PROJETO FINALIZADO: {d['nome']}")
     
-    with st.expander("📦 EBOOK (60 CARTÕES)"): st.code(d.get('ebook', ''))
-    with st.expander("🎬 ANÚNCIO (GOOGLE ADS)"): st.code(d.get('anuncio', ''))
-    with st.expander("🌐 LANDING PAGE"): st.code(d.get('lp', ''))
-    with st.expander("📌 MENSAGENS + VSL FINAL"): st.code(d.get('mensagens', ''))
-    
-    st.markdown("---")
-    st.subheader("💬 SUPORTE CONTÍNUO")
-    duvida = st.text_input("Dúvida?")
-    if st.button("Enviar"):
-        resp = gerar_ia(f"Dúvida sobre projeto {d['nome']}: {duvida}")
-        st.session_state.chat_history.append(f"🤖: {resp}")
-    for m in reversed(st.session_state.chat_history): st.write(m)
+    t1, t2, t3, t4, t5 = st.tabs(["📦 EBOOK", "🎬 ANÚNCIO", "🌐 LP", "📌 LANÇAMENTO", "🛠️ COMO APLICAR"])
+    with t1: st.code(d.get('ebook', ''))
+    with t2: st.code(d.get('anuncio', ''))
+    with t3: st.code(d.get('lp', ''))
+    with t4: st.code(d.get('final', ''))
+    with t5: st.write("1. Ebook no Canva\n2. Anúncio no Google Ads\n3. LP de Captura\n4. Mensagens no Grupo.")
 
-st.markdown('<div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #00BFFF; color: white; text-align: center; padding: 5px; font-weight: bold;">NEXUS LANCEUR - SISTEMA PROTEGIDO</div>', unsafe_allow_html=True)
+    st.markdown("---")
+    st.subheader("💬 TEM ALGUMA DÚVIDA?")
+    duvida = st.text_input("Digite aqui:")
+    if st.button("ENVIAR"):
+        st.session_state.chat_history.append(f"🤖: {gerar_ia(duvida)}")
+    for msg in reversed(st.session_state.chat_history): st.write(msg)
+
+st.markdown('<div class="footer">NEXUS LANCEUR - QUIZ MAIS PRÊMIOS</div>', unsafe_allow_html=True)
