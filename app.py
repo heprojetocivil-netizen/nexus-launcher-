@@ -138,7 +138,7 @@ elif st.session_state.etapa == "VSL_Gerar":
     st.title("🎬 1. VSL DO ANÚNCIO")
     if st.button("GERAR ROTEIRO"):
         sys_vsl = "Você deve personalizar o texto para o nicho do usuário sem simplificá-lo. Mantenha os parágrafos."
-        prompt_vsl = f"Nicho: {st.session_state.dados['nicho']}. Gere um roteiro focado em convidar para o grupo de WhatsApp."
+        prompt_vsl = f"Nicho: {st.session_state.dados['nicho']}. Gere um roteiro de VSL focado em convidar para o grupo de WhatsApp, destacando que a falta de direção é o erro principal."
         st.session_state.dados['vsl_roteiro'] = chamar_ia(prompt_vsl, sys_vsl, st.session_state.api_key)
     if 'vsl_roteiro' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['vsl_roteiro']}</div>", unsafe_allow_html=True)
@@ -149,7 +149,7 @@ elif st.session_state.etapa == "LP_Gerar":
     st.title("🌐 2. LANDING PAGE")
     if st.button("GERAR ROTEIRO"):
         nicho = st.session_state.dados['nicho']
-        st.session_state.dados['lp_roteiro'] = f"Headline: Um caminho simples para {nicho}...\n\nClique para entrar no grupo."
+        st.session_state.dados['lp_roteiro'] = f"Headline: Um caminho simples para {nicho}...\n\nEu sou {st.session_state.usuario} e vou te mostrar o caminho direto.\n\nClique para entrar no grupo."
     if 'lp_roteiro' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_roteiro']}</div>", unsafe_allow_html=True)
         navegação("VSL_Gerar", "MSG_Gerar")
@@ -188,10 +188,23 @@ Clique no link agora e garanta o seu. Essa promoção irá acabar a qualquer mom
 elif st.session_state.etapa == "Visualizacao":
     barra_topo()
     st.title(f"PROJETO: {st.session_state.dados.get('nome_eb')}")
-    with st.expander("📌 MENSAGENS", expanded=True): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo')}</div>", True)
+    
+    # EXIBINDO TUDO O QUE FOI GERADO
+    with st.expander("📚 CONTEÚDO DO E-BOOK", expanded=False):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('eb_conteudo', 'Não gerado')}</div>", True)
+    
+    with st.expander("🎬 ROTEIRO DO ANÚNCIO (VSL)", expanded=False):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('vsl_roteiro', 'Não gerado')}</div>", True)
+        
+    with st.expander("🌐 LANDING PAGE", expanded=False):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('lp_roteiro', 'Não gerado')}</div>", True)
+
+    with st.expander("📌 SEQUÊNCIA DE MENSAGENS (3 DIAS)", expanded=True):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo', 'Não gerado')}</div>", True)
+        
     if st.button("💾 SALVAR PROJETO"):
         st.session_state.projetos[st.session_state.dados['nome_eb']] = st.session_state.dados
-        st.success("Projeto salvo!")
+        st.success("Projeto completo salvo com sucesso!")
 
 # --- RODAPÉ ---
 st.markdown(f"<div class='footer'>© 2026 Nexus Launcer Lançamento inteligente</div>", unsafe_allow_html=True)
