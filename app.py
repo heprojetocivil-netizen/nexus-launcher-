@@ -10,6 +10,7 @@ st.markdown("""
     [data-testid="stSidebar"] { display: none; }
     .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; background-color: #00BFFF !important; color: white !important; font-weight: bold; border: none; }
     .btn-voltar>button { background-color: #64748B !important; }
+    .btn-deletar>button { background-color: #94A3B8 !important; height: 2.5em !important; margin-top: 0.5em; }
     .caixa-texto { background-color: #F8FAFC; padding: 25px; border-radius: 12px; border-left: 6px solid #00BFFF; margin-bottom: 20px; white-space: pre-wrap; color: #1E293B; line-height: 1.6; font-size: 1.1em; }
     .footer { text-align: center; padding: 40px; color: #94A3B8; font-size: 0.9em; border-top: 1px solid #E2E8F0; margin-top: 50px; }
     .chat-bubble { background-color: #F1F5F9; padding: 15px; border-radius: 10px; border: 1px solid #CBD5E1; margin-bottom: 10px; }
@@ -68,11 +69,19 @@ def barra_topo():
             with st.expander("📂 MEUS PROJETOS"):
                 if not st.session_state.projetos:
                     st.write("Nenhum projeto salvo.")
-                for nome in st.session_state.projetos.keys():
-                    if st.button(f"📄 {nome}"):
-                        st.session_state.dados = st.session_state.projetos[nome]
-                        st.session_state.etapa = "Visualizacao"
-                        st.rerun()
+                for nome in list(st.session_state.projetos.keys()):
+                    col_p_abrir, col_p_del = st.columns([3, 1])
+                    with col_p_abrir:
+                        if st.button(f"📄 {nome}", key=f"abrir_{nome}"):
+                            st.session_state.dados = st.session_state.projetos[nome]
+                            st.session_state.etapa = "Visualizacao"
+                            st.rerun()
+                    with col_p_del:
+                        st.markdown('<div class="btn-deletar">', unsafe_allow_html=True)
+                        if st.button("EXCLUIR", key=f"del_{nome}"):
+                            del st.session_state.projetos[nome]
+                            st.rerun()
+                        st.markdown('</div>', unsafe_allow_html=True)
 
 def navegação(voltar_para, avancar_para):
     col1, col2 = st.columns(2)
