@@ -101,23 +101,36 @@ elif st.session_state.etapa == 3:
         st.write(st.session_state.memoria['whats_cronograma'])
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("TREINAMENTO PARA A LIVE 👉"): st.session_state.etapa = 4; st.rerun()
+    if st.button("PREPARAR SCRIPTS DA LIVE 👉"): st.session_state.etapa = 4; st.rerun()
 
 elif st.session_state.etapa == 4:
-    st.title("🔴 4. MENTORIA DE ORATÓRIA E DESCRIÇÃO DO VÍDEO")
+    st.title("🔴 4. MENTORIA, SCRIPT DA LIVE E DESCRIÇÃO")
     st.markdown("<div class='nexus-card'>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("🎤 MENTORIA DE ORATÓRIA"):
-            p = f"Crie um guia de oratória para a live. Como manter a energia, como olhar para a câmera e como fazer as pausas certas para gerar desejo no e-book."
+            p = f"Dê orientações de postura e oratória para a live de {st.session_state.memoria['nicho']}. Como manter energia e autoridade."
             st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Oratória", api_key)
     with col2:
-        if st.button("📝 DESCRIÇÃO DO VÍDEO + LINK"):
-            p = f"Crie a copy da descrição para o vídeo da live. Deve conter resumo do que será ensinado e o LINK DE COMPRA DO E-BOOK em destaque."
+        if st.button("🎬 SCRIPT DA LIVE (FALA)"):
+            p = f"Crie um roteiro completo de fala para a live de {st.session_state.memoria['nicho']}. Deve começar com 'Olá pessoal, eu sou [Seu Nome]...', ensinar o conteúdo prometido e, no final, oferecer o E-book oficial reforçando que o link de compra está na descrição do vídeo."
+            st.session_state.memoria['script_fala_live'] = nexus_ai(p, "Estrategista de Vendas", api_key)
+    with col3:
+        if st.button("📝 DESCRIÇÃO DO VÍDEO"):
+            p = f"Crie uma descrição breve para o vídeo da live de {st.session_state.memoria['nicho']}. O LINK DE COMPRA deve estar logo na primeira linha. Abaixo, fale mais sobre os benefícios do E-book para pressionar a venda."
             st.session_state.memoria['desc_video'] = nexus_ai(p, "Copywriter de Vendas", api_key)
 
-    if 'mentor_ora' in st.session_state.memoria: st.info(st.session_state.memoria['mentor_ora'])
-    if 'desc_video' in st.session_state.memoria: st.success(st.session_state.memoria['desc_video'])
+    if 'mentor_ora' in st.session_state.memoria: 
+        st.subheader("💡 Mentoria")
+        st.info(st.session_state.memoria['mentor_ora'])
+    
+    if 'script_fala_live' in st.session_state.memoria: 
+        st.subheader("🗣️ O que falar na Live")
+        st.write(st.session_state.memoria['script_fala_live'])
+        
+    if 'desc_video' in st.session_state.memoria: 
+        st.subheader("📋 Descrição do Vídeo")
+        st.success(st.session_state.memoria['desc_video'])
     st.markdown("</div>", unsafe_allow_html=True)
 
     if st.button("CONCLUIR LANÇAMENTO"):
