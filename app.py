@@ -117,7 +117,7 @@ elif st.session_state.etapa == 4:
             st.session_state.memoria['script_fala_live'] = nexus_ai(p, "Estrategista de Vendas", api_key)
     with col3:
         if st.button("📝 DESCRIÇÃO DO VÍDEO"):
-            p = f"Crie uma descrição breve para o vídeo da live de {st.session_state.memoria['nicho']}. O LINK DE COMPRA deve estar logo na primeira linha. Abaixo, fale mais sobre os benefícios do E-book para pressionar a venda."
+            p = f"Crie uma descrição para o vídeo da live de {st.session_state.memoria['nicho']}. Use este formato EXATO: Primeira linha: 'Clique no link para acessar o e-book: [LINK]'. Segunda linha em diante: Explique por que o conteúdo desse e-book é o 'marketing perfeito' para quem quer resultados com importação da China ou o nicho escolhido, usando argumentos fortes de venda e pressão."
             st.session_state.memoria['desc_video'] = nexus_ai(p, "Copywriter de Vendas", api_key)
 
     if 'mentor_ora' in st.session_state.memoria: 
