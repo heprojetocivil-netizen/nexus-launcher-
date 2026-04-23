@@ -37,6 +37,25 @@ def chamar_ia(prompt, system_prompt, key):
     except Exception as e:
         return f"Erro na API: Verifique sua chave. {e}"
 
+# --- FUNÇÃO CHAT CONTÍNUO (MEMÓRIA ATIVA) ---
+def chat_continuo(pergunta, key):
+    try:
+        client = Groq(api_key=key)
+        # Constrói o histórico para a IA
+        mensagens = [{"role": "system", "content": "Você é o LaunchBot, especialista em lançamentos digitais de alta conversão. Seja direto e ajude o usuário com estratégias de vendas."}]
+        for q, a in st.session_state.chat_hist:
+            mensagens.append({"role": "user", "content": q})
+            mensagens.append({"role": "assistant", "content": a})
+        mensagens.append({"role": "user", "content": pergunta})
+        
+        response = client.chat.completions.create(
+            messages=mensagens,
+            model="llama-3.3-70b-versatile",
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Erro no chat: {e}"
+
 # --- COMPONENTES REUTILIZÁVEIS ---
 def barra_topo():
     if st.session_state.etapa != "Login":
@@ -125,7 +144,6 @@ elif st.session_state.etapa == "LP_Gerar":
     if st.button("GERAR ROTEIRO"):
         nicho = st.session_state.dados['nicho']
         usuario = st.session_state.usuario
-        # REPLICAÇÃO FIEL DO TEXTO SOLICITADO
         st.session_state.dados['lp_roteiro'] = f"""Headline: Um caminho simples para {nicho}, mesmo começando do zero
 
 Eu sou {usuario}
@@ -234,13 +252,11 @@ elif st.session_state.etapa == "Visualizacao":
     st.subheader("💬 LaunchBot")
     st.write("Eu sou o LaunchBot, especialista em lançamentos digitais de alta conversão")
     
-    # CHAT CONTÍNUO
     msg_chat = st.text_input("Digite a sua dúvida e aperte Enter", key="chat_input")
     if msg_chat:
-        resp = chamar_ia(msg_chat, "Você é o LaunchBot, especialista em marketing digital.", st.session_state.api_key)
+        resp = chat_continuo(msg_chat, st.session_state.api_key)
         st.session_state.chat_hist.append((msg_chat, resp))
     
-    # Exibição do histórico completo
     for q, a in reversed(st.session_state.chat_hist):
         st.markdown(f"**Você:** {q}")
         st.markdown(f"<div class='chat-bubble'>{a}</div>", unsafe_allow_html=True)
