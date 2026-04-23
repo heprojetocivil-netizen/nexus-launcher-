@@ -11,56 +11,63 @@ st.markdown("""
     .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; background-color: #00BFFF !important; color: white !important; font-weight: bold; border: none; }
     .caixa-texto { background-color: #F8FAFC; padding: 20px; border-radius: 10px; border-left: 5px solid #00BFFF; margin-bottom: 20px; white-space: pre-wrap; color: #1E293B; font-size: 1.1em; }
     .footer { text-align: center; padding: 30px; color: #94A3B8; font-size: 0.9em; border-top: 1px solid #E2E8F0; margin-top: 50px; }
-    .btn-novo { background-color: #EF4444 !important; margin-bottom: 20px; }
+    .stExpander { border: 1px solid #E2E8F0; border-radius: 10px; margin-bottom: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- INICIALIZAÇÃO ---
+# --- INICIALIZAÇÃO DE ESTADOS ---
 if 'etapa' not in st.session_state: st.session_state.etapa = "Login"
 if 'dados' not in st.session_state: st.session_state.dados = {}
 if 'projetos' not in st.session_state: st.session_state.projetos = {}
+if 'chat_history' not in st.session_state: st.session_state.chat_history = []
 
-# --- FUNÇÃO IA ---
-def nexus_ia(prompt, api_key):
+# --- MOTOR DE IA ---
+def chamar_ia(prompt, api_key):
     try:
         client = Groq(api_key=api_key)
         response = client.chat.completions.create(
             messages=[
-                {"role": "system", "content": "Você é o LaunchBot. Siga os roteiros de copy fielmente. NÃO RESUMA, NÃO SIMPLIFIQUE. Mantenha o mesmo tamanho e teor. Personalize apenas os termos técnicos para o nicho. Para VSLs, inclua orientações de imagens/cenas detalhadas."},
+                {"role": "system", "content": "Você é o LaunchBot. Siga os roteiros fornecidos FIELMENTE. Não resuma, não simplifique e não altere o tamanho do texto. Apenas personalize os campos entre colchetes para o nicho do usuário. Para vídeos, oriente detalhadamente as imagens para cada cena."},
                 {"role": "user", "content": prompt}
             ],
             model="llama-3.3-70b-versatile"
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Erro na Chave: {e}"
+        return f"Erro: Verifique sua Chave API. ({e})"
 
-# --- COMPONENTES GLOBAIS ---
-def menu_global():
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if st.button("➕ INICIAR NOVO PROJETO", key="btn_novo_global"):
-            st.session_state.dados = {}
-            st.session_state.etapa = "Formulario"
-            st.rerun()
-    with col2:
-        with st.expander("📂 MEUS PROJETOS"):
-            if not st.session_state.projetos:
-                st.write("Nenhum projeto salvo.")
-            for p in list(st.session_state.projetos.keys()):
-                if st.button(f"📄 {p}", key=f"load_{p}"):
-                    st.session_state.dados = st.session_state.projetos[p]
-                    st.session_state.etapa = "Visualizacao"
-                    st.rerun()
+# --- NAVEGAÇÃO GLOBAL (NOVO PROJETO / MEUS PROJETOS) ---
+def barra_ferramentas():
+    if st.session_state.etapa != "Login":
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("➕ INICIAR NOVO PROJETO", key="btn_novo"):
+                st.session_state.dados = {}
+                st.session_state.etapa = "Formulario"
+                st.rerun()
+        with col2:
+            with st.expander("📂 MEUS PROJETOS"):
+                if not st.session_state.projetos:
+                    st.write("Nenhum projeto salvo.")
+                for p_nome in list(st.session_state.projetos.keys()):
+                    c1, c2 = st.columns([0.8, 0.2])
+                    if c1.button(f"📄 {p_nome}", key=f"abrir_{p_nome}"):
+                        st.session_state.dados = st.session_state.projetos[p_nome]
+                        st.session_state.etapa = "Visualizacao"
+                        st.rerun()
+                    if c2.button("🗑️", key=f"del_{p_nome}"):
+                        del st.session_state.projetos[p_nome]
+                        st.rerun()
 
-# --- TELAS ---
+# --- TELAS DO SISTEMA ---
 
+# 1. LOGIN
 if st.session_state.etapa == "Login":
     st.title("NEXUS LAUNCER")
     st.subheader("USO RESTRITO À ASSOCIADOS QUIZ MAIS PRÊMIOS")
-    st.warning("Não coloque senha do site, só a chave api_key")
+    st.info("Não coloque senha do site, só a chave api_key")
     nome = st.text_input("Nome")
-    chave = st.text_input("Chave (API Key)", type="password")
+    chave = st.text_input("Chave", type="password")
     if st.button("ENTRAR"):
         if nome and chave:
             st.session_state.usuario = nome
@@ -68,82 +75,98 @@ if st.session_state.etapa == "Login":
             st.session_state.etapa = "Formulario"
             st.rerun()
 
+# 2. FORMULÁRIO
 elif st.session_state.etapa == "Formulario":
-    menu_global()
+    barra_ferramentas()
     st.title("PREENCHA FORMULÁRIO")
-    nicho = st.text_input("Nicho")
-    nome_eb = st.text_input("Nome do e-book")
-    dor = st.text_input("Qual dor ele resolve")
-    preco = st.text_input("Preço")
+    n_nicho = st.text_input("Nicho")
+    n_ebook = st.text_input("Nome do e-book")
+    n_dor = st.text_input("Qual dor ele resolve")
+    n_preco = st.text_input("Preço")
     if st.button("AVANÇAR"):
-        st.session_state.dados = {"nicho": nicho, "nome_eb": nome_eb, "dor": dor, "preco": preco}
+        st.session_state.dados = {"nicho": n_nicho, "nome_ebook": n_ebook, "dor": n_dor, "preco": n_preco}
         st.session_state.etapa = "Ebook"
         st.rerun()
 
+# 3. E-BOOK
 elif st.session_state.etapa == "Ebook":
-    menu_global()
-    st.title("E-BOOK PROFISSIONAL")
+    barra_ferramentas()
+    st.title("E-BOOK PROFISSOAL")
     if st.button("GERAR CONTEUDO – 60 CARTÕES"):
-        with st.spinner("Gerando..."):
-            p = f"Gere 60 cartões de conteúdo para o eBook {st.session_state.dados['nome_eb']} no nicho {st.session_state.dados['nicho']} focado em {st.session_state.dados['dor']}."
-            st.session_state.dados['out_eb'] = nexus_ia(p, st.session_state.api_key)
+        with st.spinner("Gerando conteúdo..."):
+            p = f"Gere 60 cartões de conteúdo para o eBook {st.session_state.dados['nome_ebook']} no nicho {st.session_state.dados['nicho']} resolvendo a dor {st.session_state.dados['dor']}."
+            st.session_state.dados['out_eb'] = chamar_ia(p, st.session_state.api_key)
     if 'out_eb' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['out_eb']}</div>", unsafe_allow_html=True)
         if st.button("AVANÇAR"):
             st.session_state.etapa = "VSL_Anuncio"
             st.rerun()
 
+# 4. VSL ANÚNCIO
 elif st.session_state.etapa == "VSL_Anuncio":
-    menu_global()
+    barra_ferramentas()
     st.title("🎬 1. VSL DO ANÚNCIO")
     if st.button("GERAR ROTEIRO"):
-        with st.spinner("Processando..."):
-            p = f"Personalize este roteiro para {st.session_state.dados['nicho']} sem simplificar e oriente imagens: 'Se você quer [RESULTADO], mas sente que está perdido… provavelmente não é falta de esforço. É falta de direção. A maioria das pessoas comete um erro simples… e por isso continua tentando e não sai do lugar. E o pior: nem percebem onde estão errando. Eu organizei um caminho direto pra resolver isso… e vou mostrar dentro de um grupo fechado. Sem complicação. É gratuito. Clica em SAIBA MAIS para entrar'"
-            st.session_state.dados['out_vsl1'] = nexus_ia(p, st.session_state.api_key)
-    if 'out_vsl1' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['out_vsl1']}</div>", unsafe_allow_html=True)
+        with st.spinner("Personalizando..."):
+            p = f"Personalize este texto sem simplificar para o nicho {st.session_state.dados['nicho']} e oriente as imagens: 'Se você quer [RESULTADO], mas sente que está perdido… provavelmente não é falta de esforço. É falta de direção. A maioria das pessoas comete um erro simples… e por isso continua tentando e não sai do lugar. E o pior: nem percebem onde estão errando. Eu organizei um caminho direto pra resolver isso… e vou mostrar dentro de um grupo fechado. Sem complicação. É gratuito. Clica em SAIBA MAIS para entrar'"
+            st.session_state.dados['out_vsl_an'] = chamar_ia(p, st.session_state.api_key)
+    if 'out_vsl_an' in st.session_state.dados:
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['out_vsl_an']}</div>", unsafe_allow_html=True)
         if st.button("AVANÇAR"):
             st.session_state.etapa = "LP"
             st.rerun()
 
+# 5. LANDING PAGE
 elif st.session_state.etapa == "LP":
-    menu_global()
+    barra_ferramentas()
     st.title("🌐 2. LANDING PAGE")
-    link = st.text_input("insira o link convite para o grupo no botão abaixo")
+    link_g = st.text_input("insira o link convite para o grupo no botão acima")
     if st.button("GERAR ROTEIRO"):
-        with st.spinner("Gerando parágrafos..."):
-            p = f"Personalize para {st.session_state.usuario} no nicho {st.session_state.dados['nicho']} separando em parágrafos: Headline: Um caminho simples para [RESULTADO], mesmo começando do zero. Texto: Eu sou {st.session_state.usuario}. Já estive exatamente onde você está… tentando várias coisas… sem resultado. Até começar a estudar e aplicar o que realmente funciona… e identificar um padrão simples que muda completamente o jogo. Depois de aplicar isso na prática… eu percebi que o problema nunca foi esforço — foi direção. Se você sente que está tentando… mas não sai do lugar… provavelmente está passando por isso também. Eu criei um grupo onde vou te mostrar isso de forma direta: O erro que te mantém travado; O caminho mais simples; O que realmente funciona na prática. BOTÃO: ENTRAR NO GRUPO (Link: {link})"
-            st.session_state.dados['out_lp'] = nexus_ia(p, st.session_state.api_key)
+        with st.spinner("Criando parágrafos..."):
+            p = f"Personalize para {st.session_state.usuario} no nicho {st.session_state.dados['nicho']} separando em parágrafos: Headline: Um caminho simples para [RESULTADO], mesmo começando do zero. Texto: Eu sou {st.session_state.usuario}. Já estive exatamente onde você está… tentando várias coisas… sem resultado. Até começar a estudar e aplicar o que realmente funciona… e identificar um padrão simples que muda completamente o jogo. Depois de aplicar isso na prática… eu percebi que o problema nunca foi esforço — foi direção. Se você sente que está tentando… mas não sai do lugar… provavelmente está passando por isso também. Eu criei um grupo onde vou te mostrar isso de forma direta: O erro que te mantém travado; O caminho mais simples; O que realmente funciona na prática. Botão: ENTRAR NO GRUPO (Link: {link_g})"
+            st.session_state.dados['out_lp'] = chamar_ia(p, st.session_state.api_key)
     if 'out_lp' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['out_lp']}</div>", unsafe_allow_html=True)
         if st.button("AVANÇAR"):
             st.session_state.etapa = "Mensagens"
             st.rerun()
 
+# 6. MENSAGENS
 elif st.session_state.etapa == "Mensagens":
-    menu_global()
+    barra_ferramentas()
     st.title("📌 3. MENSAGEM FIXA DO GRUPO")
     if st.button("GERAR MENSAGENS PARA O GRUPO"):
-        with st.spinner("Gerando sequência fiel..."):
-            p = f"Personalize sem simplificar para {st.session_state.dados['nicho']}: Descrição do Grupo (caminho simples para [RESULTADO]). Dia 1: Pergunta direta. Dia 2: Direção Errada. Dia 3: Ponto Simples. Dia 4: Parar de perder tempo. Dia 5: Amanhã mostro diferente. Dia 6 VSL Final: 'O que trava a maioria... fazer da forma certa'. eBook {st.session_state.dados['nome_eb']}, garantia 7 dias, link loja 30% desconto. Oriente imagens para o Dia 6 e gere a descrição curta abaixo com o link."
-            st.session_state.dados['out_msg'] = nexus_ia(p, st.session_state.api_key)
-    if 'out_msg' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['out_msg']}</div>", unsafe_allow_html=True)
+        with st.spinner("Gerando sequência..."):
+            p = f"""Personalize sem simplificar para {st.session_state.dados['nicho']} e preço {st.session_state.dados['preco']}: 
+            DESCRIÇÃO DO GRUPO: Esse grupo é silencioso... caminho simples para [RESULTADO]. 
+            DIA 1: Pergunta direta. 
+            DIA 2: Direção errada. 
+            DIA 3: Ponto simples. 
+            DIA 4: Parar de perder tempo. 
+            DIA 5: Amanhã mostro diferente. 
+            DIA 6 VSL FINAL: Roteiro 'O que trava a maioria... fazer da forma certa'. eBook {st.session_state.dados['nome_ebook']}, garantia 7 dias. Oriente imagens para o Dia 6 e gere a descrição curta com link 30% desconto."""
+            st.session_state.dados['out_msgs'] = chamar_ia(p, st.session_state.api_key)
+    if 'out_msgs' in st.session_state.dados:
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['out_msgs']}</div>", unsafe_allow_html=True)
         if st.button("AVANÇAR"):
             st.session_state.etapa = "Visualizacao"
             st.rerun()
 
+# 7. VISUALIZAÇÃO FINAL (ABAS FECHADAS)
 elif st.session_state.etapa == "Visualizacao":
-    menu_global()
-    st.title(f"PROJETO: {st.session_state.dados.get('nome_eb', 'Sem Nome')}")
+    barra_ferramentas()
+    st.title(f"PROJETO: {st.session_state.dados.get('nome_ebook', 'Sem Nome')}")
     
-    aba1, aba2, aba3, aba4, aba5 = st.tabs(["📚 E-BOOK", "🎬 1. VSL DO ANÚNCIO", "🌐 2. LANDING PAGE", "📌 3. MENSAGENS", "📅 APLICAÇÃO"])
-    
-    with aba1: st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_eb')}</div>", unsafe_allow_html=True)
-    with aba2: st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_vsl1')}</div>", unsafe_allow_html=True)
-    with aba3: st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_lp')}</div>", unsafe_allow_html=True)
-    with aba4: st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_msg')}</div>", unsafe_allow_html=True)
-    with aba5:
+    # Abas iniciam fechadas (expanded=False)
+    with st.expander("📚 E-BOOK", expanded=False):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_eb')}</div>", unsafe_allow_html=True)
+    with st.expander("🎬 1. VSL DO ANÚNCIO", expanded=False):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_vsl_an')}</div>", unsafe_allow_html=True)
+    with st.expander("🌐 2. LANDING PAGE", expanded=False):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_lp')}</div>", unsafe_allow_html=True)
+    with st.expander("📌 3. MENSAGENS", expanded=False):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('out_msgs')}</div>", unsafe_allow_html=True)
+    with st.expander("📅 APLICAÇÃO", expanded=False):
         st.markdown("""
         <div class='caixa-texto'>
         🚀 Sistema de lançamento simplificado
@@ -167,9 +190,22 @@ elif st.session_state.etapa == "Visualizacao":
         """, unsafe_allow_html=True)
 
     if st.button("💾 SALVAR PROJETO"):
-        name = st.session_state.dados['nome_eb']
-        st.session_state.projetos[name] = st.session_state.dados
+        st.session_state.projetos[st.session_state.dados['nome_ebook']] = st.session_state.dados
         st.success("Projeto salvo!")
 
-# --- RODAPÉ ---
-st.markdown(f'<div class="footer">© 2026 Nexus Launcer Lançamento inteligente de produtos digitais</div>', unsafe_allow_html=True)
+    st.markdown("---")
+    # CHAT CONTÍNUO EMBAIXO DAS ABAS
+    st.subheader("💬 LaunchBot - Especialista em Lançamentos")
+    st.write("Eu sou o LaunchBot, especialista em lançamentos digitais de alta conversão")
+    pergunta = st.text_input("Digite a sua dúvida", key="chat_input")
+    if pergunta:
+        resposta = chamar_ia(pergunta, st.session_state.api_key)
+        st.session_state.chat_history.append((pergunta, resposta))
+    
+    for q, a in reversed(st.session_state.chat_history):
+        st.write(f"👤: {q}")
+        st.write(f"🤖: {a}")
+        st.markdown("---")
+
+# RODAPÉ
+st.markdown('<div class="footer">© 2026 Nexus Launcer Lançamento inteligente de produtos digitais</div>', unsafe_allow_html=True)
