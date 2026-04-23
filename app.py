@@ -123,9 +123,39 @@ elif st.session_state.etapa == "LP_Gerar":
     barra_topo()
     st.title("🌐 2. LANDING PAGE")
     if st.button("GERAR ROTEIRO"):
-        sys_lp = "Personalize o texto para o nicho sem simplificá-lo, mantendo parágrafos."
-        prompt_lp = f"Nome: {st.session_state.usuario}. Nicho: {st.session_state.dados['nicho']}. Texto base: Headline: Um caminho simples para [RESULTADO], mesmo começando do zero. Eu sou {st.session_state.usuario}. Já estive exatamente onde você está... tentando várias coisas... sem resultado. Até começar a estudar e aplicar o que realmente funciona... e identificar um padrão simples que muda completamente o jogo. Depois de aplicar isso na prática... eu percebi que o problema nunca foi esforço — foi direção. Se você sente que está tentando... mas não sai do lugar... provavelmente está passando por isso também. Eu criei um grupo onde vou te mostrar isso de forma direta. O erro que te mantém travado. O caminho mais simples. O que realmente funciona na prática. ENTRAR NO GRUPO"
-        st.session_state.dados['lp_roteiro'] = chamar_ia(prompt_lp, sys_lp, st.session_state.api_key)
+        nicho = st.session_state.dados['nicho']
+        usuario = st.session_state.usuario
+        # REPLICAÇÃO FIEL DO TEXTO SOLICITADO
+        st.session_state.dados['lp_roteiro'] = f"""Headline: Um caminho simples para {nicho}, mesmo começando do zero
+
+Eu sou {usuario}
+Já estive exatamente onde você está…
+
+tentando várias coisas… sem resultado.
+Até começar a estudar e aplicar o que realmente funciona…
+
+e identificar um padrão simples
+
+que muda completamente o jogo.
+Depois de aplicar isso na prática…
+
+eu percebi que o problema nunca foi esforço —
+
+foi direção.
+
+Se você sente que está tentando…
+
+mas não sai do lugar…
+
+provavelmente está passando por isso também.
+
+Eu criei um grupo onde vou te mostrar isso de forma direta.
+
+- O erro que te mantém travado 
+- O caminho mais simples 
+- O que realmente funciona na prática 
+
+ENTRAR NO GRUPO"""
     
     if 'lp_roteiro' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_roteiro']}</div>", unsafe_allow_html=True)
@@ -135,7 +165,6 @@ elif st.session_state.etapa == "MSG_Gerar":
     barra_topo()
     st.title("📌 3. MENSAGEM FIXA DO GRUPO")
     if st.button("GERAR MENSAGENS PARA O GRUPO"):
-        # Lógica de fidelidade total para mensagens 1 a 5
         nicho = st.session_state.dados['nicho']
         ebook = st.session_state.dados['nome_eb']
         st.session_state.dados['msg_grupo'] = f"""DESCRIÇÃO DO GRUPO
@@ -204,11 +233,14 @@ elif st.session_state.etapa == "Visualizacao":
     st.divider()
     st.subheader("💬 LaunchBot")
     st.write("Eu sou o LaunchBot, especialista em lançamentos digitais de alta conversão")
+    
+    # CHAT CONTÍNUO
     msg_chat = st.text_input("Digite a sua dúvida e aperte Enter", key="chat_input")
     if msg_chat:
         resp = chamar_ia(msg_chat, "Você é o LaunchBot, especialista em marketing digital.", st.session_state.api_key)
         st.session_state.chat_hist.append((msg_chat, resp))
     
+    # Exibição do histórico completo
     for q, a in reversed(st.session_state.chat_hist):
         st.markdown(f"**Você:** {q}")
         st.markdown(f"<div class='chat-bubble'>{a}</div>", unsafe_allow_html=True)
