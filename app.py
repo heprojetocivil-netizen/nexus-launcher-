@@ -113,12 +113,13 @@ if st.session_state.etapa == "Login":
 elif st.session_state.etapa == "Formulario":
     barra_topo()
     st.title("PREENCHA FORMULÁRIO")
-    nicho = st.text_input("Nicho")
+    nicho = st.text_input("Nicho (ex: Prática de Yoga)")
     nome_eb = st.text_input("Nome do e-book")
     dor = st.text_input("Qual dor ele resolve")
     preco = st.text_input("Preço")
+    data_lancto = st.text_input("Data do lançamento (ex: 6 de março)")
     if st.button("AVANÇAR"):
-        st.session_state.dados.update({"nicho": nicho, "nome_eb": nome_eb, "dor": dor, "preco": preco})
+        st.session_state.dados.update({"nicho": nicho, "nome_eb": nome_eb, "dor": dor, "preco": preco, "data_lancto": data_lancto})
         st.session_state.etapa = "Ebook_Gerar"
         st.rerun()
 
@@ -188,34 +189,28 @@ ENTRAR NO GRUPO"""
 
 elif st.session_state.etapa == "MSG_Gerar":
     barra_topo()
-    st.title("📌 3. MENSAGEM FIXA DO GRUPO")
-    if st.button("GERAR MENSAGENS PARA O GRUPO"):
+    st.title("📌 3. MENSAGENS DO GRUPO")
+    if st.button("GERAR SEQUÊNCIA DE 3 DIAS"):
         nicho = st.session_state.dados['nicho']
         ebook = st.session_state.dados['nome_eb']
         dor = st.session_state.dados['dor']
-        st.session_state.dados['msg_grupo'] = f"""DESCRIÇÃO DO GRUPO
-Esse grupo é silencioso. Você não será incomodado hora nenhuma.
-Eu vou te mostrar um caminho simples para {nicho}.
-Não é teoria… é algo direto.
-Fica até o final.
+        data = st.session_state.dados['data_lancto']
+        
+        st.session_state.dados['msg_grupo'] = f"""🔥 1ª MENSAGEM
+Se você deseja {nicho}, mas sente que está perdido na busca por uma prática de {nicho} eficaz... provavelmente não é falta de esforço. É falta de direção. A maioria das pessoas que começam a praticar {nicho} comete um erro simples: não têm um plano claro e personalizado para alcançar seus objetivos. E por isso, continuam tentando e não saem do lugar. E o pior: nem percebem onde estão errando.
+Eu organizei um caminho direto para resolver isso... um material que eu preparei e vou liberar o acesso para todos os membros desse grupo no dia {data}. Fiquem ligados e atentos as mensagens. Até…
 
-🔥 DIA 1
-Deixa eu te fazer uma pergunta direta: Você sente que está no caminho certo… "{nicho}" ou só tentando coisas e esperando dar certo?
+🔥 2ª MENSAGEM
+Amanhã é o dia.
+Depois de tanto tempo tentando encontrar uma prática de {nicho} que realmente funcione para você, talvez o que faltava não era mais esforço… era apenas um caminho mais claro.
+Muita gente insiste, muda de vídeo, muda de sequência, mas continua sem evolução real — porque segue sem direção definida.
+E isso vai mudar a partir de amanhã. Quando será liberado o acesso ao material que eu organizei especialmente para te mostrar um caminho simples, direto e estruturado para evoluir na prática.
+Até amanhã, abraços
 
-🔥 DIA 2
-A maioria das pessoas não falha por falta de esforço… falha porque está andando na direção errada. E o pior: só percebe depois de muito tempo.
-
-🔥 DIA 3
-Existe um ponto simples que separa quem consegue resultado "{nicho}" … de quem continua tentando. E não tem nada a ver com trabalhar mais.
-
-🔥 DIA 4
-Quando você entende isso… você para de perder tempo com o que não funciona. E começa a focar no que realmente dá resultado.
-
-🔥 DIA 5
-Eu poderia explicar tudo aqui… mas a maioria das pessoas não aplicaria. Então amanhã eu vou te mostrar isso de forma diferente.
-
-🔥 DIA 6
-Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… em um e-book qe você poderá acessar hoje com 30% de desconto. O método “{ebook}” ele foi pensado para “{dor}” Clique no link e agora e garanto o seu. Essa promoção irá acabar a qualquer momento Obrigado por estar comigo até agora."""
+🔥 3ª MENSAGEM (LIBERAÇÃO)
+Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… em um e-book que você poderá acessar hoje com 30% de desconto. 
+O método “{ebook}” ele foi pensado para “{dor}”. 
+Clique no link agora e garanta o seu. Essa promoção irá acabar a qualquer momento. Obrigado por estar comigo até agora."""
 
     if 'msg_grupo' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['msg_grupo']}</div>", unsafe_allow_html=True)
@@ -246,7 +241,7 @@ elif st.session_state.etapa == "Visualizacao":
 - Segunda a sexta: Anuncie e preencha o grupo
 
 🔥 5. Sequência de vendas
-- Na semana seguinte, inicie as mensagens
+- Siga a sequência das 3 mensagens personalizadas
 - Finalize levando para a oferta na Monetizze</div>""", True)
 
     if st.button("💾 SALVAR PROJETO"):
