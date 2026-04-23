@@ -110,18 +110,18 @@ elif st.session_state.etapa == 4:
     
     with col1:
         if st.button("🎤 MENTORIA DE ORATÓRIA"):
-            p = f"Dê apenas dicas técnicas de oratória para a live de {st.session_state.memoria['nicho']}. Foque em postura, voz, olhar para câmera e energia. NÃO escreva scripts ou falas de venda aqui."
-            st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Oratória", api_key)
+            p = f"Aja apenas como Mentor de Oratória. Dê dicas técnicas exclusivas sobre postura, voz e energia para a live de {st.session_state.memoria['nicho']}. É PROIBIDO escrever roteiros ou o que falar. Foque apenas no comportamento."
+            st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Performance Humana", api_key)
             
     with col2:
         if st.button("🎬 SCRIPT DO VÍDEO (LIVE)"):
-            p = f"Escreva apenas o script de fala para a live de {st.session_state.memoria['nicho']}. Comece obrigatoriamente com 'Olá pessoal...' e termine anunciando que o link para a venda do e-book está na descrição. NÃO inclua dicas de oratória aqui."
-            st.session_state.memoria['script_live'] = nexus_ai(p, "Roteirista de Vendas", api_key)
+            p = f"Aja apenas como Roteirista. Escreva o script de fala para a live de {st.session_state.memoria['nicho']}. Comece obrigatoriamente com 'Olá pessoal...' e termine anunciando o link para o e-book na descrição. É PROIBIDO dar dicas técnicas de oratória. Escreva apenas o texto da live."
+            st.session_state.memoria['script_live'] = nexus_ai(p, "Roteirista de Vendas Profissional", api_key)
             
     with col3:
         if st.button("📝 DESCRIÇÃO + LINK"):
-            p = f"Crie apenas o texto da descrição do vídeo da live. Coloque na PRIMEIRA LINHA: 'Clique no link para acessar o e-book: [LINK]'. Adicione um resumo persuasivo abaixo. NÃO inclua scripts de fala ou dicas de oratória."
-            st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Copywriter", api_key)
+            p = f"Aja apenas como Copywriter de YouTube. Crie o texto da descrição do vídeo. PRIMEIRA LINHA: 'Clique no link para acessar o e-book: [LINK]'. Em seguida, resumo persuasivo. É PROIBIDO escrever o script da live ou dar dicas de oratória."
+            st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Especialista em Descrições de Vídeo", api_key)
 
     if 'mentor_ora' in st.session_state.memoria: 
         st.subheader("🎤 Mentoria de Oratória")
