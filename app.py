@@ -41,7 +41,6 @@ def chamar_ia(prompt, system_prompt, key):
 def chat_continuo(pergunta, key):
     try:
         client = Groq(api_key=key)
-        # Constrói o histórico para a IA
         mensagens = [{"role": "system", "content": "Você é o LaunchBot, especialista em lançamentos digitais de alta conversão. Seja direto e ajude o usuário com estratégias de vendas."}]
         for q, a in st.session_state.chat_hist:
             mensagens.append({"role": "user", "content": q})
@@ -185,6 +184,7 @@ elif st.session_state.etapa == "MSG_Gerar":
     if st.button("GERAR MENSAGENS PARA O GRUPO"):
         nicho = st.session_state.dados['nicho']
         ebook = st.session_state.dados['nome_eb']
+        dor = st.session_state.dados['dor']
         st.session_state.dados['msg_grupo'] = f"""DESCRIÇÃO DO GRUPO
 Esse grupo é silencioso. Você não será incomodado hora nenhuma.
 Eu vou te mostrar um caminho simples para {nicho}.
@@ -208,9 +208,11 @@ Quando você entende isso… você para de perder tempo com o que não funciona.
 Eu poderia explicar tudo aqui… mas a maioria das pessoas não aplicaria. Então amanhã eu vou te mostrar isso de forma diferente.
 
 🔥 DIA 6
-Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… pra chegar em {nicho}. E coloquei tudo isso em um eBook simples e direto ao ponto: {ebook}. Você pode acessar agora… com garantia de 7 dias. O acesso já está liberado. Clica no link e vê todos os detalhes.
-
-DESCRIÇÃO: Clique no link para acessar o seu e-book com 30% de desconto, somente hoje."""
+Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… em um e-book qe você poderá acessar hoje com 30% de desconto.
+O método “{ebook}” ele foi pensado para “{dor}”
+Clique no link e agora e garanto o seu.
+Essa promoção irá acabar a qualquer momento
+Obrigado por estar comigo até agora"""
 
     if 'msg_grupo' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['msg_grupo']}</div>", unsafe_allow_html=True)
