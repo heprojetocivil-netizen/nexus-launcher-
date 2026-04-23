@@ -110,17 +110,17 @@ elif st.session_state.etapa == 4:
     
     with col1:
         if st.button("🎤 MENTORIA DE ORATÓRIA"):
-            p = f"Dê apenas orientações de postura e oratória para a live de {st.session_state.memoria['nicho']}. Foque exclusivamente em como manter a energia alta e autoridade. Não inclua scripts de venda aqui."
+            p = f"Dê apenas dicas e orientações técnicas de oratória para a live de {st.session_state.memoria['nicho']}. Foque em postura, tom de voz, energia e como manter a autoridade diante da câmera. Não inclua roteiros de fala."
             st.session_state.memoria['mentor_ora'] = nexus_ai(p, "Mentor de Oratória", api_key)
             
     with col2:
-        if st.button("🎬 SCRIPT DA LIVE"):
-            p = f"Crie apenas o script de fala para a live de {st.session_state.memoria['nicho']}. Deve obrigatoriamente começar com 'Olá pessoal, eu sou [Seu Nome]...', entregar o conteúdo e terminar anunciando que o link para a compra do e-book está na descrição do vídeo."
+        if st.button("🎬 SCRIPT DO VÍDEO (LIVE)"):
+            p = f"Crie apenas o script de fala para a live de {st.session_state.memoria['nicho']}. O texto DEVE obrigatoriamente começar com 'Olá pessoal...' e terminar com uma chamada de ação clara anunciando que o link para a compra do e-book está disponível na descrição do vídeo."
             st.session_state.memoria['script_live'] = nexus_ai(p, "Estrategista de Vendas", api_key)
             
     with col3:
         if st.button("📝 DESCRIÇÃO + LINK"):
-            p = f"Crie apenas o texto da descrição do vídeo para {st.session_state.memoria['nicho']}. A primeira linha DEVE ser: 'Clique no link para acessar o e-book: [LINK]'. Abaixo, coloque um resumo forte de vendas."
+            p = f"Crie apenas o texto da descrição do vídeo para {st.session_state.memoria['nicho']}. A primeira linha DEVE conter o aviso: 'Clique no link para acessar o e-book: [LINK]'. Em seguida, forneça um resumo persuasivo do conteúdo para reforçar a venda."
             st.session_state.memoria['desc_video_final'] = nexus_ai(p, "Copywriter de Vendas", api_key)
 
     if 'mentor_ora' in st.session_state.memoria: 
@@ -128,7 +128,7 @@ elif st.session_state.etapa == 4:
         st.info(st.session_state.memoria['mentor_ora'])
         
     if 'script_live' in st.session_state.memoria: 
-        st.subheader("🎬 Script da Live")
+        st.subheader("🎬 Script do Vídeo")
         st.write(st.session_state.memoria['script_live'])
         
     if 'desc_video_final' in st.session_state.memoria: 
