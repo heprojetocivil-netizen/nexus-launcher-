@@ -168,7 +168,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento (com link Monetizze)**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, eu mostro exatamente como você pode {resultado}, mesmo começando do zero.
+Nele, eu mostro exatamente como você pode aprender o passo a passo que pode te ajudar a {resultado}, mesmo começando do zero.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora, está disponível — mas não sei por quanto tempo vou deixar assim.
