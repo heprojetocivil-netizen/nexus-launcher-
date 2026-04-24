@@ -169,14 +169,15 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # --- ETAPAS PARA INDICADOR DE PROGRESSO ---
-ETAPAS = ["Formulario", "Gerar_Ebook", "Copy_Face", "Copy_LP", "Mensagens_Grupo", "Visualizacao"]
+ETAPAS = ["Formulario", "Gerar_Ebook", "Gerar_Bonus", "Copy_Face", "Copy_LP", "Mensagens_Grupo", "Visualizacao"]
 ETAPAS_LABELS = {
     "Formulario": "1. Formulário",
     "Gerar_Ebook": "2. E-book",
-    "Copy_Face": "3. Anúncio",
-    "Copy_LP": "4. Landing Page",
-    "Mensagens_Grupo": "5. Mensagens",
-    "Visualizacao": "6. Projeto Final",
+    "Gerar_Bonus": "3. Bônus",
+    "Copy_Face": "4. Anúncio",
+    "Copy_LP": "5. Landing Page",
+    "Mensagens_Grupo": "6. Mensagens",
+    "Visualizacao": "7. Projeto Final",
 }
 
 # --- EXEMPLOS POR NICHO ---
@@ -340,6 +341,34 @@ def prompt_ebook():
 def system_ebook():
     return "Você é um especialista em conteúdo digital educativo. Seja objetivo e prático."
 
+
+def prompt_bonus():
+    d = st.session_state.dados
+    nicho = d.get('nicho', '')
+    nome_eb = d.get('nome_eb', '')
+    publico = d.get('publico', '')
+    dor = d.get('dor', '')
+    promessa = d.get('promessa', '')
+    return (
+        f"Crie 3 ebooks bônus complementares para quem comprou o ebook principal sobre {nicho}. "
+        f"Ebook principal: {nome_eb}. "
+        f"Publico-alvo: {publico}. Dor principal: {dor}. Promessa: {promessa}. "
+        f"Para cada ebook bonus, gere EXATAMENTE neste formato:\n\n"
+        f"BONUS 1: [Nome do ebook]\n"
+        f"Descricao: [2 linhas explicando o que o leitor vai aprender]\n"
+        f"Conteudo: [20 cartoes educativos numerados com titulo e conteudo util]\n\n"
+        f"BONUS 2: [Nome do ebook]\n"
+        f"Descricao: [2 linhas]\n"
+        f"Conteudo: [20 cartoes educativos numerados]\n\n"
+        f"BONUS 3: [Nome do ebook]\n"
+        f"Descricao: [2 linhas]\n"
+        f"Conteudo: [20 cartoes educativos numerados]\n\n"
+        f"Os 3 bonus devem ser diferentes entre si e complementar o ebook principal de forma logica."
+    )
+
+def system_bonus():
+    return "Você é um especialista em conteúdo digital educativo. Crie ebooks bônus práticos, diretos e que agreguem valor real ao produto principal."
+
 def prompt_fb():
     d = st.session_state.dados
     return (
@@ -380,15 +409,20 @@ def prompt_msg():
     d = st.session_state.dados
     data = d['data_lancto'].strftime('%d/%m/%Y')
     data_d1 = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
+    preco = d.get('preco', 47)
+    nome_eb = d['nome_eb']
+    bonus_resumo = d.get('bonus_resumo', 'Bônus 1, Bônus 2 e Bônus 3 complementares')
     return (
         f"Crie 3 mensagens para um grupo de WhatsApp/Telegram de lançamento digital. "
         f"Use os dados abaixo para personalizar as mensagens de forma natural e fluida, "
         f"sem repetir textos longos e sem incoerências gramaticais.\n\n"
         f"- Nicho: {d['nicho']}\n"
         f"- Público-alvo: {d['publico']}\n"
-        f"- Nome do e-book: {d['nome_eb']}\n"
+        f"- Nome do e-book principal: {nome_eb}\n"
         f"- Principal dor: {d['dor']}\n"
         f"- Promessa/resultado: {d['promessa']}\n"
+        f"- Preço: R${preco}\n"
+        f"- Bônus inclusos: {bonus_resumo}\n"
         f"- Data de lançamento: {data}\n"
         f"- Data de aquecimento (1 dia antes): {data_d1}\n\n"
         f"Estruture EXATAMENTE assim:\n\n"
@@ -403,9 +437,15 @@ def prompt_msg():
         f"[mensagem de aquecimento, mencione a dor, crie expectativa para amanhã]\n\n"
         f"---\n\n"
         f"**🚀 Mensagem 3 – Lançamento ({data})**\n"
-        f"[mensagem de lançamento, diga que o conteúdo foi liberado, mencione o resultado, "
-        f"finalize com: 👉 [LINK DA MONETIZZE]\n"
-        f"Este preço é válido só hoje, {data}. Amanhã o valor muda.]"
+        f"[Escreva uma mensagem de lançamento completa com esta estrutura exata:\n"
+        f"- Anuncie que foi liberado o ebook '{nome_eb}'\n"
+        f"- Diga que é um ebook completo sobre {d['nicho']} para {d['publico']}\n"
+        f"- Mencione o resultado: {d['promessa']}\n"
+        f"- Liste os bônus: {bonus_resumo}\n"
+        f"- Preço de lançamento: R${preco} — válido só hoje, {data}\n"
+        f"- Garantia: 7 dias ou seu dinheiro de volta, sem perguntas\n"
+        f"- Finalize com: 👉 [LINK DA MONETIZZE]\n"
+        f"- Última linha: Este preço é válido só hoje, {data}. Amanhã o valor muda.]"
     )
 
 def system_msg():
@@ -574,6 +614,37 @@ elif st.session_state.etapa == "Gerar_Ebook":
     if 'ebook_cont' in st.session_state.dados:
         bloco_conteudo('ebook_cont', 'E-book', prompt_ebook, system_ebook)
         if st.button("AVANÇAR →"):
+            st.session_state.etapa = "Gerar_Bonus"
+            st.rerun()
+
+# ============================================================
+# TELA: GERAR E-BOOKS BÔNUS
+# ============================================================
+elif st.session_state.etapa == "Gerar_Bonus":
+    barra_navegacao()
+    st.title("🎁 GERAR 3 E-BOOKS BÔNUS")
+    st.caption("Os bônus serão complementares ao ebook principal e incluídos automaticamente na Mensagem de Lançamento.")
+
+    if st.button("GERAR 3 EBOOKS BÔNUS"):
+        with st.spinner("Gerando ebooks bônus com IA..."):
+            st.session_state.dados['bonus_cont'] = chamar_ia(prompt_bonus(), system_bonus())
+            # Extrai só os nomes dos bônus para usar na Mensagem 3
+            bonus_texto = st.session_state.dados['bonus_cont']
+            linhas = bonus_texto.split('\n')
+            nomes = []
+            for linha in linhas:
+                for prefixo in ['BÔNUS 1:', 'BÔNUS 2:', 'BÔNUS 3:', '🎁 BÔNUS 1:', '🎁 BÔNUS 2:', '🎁 BÔNUS 3:']:
+                    if prefixo in linha:
+                        nome = linha.replace(prefixo, '').strip()
+                        if nome:
+                            nomes.append(nome)
+            if nomes:
+                st.session_state.dados['bonus_resumo'] = ', '.join(nomes)
+            st.rerun()
+
+    if 'bonus_cont' in st.session_state.dados:
+        bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
+        if st.button("AVANÇAR →"):
             st.session_state.etapa = "Copy_Face"
             st.rerun()
 
@@ -650,11 +721,16 @@ E-BOOK: {d.get('nome_eb', '')}
 NICHO: {d.get('nicho', '')}
 PÚBLICO: {d.get('publico', '')}
 DATA DE LANÇAMENTO: {d.get('data_lancto', '')}
+PREÇO: R${d.get('preco', 47)}
 {'='*50}
 
-📚 E-BOOK
+📚 E-BOOK PRINCIPAL
 {'-'*40}
 {limpar_html(d.get('ebook_cont', 'Não gerado.'))}
+
+🎁 E-BOOKS BÔNUS
+{'-'*40}
+{limpar_html(d.get('bonus_cont', 'Não gerado.'))}
 
 🎬 ANÚNCIOS (FACEBOOK)
 {'-'*40}
@@ -683,6 +759,9 @@ DATA DE LANÇAMENTO: {d.get('data_lancto', '')}
 
     with st.expander("📚 E-BOOK"):
         bloco_conteudo('ebook_cont', 'E-book', prompt_ebook, system_ebook)
+
+    with st.expander("🎁 E-BOOKS BÔNUS"):
+        bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
 
     with st.expander("🎬 ANÚNCIO (Facebook)"):
         bloco_conteudo('fb_copy', 'Anúncios', prompt_fb, system_fb)
