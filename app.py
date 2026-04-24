@@ -1,3 +1,4 @@
+
 import streamlit as st
 from groq import Groq
 from datetime import timedelta
@@ -312,6 +313,11 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     data     = d['data_lancto'].strftime('%d/%m/%Y')
     data_d1  = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
     resultado= d['promessa']
+    # Converte a promessa para infinitivo (ex: "Aprenda X" → "aprender X")
+    resultado_infinitivo = chamar_ia(
+        f"Reescreva esta frase no infinitivo, começando com letra minúscula, sem ponto final, sem aspas e sem explicação: '{resultado}'",
+        "Você é um assistente de texto. Responda APENAS com a frase reescrita, sem nenhum comentário adicional."
+    ).strip().strip('"').strip("'").rstrip('.')
     dor      = d['dor']
 
     msg_template = f"""**Descrição do grupo:**
@@ -324,7 +330,7 @@ Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
 Bem-vindo(a) 👋
 Este grupo é silencioso, então pode ficar tranquilo(a), você não será incomodado.
 Você entrou aqui porque quer aprender mais sobre {nicho} — e eu preparei algo direto ao ponto pra isso.
-📅 No dia {data}, vou liberar um conteúdo exclusivo onde mostro um método simples que pode te ajudar a {resultado}.
+📅 No dia {data}, vou liberar um conteúdo exclusivo onde mostro um método simples que pode te ajudar a {resultado_infinitivo}.
 Fica por aqui… porque o que vou mostrar pode mudar a forma como você enxerga isso.
 
 ---
@@ -341,7 +347,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento ({data})**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, mostro exatamente como você pode {resultado}, mesmo começando do zero.
+Nele, mostro exatamente como você pode {resultado_infinitivo}, mesmo começando do zero.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora está disponível — mas não sei por quanto tempo vou deixar assim."""
