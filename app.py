@@ -106,8 +106,8 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. Leve para a Landing Page. Separe em parágrafos e sugira imagens."
-        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios.")
+        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. Leve para a Landing Page. IMPORTANTE: Separe todos os parágrafos com linha em branco (inclusive o 1º e o 2º) para facilitar a leitura. Sugira imagens."
+        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios de alta conversão.")
     
     if 'fb_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['fb_copy']}</div>", unsafe_allow_html=True)
@@ -120,7 +120,7 @@ elif st.session_state.etapa == "Copy_LP":
     st.title("🌐 COPY PARA A LANDING PAGE")
     if st.button("GERAR 5 VARIAÇÕES LP"):
         prompt = f"Crie 5 variações de copy para Landing Page. Situação atual: {st.session_state.dados['atual']}. Situação desejada: {st.session_state.dados['desejada']}. Promessa: {st.session_state.dados['promessa']}. Sugira imagens."
-        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages. OBRIGATÓRIO: Ao final de cada uma das 5 variações, inclua o botão [ ENTRAR NO GRUPO ].")
+        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages. OBRIGATÓRIO: Identifique cada variação com título em negrito (ex: **Variação 1: [Nome]**). Ao final de cada variação, inclua o botão [ ENTRAR NO GRUPO ].")
     
     if 'lp_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_copy']}</div>", unsafe_allow_html=True)
@@ -181,7 +181,6 @@ elif st.session_state.etapa == "Visualizacao":
     barra_navegacao()
     st.title(f"PROJETO: {st.session_state.dados.get('nome_eb')}")
     
-    # ABAS FECHADAS (Expanders independentes)
     with st.expander("📚 E-BOOKS"):
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('ebook_cont')}</div>", True)
     
@@ -197,7 +196,6 @@ elif st.session_state.etapa == "Visualizacao":
     with st.expander("💡 DICAS PARA APLICAÇÃO"):
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('dicas')}</div>", True)
 
-    # LAUNCERBOT
     st.divider()
     st.markdown("### Olá 👋")
     st.info("**Eu sou o Launcerbot.** Eu ajudo pessoas a criar e lançar produtos digitais, mesmo começando do zero. Se você quer vender na internet, pode me perguntar qualquer coisa 👇")
