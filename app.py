@@ -11,7 +11,7 @@ st.markdown("""
     [data-testid="stSidebar"] { display: none; }
     .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; background-color: #00BFFF !important; color: white !important; font-weight: bold; border: none; }
     .caixa-texto { background-color: #F8FAFC; padding: 25px; border-radius: 12px; border-left: 6px solid #00BFFF; margin-bottom: 20px; white-space: pre-wrap; color: #1E293B; line-height: 1.6; }
-    .footer { text-align: center; padding: 30px; color: #94A3B8; font-size: 0.8em; opacity: 0.6; }
+    .footer { text-align: center; padding: 50px; color: #94A3B8; font-size: 0.8em; opacity: 0.5; border-top: 1px solid #E2E8F0; margin-top: 50px; }
     .chat-bubble { background-color: #F1F5F9; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #E2E8F0; }
     </style>
 """, unsafe_allow_html=True)
@@ -22,7 +22,7 @@ if 'dados' not in st.session_state: st.session_state.dados = {}
 if 'projetos' not in st.session_state: st.session_state.projetos = {}
 if 'chat_hist' not in st.session_state: st.session_state.chat_hist = []
 
-# --- FUNÇÕES DE APOIO ---
+# --- FUNÇÃO DE IA ---
 def chamar_ia(prompt, system_prompt):
     try:
         client = Groq(api_key=st.session_state.api_key)
@@ -32,27 +32,30 @@ def chamar_ia(prompt, system_prompt):
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Erro na API: {e}"
+        return f"Erro na API: Verifique sua chave Groq. {e}"
 
-def barra_topo():
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("➕ INICIAR NOVO PROJETO"):
-            st.session_state.dados = {}
-            st.session_state.etapa = "Formulario"
-            st.rerun()
-    with col2:
-        with st.expander("📂 MEUS PROJETOS"):
-            if not st.session_state.projetos: st.write("Nenhum projeto.")
-            for nome in list(st.session_state.projetos.keys()):
-                c_abrir, c_del = st.columns([3, 1])
-                if c_abrir.button(f"📄 {nome}", key=f"ab_{nome}"):
-                    st.session_state.dados = st.session_state.projetos[nome]
-                    st.session_state.etapa = "Visualizacao"
-                    st.rerun()
-                if c_del.button("🗑️", key=f"del_{nome}"):
-                    del st.session_state.projetos[nome]
-                    st.rerun()
+# --- COMPONENTES GLOBAIS ---
+def menu_topo():
+    if st.session_state.etapa != "Login":
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("➕ INICIAR NOVO PROJETO"):
+                st.session_state.dados = {}
+                st.session_state.etapa = "Formulario"
+                st.rerun()
+        with col2:
+            with st.expander("📂 MEUS PROJETOS"):
+                if not st.session_state.projetos:
+                    st.write("Nenhum projeto salvo.")
+                for nome in list(st.session_state.projetos.keys()):
+                    c1, c2 = st.columns([4, 1])
+                    if c1.button(f"📄 {nome}", key=f"pj_{nome}"):
+                        st.session_state.dados = st.session_state.projetos[nome]
+                        st.session_state.etapa = "Visualizacao"
+                        st.rerun()
+                    if c2.button("🗑️", key=f"del_{nome}"):
+                        del st.session_state.projetos[nome]
+                        st.rerun()
 
 # --- TELAS ---
 
@@ -67,7 +70,7 @@ if st.session_state.etapa == "Login":
             st.rerun()
 
 elif st.session_state.etapa == "Formulario":
-    barra_topo()
+    menu_topo()
     st.title("PREENCHA O FORMULÁRIO")
     d = st.session_state.dados
     d['nicho'] = st.text_input("Nicho:", help="ex: emagrecimento, renda extra")
@@ -81,64 +84,66 @@ elif st.session_state.etapa == "Formulario":
     d['data_lancto'] = st.date_input("Data de lançamento")
     
     if st.button("AVANÇAR"):
-        st.session_state.etapa = "Gerar_Ebook"
+        st.session_state.etapa = "Segunda_Pagina"
         st.rerun()
 
-elif st.session_state.etapa == "Gerar_Ebook":
-    barra_topo()
+elif st.session_state.etapa == "Segunda_Pagina":
+    menu_topo()
     st.title("📚 GERAR E-BOOK PROFISSIONAL")
-    if st.button("GERAR CONTEÚDO - 60 CARTÕES"):
-        prompt = f"Gere 60 cartões de conteúdo para o e-book {st.session_state.dados['nome_eb']}. Público: {st.session_state.dados['publico']}. Dor: {st.session_state.dados['dor']}. Diferencial: {st.session_state.dados['diferencial']}."
-        st.session_state.dados['ebook'] = chamar_ia(prompt, "Você é um especialista em criação de produtos digitais.")
+    if st.button("GERAR E-BOOK – 60 CARTÕES"):
+        prompt = f"Gere o conteúdo para o e-book '{st.session_state.dados['nome_eb']}' com 60 cartões educativos. Público: {st.session_state.dados['publico']}. Dor: {st.session_state.dados['dor']}."
+        st.session_state.dados['ebook_cont'] = chamar_ia(prompt, "Você é um especialista em criação de e-books.")
     
-    if 'ebook' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['ebook']}</div>", unsafe_allow_html=True)
+    if 'ebook_cont' in st.session_state.dados:
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['ebook_cont']}</div>", unsafe_allow_html=True)
         if st.button("AVANÇAR"):
-            st.session_state.etapa = "Gerar_Face"
+            st.session_state.etapa = "Copy_Facebook"
             st.rerun()
 
-elif st.session_state.etapa == "Gerar_Face":
-    barra_topo()
+elif st.session_state.etapa == "Copy_Facebook":
+    menu_topo()
     st.title("📱 COPY PARA FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Promessa: {st.session_state.dados['promessa']}. Data: {st.session_state.dados['data_lancto']}. Leve para a Landing Page. Separe em parágrafos e sugira imagens para cada uma."
-        st.session_state.dados['face'] = chamar_ia(prompt, "Você é um copywriter expert em Facebook Ads.")
+        prompt = f"Crie 5 variações de copy para Facebook Ads baseadas no nicho {st.session_state.dados['nicho']} para lançamento em {st.session_state.dados['data_lancto']}. Leve para a Landing Page. Separe em parágrafos e sugira imagens."
+        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter de Facebook Ads.")
     
-    if 'face' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['face']}</div>", unsafe_allow_html=True)
+    if 'fb_copy' in st.session_state.dados:
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['fb_copy']}</div>", unsafe_allow_html=True)
         if st.button("AVANÇAR"):
-            st.session_state.etapa = "Gerar_LP"
+            st.session_state.etapa = "Copy_LP"
             st.rerun()
 
-elif st.session_state.etapa == "Gerar_LP":
-    barra_topo()
+elif st.session_state.etapa == "Copy_LP":
+    menu_topo()
     st.title("🌐 COPY PARA LANDING PAGE")
     if st.button("GERAR ROTEIRO LP"):
-        prompt = f"Crie uma copy de Landing Page de alta conversão. Situação atual: {st.session_state.dados['atual']}. Situação desejada: {st.session_state.dados['desejada']}. Promessa: {st.session_state.dados['promessa']}. Botão: ENTRAR NO GRUPO. Sugira imagens."
-        st.session_state.dados['lp'] = chamar_ia(prompt, "Você é um especialista em Landing Pages.")
+        prompt = f"Crie uma copy para Landing Page. Promessa: {st.session_state.dados['promessa']}. Botão: ENTRAR NO GRUPO. Sugira 5 variações e imagens."
+        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages.")
     
-    if 'lp' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp']}</div>", unsafe_allow_html=True)
+    if 'lp_copy' in st.session_state.dados:
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_copy']}</div>", unsafe_allow_html=True)
         if st.button("AVANÇAR"):
-            st.session_state.etapa = "Gerar_Mensagens"
+            st.session_state.etapa = "Mensagens_Grupo"
             st.rerun()
 
-elif st.session_state.etapa == "Gerar_Mensagens":
-    barra_topo()
+elif st.session_state.etapa == "Mensagens_Grupo":
+    menu_topo()
     st.title("📌 MENSAGENS PARA O GRUPO")
     
+    # Dados para as mensagens
     nicho = st.session_state.dados['nicho']
     data = st.session_state.dados['data_lancto'].strftime('%d/%m/%Y')
     resultado = st.session_state.dados['promessa']
     dor = st.session_state.dados['dor']
     data_ontem = (st.session_state.dados['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
 
-    st.session_state.dados['msg'] = f"""
-**Descrição do Grupo:**
+    msg_template = f"""
+**Descrição do grupo:**
 Este grupo é silencioso. Você não será incomodado.
 Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
 
 ---
+
 **📩 Mensagem 1 – Boas-vindas + Pré-lançamento**
 Bem-vindo(a) 👋
 Este grupo é silencioso, então pode ficar tranquilo(a), você não será incomodado.
@@ -146,16 +151,14 @@ Você entrou aqui porque quer aprender mais sobre {nicho} — e eu preparei algo
 📅 No dia {data}, eu vou liberar um conteúdo exclusivo onde mostro um método simples que pode te ajudar a {resultado}.
 Fica por aqui… porque o que eu vou mostrar pode mudar a forma como você enxerga isso.
 
----
-**⏳ Mensagem 2 – {data_ontem} (Aquecimento)**
+**⏳ Mensagem 2 – 1 dia antes (aquecimento)**
 Amanhã é o dia.
 Depois de organizar tudo, finalmente vou liberar o conteúdo sobre {nicho}.
 Se você sente que ainda está travado(a) em {dor}, presta atenção nisso…
 O que você vai ver amanhã não é teoria — é um caminho direto que você pode aplicar.
 ⏰ Fica atento(a), porque vou liberar aqui no grupo.
 
----
-**🚀 Mensagem 3 – Lançamento**
+**🚀 Mensagem 3 – Lançamento (com link Monetizze)**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
 Nele, eu mostro exatamente como você pode {resultado}, mesmo começando do zero.
@@ -163,7 +166,8 @@ Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o pr
 👉 [LINK DA MONETIZZE]
 A partir de agora, está disponível — mas não sei por quanto tempo vou deixar assim.
 """
-    st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['msg']}</div>", unsafe_allow_html=True)
+    st.session_state.dados['msg_grupo'] = msg_template
+    st.markdown(f"<div class='caixa-texto'>{msg_template}</div>", unsafe_allow_html=True)
     
     if st.button("💾 SALVAR PROJETO"):
         st.session_state.projetos[st.session_state.dados['nome_eb']] = st.session_state.dados
@@ -171,26 +175,35 @@ A partir de agora, está disponível — mas não sei por quanto tempo vou deixa
         st.rerun()
 
 elif st.session_state.etapa == "Visualizacao":
-    barra_topo()
+    menu_topo()
     st.title(f"PROJETO: {st.session_state.dados.get('nome_eb')}")
     
-    with st.expander("E-BOOKS"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('ebook')}</div>", True)
-    with st.expander("ANUNCIO"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('face')}</div>", True)
-    with st.expander("LANDING PAGE"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('lp')}</div>", True)
-    with st.expander("MENSAGENS"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg')}</div>", True)
-
-    st.divider()
-    st.subheader("Olá 👋 Eu sou o Launcerbot.")
-    st.info("Eu ajudo pessoas a criar e lançar produtos digitais, mesmo começando do zero. Se você quer vender na internet, pode me perguntar qualquer coisa 👇")
+    # Abas fechadas (Expanders) conforme orientação
+    with st.expander("📚 E-BOOKS"):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('ebook_cont')}</div>", True)
     
-    pergunta = st.text_input("Sua dúvida:")
+    with st.expander("🎬 ANUNCIO"):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('fb_copy')}</div>", True)
+        
+    with st.expander("🌐 LANDING PAGE"):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('lp_copy')}</div>", True)
+
+    with st.expander("📌 MENSAGENS"):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo')}</div>", True)
+
+    # Chat contínuo após as abas
+    st.divider()
+    st.markdown("### Olá 👋")
+    st.info("**Eu sou o Launcerbot.** Eu ajudo pessoas a criar e lançar produtos digitais, mesmo começando do zero. Se você quer vender na internet, pode me perguntar qualquer coisa 👇")
+    
+    pergunta = st.text_input("Digite sua dúvida:")
     if pergunta:
-        resp = chamar_ia(pergunta, "Você é o Launcerbot, especialista em vendas online.")
+        resp = chamar_ia(pergunta, "Você é o Launcerbot, assistente de lançamentos digitais.")
         st.session_state.chat_hist.append((pergunta, resp))
     
     for q, r in reversed(st.session_state.chat_hist):
         st.markdown(f"**Você:** {q}")
         st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
 
-# --- RODAPÉ ---
+# --- RODAPÉ MARCA D'ÁGUA ---
 st.markdown("<div class='footer'>© 2026 Nexus Launcer – Lançamento digital inteligente</div>", unsafe_allow_html=True)
