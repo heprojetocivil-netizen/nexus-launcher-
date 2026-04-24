@@ -14,7 +14,6 @@ st.markdown("""
     .btn-deletar>button { background-color: #94A3B8 !important; height: 2.5em !important; margin-top: 0.5em; }
     .caixa-texto { background-color: #F8FAFC; padding: 25px; border-radius: 12px; border-left: 6px solid #00BFFF; margin-bottom: 20px; white-space: pre-wrap; color: #1E293B; line-height: 1.6; font-size: 1.1em; }
     .footer { text-align: center; padding: 40px; color: #94A3B8; font-size: 0.9em; border-top: 1px solid #E2E8F0; margin-top: 50px; }
-    .chat-bubble { background-color: #F1F5F9; padding: 15px; border-radius: 10px; border: 1px solid #CBD5E1; margin-bottom: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -22,7 +21,6 @@ st.markdown("""
 if 'etapa' not in st.session_state: st.session_state.etapa = "Login"
 if 'dados' not in st.session_state: st.session_state.dados = {}
 if 'projetos' not in st.session_state: st.session_state.projetos = {}
-if 'chat_hist' not in st.session_state: st.session_state.chat_hist = []
 
 # --- FUNÇÃO DE IA ---
 def chamar_ia(prompt, system_prompt, key):
@@ -37,21 +35,7 @@ def chamar_ia(prompt, system_prompt, key):
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Erro na API: Verifique sua chave. {e}"
-
-# --- FUNÇÃO CHAT CONTÍNUO ---
-def chat_continuo(pergunta, key):
-    try:
-        client = Groq(api_key=key)
-        mensagens = [{"role": "system", "content": "Você é o LaunchBot, especialista em lançamentos digitais de alta conversão."}]
-        for q, a in st.session_state.chat_hist:
-            mensagens.append({"role": "user", "content": q})
-            mensagens.append({"role": "assistant", "content": a})
-        mensagens.append({"role": "user", "content": pergunta})
-        response = client.chat.completions.create(messages=mensagens, model="llama-3.3-70b-versatile")
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Erro no chat: {e}"
+        return f"Erro na API: {e}"
 
 # --- COMPONENTES ---
 def barra_topo():
@@ -73,30 +57,26 @@ def barra_topo():
                             st.session_state.etapa = "Visualizacao"
                             st.rerun()
                     with col_p_del:
-                        st.markdown('<div class="btn-deletar">', unsafe_allow_html=True)
                         if st.button("EXCLUIR", key=f"del_{nome}"):
                             del st.session_state.projetos[nome]
                             st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
 
 def navegação(voltar_para, avancar_para):
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="btn-voltar">', unsafe_allow_html=True)
         if st.button("VOLTAR", key=f"btn_v_{voltar_para}"):
             st.session_state.etapa = voltar_para
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
     with col2:
         if st.button("AVANÇAR", key=f"btn_a_{avancar_para}"):
             st.session_state.etapa = avancar_para
             st.rerun()
 
-# --- FLUXO DE TELAS ---
+# --- TELAS ---
 
 if st.session_state.etapa == "Login":
     st.title("NEXUS LAUNCER")
-    st.subheader("USO RESTRITO À ASSOCIADOS QUIZ MAIS PRÊMIOS")
+    st.subheader("USO RESTRITO")
     nome_usuario = st.text_input("Nome")
     chave_api = st.text_input("Chave", type="password")
     if st.button("ENTRAR"):
@@ -109,16 +89,14 @@ if st.session_state.etapa == "Login":
 elif st.session_state.etapa == "Formulario":
     barra_topo()
     st.title("PREENCHA FORMULÁRIO")
-    nicho = st.text_input("Nicho (ex: ioga)")
+    nicho = st.text_input("Nicho (ex: Praticar Ioga)")
     nome_eb = st.text_input("Nome do e-book")
-    dor = st.text_input("Qual dor ele resolve")
-    preco = st.text_input("Preço")
-    data_sel = st.date_input("Selecione a data do lançamento (Liberação)")
+    dor = st.text_input("Qual dor ele resolve (ex: Dores nas costas)")
+    data_sel = st.date_input("Data da liberação do E-book")
     if st.button("AVANÇAR"):
         st.session_state.dados.update({
             "nicho": nicho, "nome_eb": nome_eb, "dor": dor, 
-            "preco": preco, "data_obj": data_sel,
-            "data_lancto": data_sel.strftime('%d/%m/%Y')
+            "data_obj": data_sel, "data_lancto": data_sel.strftime('%d/%m/%Y')
         })
         st.session_state.etapa = "Ebook_Gerar"
         st.rerun()
@@ -127,84 +105,98 @@ elif st.session_state.etapa == "Ebook_Gerar":
     barra_topo()
     st.title("📚 E-BOOK PROFISSIONAL")
     if st.button("GERAR CONTEUDO – 60 CARTÕES"):
-        prompt = f"Gere 60 cartões de conteúdo para o eBook '{st.session_state.dados['nome_eb']}' no nicho {st.session_state.dados['nicho']} focado em resolver a dor: {st.session_state.dados['dor']}."
-        st.session_state.dados['eb_conteudo'] = chamar_ia(prompt, "Você é um especialista em criação de eBooks.", st.session_state.api_key)
+        prompt = f"Gere 60 cartões de conteúdo para o eBook '{st.session_state.dados['nome_eb']}' focado em {st.session_state.dados['dor']}."
+        st.session_state.dados['eb_conteudo'] = chamar_ia(prompt, "Você é um especialista em eBooks.", st.session_state.api_key)
     if 'eb_conteudo' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['eb_conteudo']}</div>", unsafe_allow_html=True)
         navegação("Formulario", "VSL_Gerar")
 
 elif st.session_state.etapa == "VSL_Gerar":
     barra_topo()
-    st.title("🎬 1. VSL DO ANÚNCIO")
-    if st.button("GERAR ROTEIRO"):
-        sys_vsl = "Você deve personalizar o texto para o nicho do usuário sem simplificá-lo. Mantenha os parágrafos."
-        prompt_vsl = f"Nicho: {st.session_state.dados['nicho']}. Gere um roteiro de VSL focado em convidar para o grupo de WhatsApp, destacando que a falta de direção é o erro principal."
-        st.session_state.dados['vsl_roteiro'] = chamar_ia(prompt_vsl, sys_vsl, st.session_state.api_key)
-    if 'vsl_roteiro' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['vsl_roteiro']}</div>", unsafe_allow_html=True)
-        navegação("Ebook_Gerar", "LP_Gerar")
+    st.title("🎬 1. ROTEIRO DO ANÚNCIO (VSL)")
+    # ROTEIRO FIXO CONFORME MODELO ORLANDO ROUSSEAU
+    nicho = st.session_state.dados['nicho']
+    dor = st.session_state.dados['dor']
+    st.session_state.dados['vsl_roteiro'] = f"""[ROTEIRO DE ALTA CONVERSÃO]
+
+Se você quer {nicho}, mas sente que está perdido... provavelmente não é falta de esforço. 
+É falta de direção. 
+
+A maioria das pessoas comete um erro simples: elas tentam sem um método claro para resolver as {dor}. 
+E por isso continuam tentando e não saem do lugar. 
+
+E o pior: nem percebem onde estão errando. 
+
+Eu organizei um caminho direto pra resolver isso... e vou mostrar tudo dentro de um grupo fechado no WhatsApp. 
+
+Sem complicação. É gratuito. 
+
+Clique no botão SAIBA MAIS para entrar no grupo e garantir sua vaga."""
+    
+    st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['vsl_roteiro']}</div>", unsafe_allow_html=True)
+    navegação("Ebook_Gerar", "LP_Gerar")
 
 elif st.session_state.etapa == "LP_Gerar":
     barra_topo()
     st.title("🌐 2. LANDING PAGE")
-    if st.button("GERAR ROTEIRO"):
-        nicho = st.session_state.dados['nicho']
-        st.session_state.dados['lp_roteiro'] = f"Headline: Um caminho simples para {nicho}...\n\nEu sou {st.session_state.usuario} e vou te mostrar o caminho direto.\n\nClique para entrar no grupo."
-    if 'lp_roteiro' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_roteiro']}</div>", unsafe_allow_html=True)
-        navegação("VSL_Gerar", "MSG_Gerar")
+    nicho = st.session_state.dados['nicho']
+    st.session_state.dados['lp_roteiro'] = f"""Headline: Um caminho simples para {nicho}, mesmo começando do zero
+
+Eu sou {st.session_state.usuario}. 
+Já estive exatamente onde você está… tentando várias coisas sem resultado.
+
+Até que identifiquei um padrão simples que muda o jogo. 
+O problema nunca foi esforço — foi direção.
+
+Eu criei um grupo exclusivo onde vou te mostrar:
+- O erro que te mantém travado
+- O caminho simples e direto
+- O método que realmente funciona
+
+[ BOTÃO: ENTRAR NO GRUPO GRATUITO ]"""
+    
+    st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_roteiro']}</div>", unsafe_allow_html=True)
+    navegação("VSL_Gerar", "MSG_Gerar")
 
 elif st.session_state.etapa == "MSG_Gerar":
     barra_topo()
     st.title("📌 3. MENSAGENS DO GRUPO")
-    if st.button("GERAR SEQUÊNCIA DE 3 DIAS"):
-        nicho = st.session_state.dados['nicho']
-        ebook = st.session_state.dados['nome_eb']
-        dor = st.session_state.dados['dor']
-        data_f = st.session_state.dados['data_obj']
-        data_anterior = (data_f - timedelta(days=1)).strftime('%d/%m/%Y')
-        data_venda = data_f.strftime('%d/%m/%Y')
-        
-        st.session_state.dados['msg_grupo'] = f"""🔥 1ª MENSAGEM
-Se você deseja {nicho}, mas sente que está perdido na busca por uma prática de {nicho} eficaz... provavelmente não é falta de esforço. É falta de direção. A maioria das pessoas que começam a praticar {nicho} comete um erro simples: não têm um plano claro e personalizado para alcançar seus objetivos. E por isso, continuam tentando e não saem do lugar. E o pior: nem percebem onde estão errando.
-Eu organizei um caminho direto para resolver isso... um material que eu preparei e vou liberar o acesso para todos os membros desse grupo no dia {data_venda}. Fiquem ligados e atentos as mensagens. Até…
+    nicho = st.session_state.dados['nicho']
+    ebook = st.session_state.dados['nome_eb']
+    dor = st.session_state.dados['dor']
+    data_f = st.session_state.dados['data_obj']
+    data_anterior = (data_f - timedelta(days=1)).strftime('%d/%m/%Y')
+    data_venda = data_f.strftime('%d/%m/%Y')
 
-🔥 2ª MENSAGEM - DIA {data_anterior}
-Amanhã é o dia.
-Depois de tanto tempo tentando encontrar uma prática de {nicho} que realmente funcione para você, talvez o que faltava não era mais esforço… era apenas um caminho mais claro.
-Muita gente insiste, muda de vídeo, muda de sequência, mas continua sem evolução real — porque segue sem direção definida.
-E isso vai mudar a partir de amanhã. Quando será liberado o acesso ao material que eu organizei especialmente para te mostrar um caminho simples, direto e estruturado para evoluir na prática.
-Até amanhã, abraços
+    st.session_state.dados['msg_grupo'] = f"""🔥 1ª MENSAGEM (BOAS-VINDAS)
+Se você deseja {nicho}, mas sente que está perdido... provavelmente não é falta de esforço. É falta de direção. A maioria das pessoas comete um erro simples: não têm um plano claro. Por isso, continuam tentando e não saem do lugar.
+Eu organizei um caminho direto para resolver isso... um material que eu preparei e vou liberar o acesso para todos os membros desse grupo no dia {data_venda}. Fiquem ligados!
 
-🔥 3ª MENSAGEM - DIA {data_venda} (LIBERAÇÃO)
-Eu falei que hoje ia te mostrar… então presta atenção nisso: O que trava a maioria das pessoas não é falta de esforço… é não entender esse ponto: você não precisa fazer mais… você precisa fazer da forma certa. Enquanto você tenta sem direção… você continua no mesmo lugar. Quando você entende isso… tudo muda. E foi exatamente isso que eu fiz: eu organizei um caminho simples… direto… em um e-book que você poderá acessar hoje com 30% de desconto. 
-O método “{ebook}” ele foi pensado para “{dor}”. 
-Clique no link agora e garanta o seu. Essa promoção irá acabar a qualquer momento. Obrigado por estar comigo até agora."""
+🔥 2ª MENSAGEM - DIA {data_anterior} (ANTECIPAÇÃO)
+Amanhã é o dia. 
+Depois de tanto tempo tentando encontrar algo que realmente funcione para você, talvez o que faltava não era mais esforço… era apenas um caminho mais claro. 
+Isso vai mudar amanhã, quando liberarei o acesso ao material estruturado para você evoluir de vez. Até amanhã!
 
-    if 'msg_grupo' in st.session_state.dados:
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['msg_grupo']}</div>", unsafe_allow_html=True)
-        navegação("LP_Gerar", "Visualizacao")
+🔥 3ª MENSAGEM - DIA {data_venda} (OFERTA)
+Eu falei que hoje ia te mostrar… O que trava a maioria não é falta de esforço, é não fazer da forma certa. 
+Eu organizei um caminho direto em um e-book que você poderá acessar HOJE com 30% de desconto. 
+O método “{ebook}” foi pensado exatamente para eliminar as {dor}. 
+Clique no link agora e garanta o seu. Essa promoção acaba a qualquer momento!"""
+
+    st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['msg_grupo']}</div>", unsafe_allow_html=True)
+    navegação("LP_Gerar", "Visualizacao")
 
 elif st.session_state.etapa == "Visualizacao":
     barra_topo()
     st.title(f"PROJETO: {st.session_state.dados.get('nome_eb')}")
     
-    # EXIBINDO TUDO O QUE FOI GERADO
-    with st.expander("📚 CONTEÚDO DO E-BOOK", expanded=False):
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('eb_conteudo', 'Não gerado')}</div>", True)
+    with st.expander("📚 CONTEÚDO DO E-BOOK"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('eb_conteudo')}</div>", True)
+    with st.expander("🎬 ANÚNCIO (VSL)"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('vsl_roteiro')}</div>", True)
+    with st.expander("🌐 LANDING PAGE"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('lp_roteiro')}</div>", True)
+    with st.expander("📌 MENSAGENS DO GRUPO"): st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo')}</div>", True)
     
-    with st.expander("🎬 ROTEIRO DO ANÚNCIO (VSL)", expanded=False):
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('vsl_roteiro', 'Não gerado')}</div>", True)
-        
-    with st.expander("🌐 LANDING PAGE", expanded=False):
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('lp_roteiro', 'Não gerado')}</div>", True)
-
-    with st.expander("📌 SEQUÊNCIA DE MENSAGENS (3 DIAS)", expanded=True):
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo', 'Não gerado')}</div>", True)
-        
     if st.button("💾 SALVAR PROJETO"):
         st.session_state.projetos[st.session_state.dados['nome_eb']] = st.session_state.dados
-        st.success("Projeto completo salvo com sucesso!")
+        st.success("Projeto salvo com sucesso!")
 
-# --- RODAPÉ ---
-st.markdown(f"<div class='footer'>© 2026 Nexus Launcer Lançamento inteligente</div>", unsafe_allow_html=True)
+st.markdown(f"<div class='footer'>© 2026 Nexus Launcer - Orlando Rousseau</div>", unsafe_allow_html=True)
