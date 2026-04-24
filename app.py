@@ -106,7 +106,7 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. Leve para a Landing Page. OBRIGATÓRIO: Identifique cada variação com título em negrito (ex: **Variação 1: [Título]**). Separe todos os parágrafos com linha em branco para facilitar a leitura. Sugira imagens."
+        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. Leve para a Landing Page. OBRIGATÓRIO: Identifique cada variação com título em negrito (ex: **Variação 1: [Título]**). Deixe o texto da Variação 1 em negrito. Separe todas as variações com pelo menos duas linhas em branco. Separe todos os parágrafos. Sugira imagens."
         st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios de alta conversão.")
     
     if 'fb_copy' in st.session_state.dados:
@@ -120,7 +120,7 @@ elif st.session_state.etapa == "Copy_LP":
     st.title("🌐 COPY PARA A LANDING PAGE")
     if st.button("GERAR 5 VARIAÇÕES LP"):
         prompt = f"Crie 5 variações de copy para Landing Page. Situação atual: {st.session_state.dados['atual']}. Situação desejada: {st.session_state.dados['desejada']}. Promessa: {st.session_state.dados['promessa']}. Sugira imagens."
-        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages. OBRIGATÓRIO: Identifique cada variação com título em negrito (ex: **Variação 1: [Nome]**). Separe todos os parágrafos com linha em branco para facilitar a leitura. Ao final de cada variação, inclua o botão [ ENTRAR NO GRUPO ].")
+        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages. OBRIGATÓRIO: Títulos em negrito (**Variação X**). Deixe TODO o conteúdo da Variação 1 em negrito. Separe rigidamente cada variação com várias linhas em branco para não ficarem coladas. Separe todos os parágrafos. Ao final de cada variação, inclua o botão **[ ENTRAR NO GRUPO ]** em negrito.")
     
     if 'lp_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_copy']}</div>", unsafe_allow_html=True)
