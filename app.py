@@ -106,13 +106,13 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"""Crie 5 variações de copy curta para Facebook Ads (o texto deve ser menor que uma LP). 
+        prompt = f"""Crie 5 variações de copy curta para Facebook Ads. 
         Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. 
-        OBRIGATÓRIO: 
-        1. Identifique as variações com títulos em negrito como **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**. 
-        2. Para CADA variação, inclua uma sugestão detalhada de imagem ou criativo visual que gere alta conversão.
-        3. Ao final de cada variação, use EXATAMENTE esta chamada para ação: ⬇️ Clique abaixo e descubra como. 
-        4. Separe parágrafos com linha em branco."""
+        REGRAS DE FORMATAÇÃO: 
+        1. Escreva o texto da copy.
+        2. Ao final de cada variação, crie uma linha única SEM ASTERISCOS e EM NEGRITO contendo: o número da variação, a sugestão de imagem e o CTA (Ex: **Variação 1 Sugestão de imagem: [Descrição] ⬇️ Clique abaixo e descubra como.**).
+        3. Use apenas a formatação de negrito do Markdown. Jamais use símbolos de asteriscos visíveis fora da formatação.
+        4. Separe cada variação por uma linha em branco."""
         st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads.")
     
     if 'fb_copy' in st.session_state.dados:
@@ -168,7 +168,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento (com link Monetizze)**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, eu mostro exatamente como você pode {resultado}, mesmo começando do zero.
+Nele, eu mostro exatamente como você pode aprenda o passo a passo que pode te ajudar a {resultado}, mesmo começando do zero.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora, está disponível — mas não sei por quanto tempo vou deixar assim.
