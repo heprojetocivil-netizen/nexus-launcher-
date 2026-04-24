@@ -313,71 +313,60 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     data     = d['data_lancto'].strftime('%d/%m/%Y')
     data_d1  = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
     resultado= d['promessa']
-    # Converte a promessa para infinitivo (ex: "Aprenda X" → "aprender X")
-    resultado_infinitivo = chamar_ia(
-        f"Reescreva esta frase no infinitivo, começando com letra minúscula, sem ponto final, sem aspas e sem explicação: '{resultado}'",
-        "Você é um assistente de texto. Responda APENAS com a frase reescrita, sem nenhum comentário adicional."
-    ).strip().strip('"').strip("'").rstrip('.')
     dor      = d['dor']
+    publico  = d['publico']
+    nome_eb  = d['nome_eb']
 
-    msg_template = f"""**Descrição do grupo:**
-Este grupo é silencioso. Você não será incomodado.
-Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
-
----
-
-**📩 Mensagem 1 – Boas-vindas + Pré-lançamento**
-Bem-vindo(a) 👋
-Este grupo é silencioso, então pode ficar tranquilo(a), você não será incomodado.
-Você entrou aqui porque quer aprender mais sobre {nicho} — e eu preparei algo direto ao ponto pra isso.
-📅 No dia {data}, vou liberar um conteúdo exclusivo onde mostro um método simples que pode te ajudar a {resultado_infinitivo}.
-Fica por aqui… porque o que vou mostrar pode mudar a forma como você enxerga isso.
-
----
-
-**⏳ Mensagem 2 – 1 dia antes ({data_d1}) — aquecimento**
-Amanhã é o dia.
-Depois de organizar tudo, finalmente vou liberar o conteúdo sobre {nicho}.
-Se você sente que ainda está travado(a) em {dor}, presta atenção nisso…
-O que você vai ver amanhã não é teoria — é um caminho direto que você pode aplicar.
-⏰ Fica atento(a), porque vou liberar aqui no grupo.
-
----
-
-**🚀 Mensagem 3 – Lançamento ({data})**
-Chegou o momento.
-Como prometido, acabei de liberar o conteúdo completo.
-Nele, mostro exatamente como você pode {resultado_infinitivo}, mesmo começando do zero.
-Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
-👉 [LINK DA MONETIZZE]
-A partir de agora está disponível — mas não sei por quanto tempo vou deixar assim."""
-
-    st.session_state.dados['msg_grupo'] = msg_template
-    st.markdown(f"<div class='caixa-texto'>{msg_template}</div>", unsafe_allow_html=True)
-
-    # Gerar dicas via IA (não mais hardcoded)
-    if 'dicas' not in st.session_state.dados:
-        if st.button("💡 GERAR DICAS DE APLICAÇÃO"):
-            with st.spinner("Gerando dicas com IA..."):
+    if 'msg_grupo' not in st.session_state.dados:
+        if st.button("✉️ GERAR MENSAGENS DO GRUPO"):
+            with st.spinner("Gerando mensagens com IA..."):
                 prompt = (
-                    f"Dê dicas práticas e detalhadas de como aplicar este lançamento digital. "
-                    f"Nicho: {nicho}. Público: {d['publico']}. Promessa: {resultado}. "
-                    f"Inclua dicas de tráfego pago, engajamento do grupo e conversão."
+                    f"Crie 3 mensagens para um grupo de WhatsApp/Telegram de lançamento digital. "
+                    f"Use os dados abaixo para personalizar as mensagens de forma natural e fluida, "
+                    f"sem repetir textos longos e sem incoerências gramaticais.\n\n"
+                    f"- Nicho curto (use palavras simples, ex: criptomoedas, culinária, pesca): {nicho}\n"
+                    f"- Público-alvo: {publico}\n"
+                    f"- Nome do e-book: {nome_eb}\n"
+                    f"- Principal dor: {dor}\n"
+                    f"- Promessa/resultado: {resultado}\n"
+                    f"- Data de lançamento: {data}\n"
+                    f"- Data de aquecimento (1 dia antes): {data_d1}\n\n"
+                    f"Estruture EXATAMENTE assim:\n\n"
+                    f"**Descrição do grupo:**\n"
+                    f"Este grupo é silencioso. Você não será incomodado.\n"
+                    f"Aqui você receberá apenas conteúdos e avisos relacionados ao tema.\n\n"
+                    f"---\n\n"
+                    f"**📩 Mensagem 1 – Boas-vindas + Pré-lançamento**\n"
+                    f"[mensagem de boas-vindas calorosa, mencione o nicho de forma curta e natural, "
+                    f"diga que vai liberar um conteúdo no dia {data} que vai ajudar a pessoa a alcançar o resultado, "
+                    f"sem repetir a promessa completa literalmente]\n\n"
+                    f"---\n\n"
+                    f"**⏳ Mensagem 2 – 1 dia antes ({data_d1}) — aquecimento**\n"
+                    f"[mensagem de aquecimento, mencione a dor de forma curta e humana, crie expectativa para amanhã]\n\n"
+                    f"---\n\n"
+                    f"**🚀 Mensagem 3 – Lançamento ({data})**\n"
+                    f"[mensagem de lançamento, diga que o conteúdo foi liberado, mencione o resultado de forma natural "
+                    f"em infinitivo (ex: aprender, descobrir, dominar), mencione a dor de forma curta, "
+                    f"finalize com:\n"
+                    f"👉 [LINK DA MONETIZZE]\n"
+                    f"A partir de agora está disponível — mas não sei por quanto tempo vou deixar assim.]"
                 )
-                st.session_state.dados['dicas'] = chamar_ia(
+                st.session_state.dados['msg_grupo'] = chamar_ia(
                     prompt,
-                    "Você é um especialista em lançamentos digitais e marketing de performance."
+                    "Você é um especialista em copywriting para lançamentos digitais no WhatsApp e Telegram. "
+                    "Escreva mensagens naturais, humanas e sem incoerências gramaticais. "
+                    "Nunca repita textos longos na íntegra. Use linguagem simples e direta."
                 )
                 st.rerun()
     else:
-        st.markdown("**💡 Dicas de Aplicação:**")
-        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['dicas']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['msg_grupo']}</div>", unsafe_allow_html=True)
 
-    if st.button("💾 SALVAR PROJETO"):
-        nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
-        st.session_state.projetos[nome_projeto] = st.session_state.dados.copy()
-        st.session_state.etapa = "Visualizacao"
-        st.rerun()
+    if 'msg_grupo' in st.session_state.dados:
+        if st.button("💾 SALVAR PROJETO"):
+            nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
+            st.session_state.projetos[nome_projeto] = st.session_state.dados.copy()
+            st.session_state.etapa = "Visualizacao"
+            st.rerun()
 
 # ============================================================
 # TELA: VISUALIZAÇÃO FINAL
