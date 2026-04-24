@@ -310,26 +310,10 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     nicho    = d['nicho']
     data     = d['data_lancto'].strftime('%d/%m/%Y')
     data_d1  = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
+    resultado= d['promessa']
     dor      = d['dor']
 
-    # Normaliza a promessa para um fragmento no infinitivo, ex:
-    # "Aprenda como iniciar a criação de rãs do zero" → "iniciar a criação de rãs do zero"
-    # Faz isso apenas uma vez e armazena em 'promessa_curta'.
-    if 'promessa_curta' not in st.session_state.dados:
-        with st.spinner("Preparando mensagens..."):
-            fragmento = chamar_ia(
-                f"Reescreva a frase abaixo como um fragmento curto no infinitivo, "
-                f"sem sujeito, sem pontuação final, sem aspas, adequado para completar "
-                f"a frase 'Nele, mostro exatamente como ___'. "
-                f"Frase original: {d['promessa']}. "
-                f"Responda APENAS com o fragmento, nada mais.",
-                "Você é um assistente de copywriting. Responda somente com o fragmento solicitado, sem explicações."
-            )
-            st.session_state.dados['promessa_curta'] = fragmento.strip().rstrip('.')
-            st.rerun()
-
-    resultado = st.session_state.dados['promessa_curta']
-
+    # FIX: "você pode aprender a..." em vez de texto genérico/incorreto
     msg_template = f"""**Descrição do grupo:**
 Este grupo é silencioso. Você não será incomodado.
 Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
@@ -357,7 +341,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento ({data})**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, mostro exatamente como {resultado}.
+Nele, mostro exatamente como você pode aprender a {resultado}, mesmo começando do zero.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora está disponível — mas não sei por quanto tempo vou deixar assim."""
@@ -426,15 +410,6 @@ elif st.session_state.etapa == "Visualizacao":
         "Pode me perguntar qualquer coisa sobre seu lançamento 👇"
     )
 
-    # CORREÇÃO: exibe histórico ANTES do input para que a conversa
-    # apareça acima do campo de texto (fluxo natural de chat).
-    if st.session_state.chat_hist:
-        st.markdown("---")
-        for q, r in reversed(st.session_state.chat_hist):
-            st.markdown(f"**Você:** {q}")
-            st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
-        st.markdown("---")
-
     pergunta = st.text_input(
         "Sua pergunta:",
         key=f"chat_input_{st.session_state.chat_input_key}"
@@ -453,11 +428,10 @@ elif st.session_state.etapa == "Visualizacao":
                     f"O usuário se chama {st.session_state.usuario}. "
                     f"Contexto do projeto atual: {contexto_projeto}"
                 )
-                # Monta histórico completo para manter conversa contínua
+                # FIX: passa todo o histórico para manter conversa contínua
                 try:
                     client = Groq(api_key=st.session_state.api_key)
                     messages = [{"role": "system", "content": system}]
-                    # Envia histórico em ordem cronológica
                     for q_hist, r_hist in st.session_state.chat_hist:
                         messages.append({"role": "user", "content": q_hist})
                         messages.append({"role": "assistant", "content": r_hist})
@@ -469,13 +443,18 @@ elif st.session_state.etapa == "Visualizacao":
                     resp = response.choices[0].message.content
                 except Exception as e:
                     resp = f"⚠️ Erro na API: {e}"
-
-                # Salva no histórico e limpa o campo de texto
                 st.session_state.chat_hist.append((pergunta, resp))
                 st.session_state.chat_input_key += 1
                 st.rerun()
         else:
             st.warning("Digite uma pergunta antes de enviar.")
+
+    # Exibe histórico do chat
+    if st.session_state.chat_hist:
+        st.markdown("---")
+        for q, r in reversed(st.session_state.chat_hist):
+            st.markdown(f"**Você:** {q}")
+            st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
 
 # --- RODAPÉ ---
 st.markdown("<div class='footer'>© 2026 Nexus Launcher – Lançamento digital inteligente</div>", unsafe_allow_html=True)
