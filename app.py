@@ -109,10 +109,11 @@ elif st.session_state.etapa == "Copy_Face":
         prompt = f"""Crie 5 variações de copy curta para Facebook Ads (o texto deve ser menor que uma LP). 
         Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. 
         OBRIGATÓRIO: 
-        1. Identifique as variações com títulos em negrito como **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**. 
-        2. Para CADA variação, inclua uma sugestão detalhada de imagem ou criativo visual que gere alta conversão.
-        3. Ao final de cada variação, use EXATAMENTE esta chamada para ação: ⬇️ Clique abaixo e descubra como. 
-        4. Separe parágrafos com linha em branco."""
+        1. Identifique as variações com títulos em negrito como **Variação 1**, **Variação 2**, etc. 
+        2. Para CADA variação, inclua uma sugestão de imagem ou criativo visual.
+        3. Formatação: O título da variação, a sugestão de imagem e a chamada para ação (⬇️ Clique abaixo e descubra como.) devem estar na MESMA LINHA e TUDO EM NEGRITO.
+        4. O texto da copy deve vir antes dessa linha de formatação especial.
+        5. Separe cada bloco de variação com linha em branco."""
         st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads.")
     
     if 'fb_copy' in st.session_state.dados:
@@ -168,7 +169,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento (com link Monetizze)**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, eu mostro exatamente como você pode {resultado}, mesmo começando do zero.
+Nele, eu mostro exatamente como você pode aprender o passo a passo que pode te ajudar a {resultado}, mesmo começando do zero.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora, está disponível — mas não sei por quanto tempo vou deixar assim.
