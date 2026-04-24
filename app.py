@@ -119,8 +119,8 @@ elif st.session_state.etapa == "Copy_LP":
     barra_navegacao()
     st.title("🌐 COPY PARA A LANDING PAGE")
     if st.button("GERAR 5 VARIAÇÕES LP"):
-        prompt = f"Crie 5 variações de copy para Landing Page. Situação atual: {st.session_state.dados['atual']}. Situação desejada: {st.session_state.dados['desejada']}. Promessa: {st.session_state.dados['promessa']}. Botão: ENTRAR NO GRUPO. Sugira imagens."
-        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages.")
+        prompt = f"Crie 5 variações de copy para Landing Page. Situação atual: {st.session_state.dados['atual']}. Situação desejada: {st.session_state.dados['desejada']}. Promessa: {st.session_state.dados['promessa']}. Sugira imagens."
+        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages. OBRIGATÓRIO: Ao final de cada uma das 5 variações, inclua o botão [ ENTRAR NO GRUPO ].")
     
     if 'lp_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_copy']}</div>", unsafe_allow_html=True)
