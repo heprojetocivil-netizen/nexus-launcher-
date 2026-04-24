@@ -106,15 +106,12 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"""Crie 5 variações de copy curta para Facebook Ads (texto menor que a LP). 
+        prompt = f"""Crie 5 variações de copy curta para Facebook Ads (o texto deve ser menor que uma LP). 
         Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. 
-        OBRIGATÓRIO: 
-        1. Identifique as variações com títulos em negrito: **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**.
-        2. Use o emoji ✨ APENAS para separar uma variação da outra (coloque entre as variações).
-        3. Para cada variação, sugira uma imagem específica e persuasiva.
-        4. Finalize cada variação com a chamada EXATA: ⬇️ Clique abaixo e descubra como.
-        """
-        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios curtos e diretos.")
+        OBRIGATÓRIO: Identifique as variações com títulos em negrito como **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**. 
+        Ao final de cada variação, use EXATAMENTE esta chamada para ação: ⬇️ Clique abaixo e descubra como. 
+        Separe parágrafos com linha em branco."""
+        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads.")
     
     if 'fb_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['fb_copy']}</div>", unsafe_allow_html=True)
@@ -143,6 +140,7 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     data = st.session_state.dados['data_lancto'].strftime('%d/%m/%Y')
     resultado = st.session_state.dados['promessa']
     dor = st.session_state.dados['dor']
+    data_ontem = (st.session_state.dados['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
 
     msg_template = f"""
 **Descrição do grupo:**
@@ -174,7 +172,7 @@ Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o pr
 A partir de agora, está disponível — mas não sei por quanto tempo vou deixar assim.
 """
     st.session_state.dados['msg_grupo'] = msg_template
-    st.session_state.dados['dicas'] = "Foque em tráfego pago para o grupo de WhatsApp nos primeiros 7 dias..."
+    st.session_state.dados['dicas'] = "Texto genérico: Para aplicar este lançamento, foque em tráfego pago para o grupo de WhatsApp nos primeiros 7 dias..."
     
     st.markdown(f"<div class='caixa-texto'>{msg_template}</div>", unsafe_allow_html=True)
     
@@ -204,7 +202,7 @@ elif st.session_state.etapa == "Visualizacao":
 
     st.divider()
     st.markdown("### Olá 👋")
-    st.info("**Eu sou o Launcerbot.** Eu ajudo pessoas a criar e lançar produtos digitais, mesmo começando do zero.")
+    st.info("**Eu sou o Launcerbot.** Eu ajudo pessoas a criar e lançar produtos digitais, mesmo começando do zero. Se você quer vender na internet, pode me perguntar qualquer coisa 👇")
     
     pergunta = st.text_input("Sua pergunta:")
     if pergunta:
