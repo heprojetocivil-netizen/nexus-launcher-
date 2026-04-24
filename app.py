@@ -106,13 +106,12 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"""Crie 5 variações de copy curta para Facebook Ads. 
+        prompt = f"""Crie 5 variações de copy curta para Facebook Ads (o texto deve ser menor que uma LP). 
         Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. 
-        REGRAS DE FORMATAÇÃO: 
-        1. Identifique as variações com títulos estritamente em negrito, sem usar símbolos extras ou asteriscos visíveis, como **Variação 1**, **Variação 2**, etc.
-        2. Para CADA variação, inclua uma sugestão detalhada de imagem.
+        OBRIGATÓRIO: 
+        2. Para CADA variação, inclua uma sugestão detalhada de imagem ou criativo visual que gere alta conversão.
         3. Ao final de cada variação, use EXATAMENTE esta chamada para ação: ⬇️ Clique abaixo e descubra como. 
-        4. Separe cada variação por uma linha em branco."""
+        4. Separe parágrafos com linha em branco."""
         st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads.")
     
     if 'fb_copy' in st.session_state.dados:
