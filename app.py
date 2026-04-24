@@ -310,10 +310,11 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     nicho    = d['nicho']
     data     = d['data_lancto'].strftime('%d/%m/%Y')
     data_d1  = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
-    resultado= d['promessa']
-    dor      = d['dor']
+    # CORREÇÃO: usa a promessa diretamente como frase completa,
+    # sem prefixos como "pode aprender a" que causavam redundância.
+    resultado = d['promessa']
+    dor       = d['dor']
 
-    # FIX: "você pode aprender a..." em vez de texto genérico/incorreto
     msg_template = f"""**Descrição do grupo:**
 Este grupo é silencioso. Você não será incomodado.
 Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
@@ -341,7 +342,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento ({data})**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, mostro exatamente como você pode aprender a {resultado}, mesmo começando do zero.
+Nele, mostro exatamente como {resultado}.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora está disponível — mas não sei por quanto tempo vou deixar assim."""
@@ -410,6 +411,15 @@ elif st.session_state.etapa == "Visualizacao":
         "Pode me perguntar qualquer coisa sobre seu lançamento 👇"
     )
 
+    # CORREÇÃO: exibe histórico ANTES do input para que a conversa
+    # apareça acima do campo de texto (fluxo natural de chat).
+    if st.session_state.chat_hist:
+        st.markdown("---")
+        for q, r in reversed(st.session_state.chat_hist):
+            st.markdown(f"**Você:** {q}")
+            st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
+        st.markdown("---")
+
     pergunta = st.text_input(
         "Sua pergunta:",
         key=f"chat_input_{st.session_state.chat_input_key}"
@@ -428,10 +438,11 @@ elif st.session_state.etapa == "Visualizacao":
                     f"O usuário se chama {st.session_state.usuario}. "
                     f"Contexto do projeto atual: {contexto_projeto}"
                 )
-                # FIX: passa todo o histórico para manter conversa contínua
+                # Monta histórico completo para manter conversa contínua
                 try:
                     client = Groq(api_key=st.session_state.api_key)
                     messages = [{"role": "system", "content": system}]
+                    # Envia histórico em ordem cronológica
                     for q_hist, r_hist in st.session_state.chat_hist:
                         messages.append({"role": "user", "content": q_hist})
                         messages.append({"role": "assistant", "content": r_hist})
@@ -443,18 +454,13 @@ elif st.session_state.etapa == "Visualizacao":
                     resp = response.choices[0].message.content
                 except Exception as e:
                     resp = f"⚠️ Erro na API: {e}"
+
+                # Salva no histórico e limpa o campo de texto
                 st.session_state.chat_hist.append((pergunta, resp))
                 st.session_state.chat_input_key += 1
                 st.rerun()
         else:
             st.warning("Digite uma pergunta antes de enviar.")
-
-    # Exibe histórico do chat
-    if st.session_state.chat_hist:
-        st.markdown("---")
-        for q, r in reversed(st.session_state.chat_hist):
-            st.markdown(f"**Você:** {q}")
-            st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
 
 # --- RODAPÉ ---
 st.markdown("<div class='footer'>© 2026 Nexus Launcher – Lançamento digital inteligente</div>", unsafe_allow_html=True)
