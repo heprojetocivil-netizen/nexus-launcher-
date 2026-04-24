@@ -109,12 +109,12 @@ elif st.session_state.etapa == "Copy_Face":
         prompt = f"""Crie 5 variações de copy curta para Facebook Ads (texto menor que a LP). 
         Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. 
         OBRIGATÓRIO: 
-        1. Títulos em negrito: **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**.
-        2. SEPARE TODOS os parágrafos com o emoji ✨ para que não fiquem colados.
+        1. Identifique as variações com títulos em negrito: **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**.
+        2. Use o emoji ✨ APENAS para separar uma variação da outra (coloque entre as variações).
         3. Para cada variação, sugira uma imagem específica e persuasiva.
-        4. Finalize cada variação com a chamada: ⬇️ Clique abaixo e descubra como.
+        4. Finalize cada variação com a chamada EXATA: ⬇️ Clique abaixo e descubra como.
         """
-        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios curtos de alta conversão.")
+        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios curtos e diretos.")
     
     if 'fb_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['fb_copy']}</div>", unsafe_allow_html=True)
