@@ -106,8 +106,8 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. OBRIGATÓRIO: Identifique cada variação com título em negrito (**Variação X**). PROIBIDO dizer que a Landing Page é gratuita; diga que o ACESSO AO CONTEÚDO ou o GRUPO é gratuito. Deixe o texto da Variação 1 em negrito. Separe todos os parágrafos com linha em branco. Sugira imagens."
-        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios de alta conversão para infoprodutos.")
+        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. Leve para a Landing Page. IMPORTANTE: Separe todos os parágrafos com linha em branco (inclusive o 1º e o 2º) para facilitar a leitura. Sugira imagens."
+        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios de alta conversão.")
     
     if 'fb_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['fb_copy']}</div>", unsafe_allow_html=True)
@@ -119,8 +119,8 @@ elif st.session_state.etapa == "Copy_LP":
     barra_navegacao()
     st.title("🌐 COPY PARA A LANDING PAGE")
     if st.button("GERAR 5 VARIAÇÕES LP"):
-        prompt = f"Crie 5 variações de copy para Landing Page. Promessa: {st.session_state.dados['promessa']}. OBRIGATÓRIO: Títulos em negrito (**Variação X**). Deixe TODO o conteúdo da Variação 1 em negrito. NUNCA diga que a Landing Page é gratuita. Separe as variações com espaçamento duplo. Ao final de cada uma, inclua o botão **[ ENTRAR NO GRUPO ]** em negrito."
-        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages de alta conversão.")
+        prompt = f"Crie 5 variações de copy para Landing Page. Situação atual: {st.session_state.dados['atual']}. Situação desejada: {st.session_state.dados['desejada']}. Promessa: {st.session_state.dados['promessa']}. Sugira imagens."
+        st.session_state.dados['lp_copy'] = chamar_ia(prompt, "Você é um especialista em Landing Pages. OBRIGATÓRIO: Identifique cada variação com título em negrito (ex: **Variação 1: [Nome]**). Ao final de cada variação, inclua o botão [ ENTRAR NO GRUPO ].")
     
     if 'lp_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['lp_copy']}</div>", unsafe_allow_html=True)
@@ -136,6 +136,7 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     data = st.session_state.dados['data_lancto'].strftime('%d/%m/%Y')
     resultado = st.session_state.dados['promessa']
     dor = st.session_state.dados['dor']
+    data_ontem = (st.session_state.dados['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
 
     msg_template = f"""
 **Descrição do grupo:**
@@ -146,19 +147,28 @@ Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
 
 **📩 Mensagem 1 – Boas-vindas + Pré-lançamento**
 Bem-vindo(a) 👋
-Este grupo é silencioso, então pode ficar tranquilo(a).
-Você entrou aqui porque quer aprender mais sobre {nicho}.
-📅 No dia {data}, eu vou liberar um conteúdo exclusivo para te ajudar a {resultado}.
-Fica por aqui...
+Este grupo é silencioso, então pode ficar tranquilo(a), você não será incomodado.
+Você entrou aqui porque quer aprender mais sobre {nicho} — e eu preparei algo direto ao ponto pra isso.
+📅 No dia {data}, eu vou liberar um conteúdo exclusivo onde mostro um método simples que pode te ajudar a {resultado}.
+Fica por aqui… porque o que eu vou mostrar pode mudar a forma como você enxerga isso.
 
-**🚀 Mensagem 3 – Lançamento**
+**⏳ Mensagem 2 – 1 dia antes (aquecimento)**
+Amanhã é o dia.
+Depois de organizar tudo, finalmente vou liberar o conteúdo sobre {nicho}.
+Se você sente que ainda está travado(a) em {dor}, presta atenção nisso…
+O que você vai ver amanhã não é teoria — é um caminho direto que você pode aplicar.
+⏰ Fica atento(a), porque vou liberar aqui no grupo.
+
+**🚀 Mensagem 3 – Lançamento (com link Monetizze)**
 Chegou o momento.
-Como prometido, liberei o acesso.
-Se você quer parar de sofrer com {dor} e finalmente {resultado}, esse é o próximo passo:
+Como prometido, acabei de liberar o conteúdo completo.
+Nele, eu mostro exatamente como você pode {resultado}, mesmo começando do zero.
+Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
+A partir de agora, está disponível — mas não sei por quanto tempo vou deixar assim.
 """
     st.session_state.dados['msg_grupo'] = msg_template
-    st.session_state.dados['dicas'] = "Foque em tráfego pago para o grupo de WhatsApp nos primeiros 7 dias."
+    st.session_state.dados['dicas'] = "Texto genérico: Para aplicar este lançamento, foque em tráfego pago para o grupo de WhatsApp nos primeiros 7 dias..."
     
     st.markdown(f"<div class='caixa-texto'>{msg_template}</div>", unsafe_allow_html=True)
     
@@ -183,9 +193,12 @@ elif st.session_state.etapa == "Visualizacao":
     with st.expander("📌 MENSAGENS"):
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('msg_grupo')}</div>", True)
         
+    with st.expander("💡 DICAS PARA APLICAÇÃO"):
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados.get('dicas')}</div>", True)
+
     st.divider()
     st.markdown("### Olá 👋")
-    st.info("**Eu sou o Launcerbot.** Como posso ajudar no seu lançamento hoje?")
+    st.info("**Eu sou o Launcerbot.** Eu ajudo pessoas a criar e lançar produtos digitais, mesmo começando do zero. Se você quer vender na internet, pode me perguntar qualquer coisa 👇")
     
     pergunta = st.text_input("Sua pergunta:")
     if pergunta:
@@ -196,4 +209,5 @@ elif st.session_state.etapa == "Visualizacao":
         st.markdown(f"**Você:** {q}")
         st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
 
+# --- RODAPÉ MARCA D'ÁGUA ---
 st.markdown("<div class='footer'>© 2026 Nexus Launcer – Lançamento digital inteligente</div>", unsafe_allow_html=True)
