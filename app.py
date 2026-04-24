@@ -244,6 +244,24 @@ def limpar_html(texto: str) -> str:
     limpo = limpo.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
     return limpo.strip()
 
+# --- NORMALIZAR MARKDOWN PARA HTML ---
+def normalizar_markdown(texto: str) -> str:
+    linhas = texto.split('\n')
+    resultado = []
+    for linha in linhas:
+        if linha.startswith('#### '):
+            linha = f"<h4>{linha[5:]}</h4>"
+        elif linha.startswith('### '):
+            linha = f"<h3>{linha[4:]}</h3>"
+        elif linha.startswith('## '):
+            linha = f"<h2>{linha[3:]}</h2>"
+        elif linha.startswith('# '):
+            linha = f"<h2>{linha[2:]}</h2>"
+        linha = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', linha)
+        linha = re.sub(r'\*(.+?)\*', r'<em>\1</em>', linha)
+        resultado.append(linha)
+    return '\n'.join(resultado)
+
 # --- COMPONENTE: BLOCO COM BOTÕES DE COPIAR E REGENERAR ---
 def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
     conteudo = st.session_state.dados.get(chave, '')
@@ -251,7 +269,8 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
         st.info(f"{titulo} ainda não foi gerado.")
         return
 
-    st.markdown(f"<div class='caixa-texto'>{conteudo}</div>", unsafe_allow_html=True)
+    conteudo_html = normalizar_markdown(conteudo)
+    st.markdown(f"<div class='caixa-texto'>{conteudo_html}</div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -481,7 +500,15 @@ elif st.session_state.etapa == "Formulario":
     d['promessa']    = st.text_input("Promessa do e-book:", value=d.get('promessa', ''))
     d['diferencial'] = st.text_input("Diferencial:", value=d.get('diferencial', ''))
     d['preco']       = st.number_input("Preço do e-book (R$):", min_value=9, max_value=997, value=int(d.get('preco', 47)), step=1)
-    d['data_lancto'] = st.date_input("Data de lançamento")
+    from datetime import date
+    data_sugerida = d.get('data_lancto', date.today() + timedelta(days=15))
+    d['data_lancto'] = st.date_input(
+        "Data de lançamento",
+        value=data_sugerida,
+        min_value=date.today(),
+        help="💡 Sugerimos daqui a 15 dias: 1 semana para encher o grupo e 1 semana para aquecer."
+    )
+    st.caption("💡 Dica: Use os primeiros 7 dias para encher o grupo com tráfego e os próximos 7 para aquecer com as mensagens. Lance no 15º dia.")
 
     # --- MELHORIA 3: Calculadora de meta ---
     st.divider()
