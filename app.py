@@ -106,8 +106,12 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
-        prompt = f"Crie 5 variações de copy para Facebook Ads. Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. Leve para a Landing Page. IMPORTANTE: Separe todos os parágrafos com linha em branco (inclusive o 1º e o 2º) para facilitar a leitura. Sugira imagens."
-        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter expert em anúncios de alta conversão.")
+        prompt = f"""Crie 5 variações de copy curta para Facebook Ads (o texto deve ser menor que uma LP). 
+        Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. 
+        OBRIGATÓRIO: Identifique as variações com títulos em negrito como **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**. 
+        Ao final de cada variação, use EXATAMENTE esta chamada para ação: ⬇️ Clique abaixo e descubra como. 
+        Separe parágrafos com linha em branco."""
+        st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads.")
     
     if 'fb_copy' in st.session_state.dados:
         st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['fb_copy']}</div>", unsafe_allow_html=True)
