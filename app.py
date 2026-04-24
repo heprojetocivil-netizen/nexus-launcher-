@@ -253,14 +253,15 @@ elif st.session_state.etapa == "Copy_Face":
                 f"Nicho: {d['nicho']}. Público: {d['publico']}. Dor: {d['dor']}. "
                 f"Lançamento: {d['data_lancto'].strftime('%d/%m/%Y')}. "
                 f"OBRIGATÓRIO para cada variação: "
-                f"1. Identifique com título em negrito (ex: **Variação 1: [Nome]**). "
+                f"1. Identifique com título em negrito HTML usando a tag <strong> (ex: <strong>Variação 1: [Nome]</strong>). "
                 f"2. Inclua sugestão detalhada de imagem/criativo visual. "
                 f"3. Finalize com: ⬇️ Clique abaixo e descubra como. "
                 f"4. Separe parágrafos com linha em branco."
             )
             st.session_state.dados['fb_copy'] = chamar_ia(
                 prompt,
-                "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads."
+                "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads. "
+                "Use sempre tags HTML <strong> para títulos em negrito, nunca use ** (asteriscos)."
             )
 
     if 'fb_copy' in st.session_state.dados:
@@ -312,6 +313,7 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     resultado= d['promessa']
     dor      = d['dor']
 
+    # FIX: "você pode aprender a..." em vez de texto genérico/incorreto
     msg_template = f"""**Descrição do grupo:**
 Este grupo é silencioso. Você não será incomodado.
 Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
@@ -339,7 +341,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento ({data})**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, mostro exatamente como você pode {resultado}, mesmo começando do zero.
+Nele, mostro exatamente como você pode aprender a {resultado}, mesmo começando do zero.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora está disponível — mas não sei por quanto tempo vou deixar assim."""
@@ -408,7 +410,6 @@ elif st.session_state.etapa == "Visualizacao":
         "Pode me perguntar qualquer coisa sobre seu lançamento 👇"
     )
 
-    # Chat com botão — evita chamadas duplicadas a cada rerun
     pergunta = st.text_input(
         "Sua pergunta:",
         key=f"chat_input_{st.session_state.chat_input_key}"
@@ -427,9 +428,22 @@ elif st.session_state.etapa == "Visualizacao":
                     f"O usuário se chama {st.session_state.usuario}. "
                     f"Contexto do projeto atual: {contexto_projeto}"
                 )
-                resp = chamar_ia(pergunta, system)
+                # FIX: passa todo o histórico para manter conversa contínua
+                try:
+                    client = Groq(api_key=st.session_state.api_key)
+                    messages = [{"role": "system", "content": system}]
+                    for q_hist, r_hist in st.session_state.chat_hist:
+                        messages.append({"role": "user", "content": q_hist})
+                        messages.append({"role": "assistant", "content": r_hist})
+                    messages.append({"role": "user", "content": pergunta})
+                    response = client.chat.completions.create(
+                        messages=messages,
+                        model="llama-3.3-70b-versatile",
+                    )
+                    resp = response.choices[0].message.content
+                except Exception as e:
+                    resp = f"⚠️ Erro na API: {e}"
                 st.session_state.chat_hist.append((pergunta, resp))
-                # Incrementa a key para limpar o campo de texto
                 st.session_state.chat_input_key += 1
                 st.rerun()
         else:
