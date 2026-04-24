@@ -99,7 +99,6 @@ defaults = {
     'usuario': '',
     'api_key': '',
     'chat_input_key': 0,
-    'admin_mode_dicas': False,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -348,50 +347,23 @@ A partir de agora está disponível — mas não sei por quanto tempo vou deixar
     st.session_state.dados['msg_grupo'] = msg_template
     st.markdown(f"<div class='caixa-texto'>{msg_template}</div>", unsafe_allow_html=True)
 
-    # --- DICAS DE APLICAÇÃO COM MODO ADMIN ---
-    st.markdown("---")
-    st.markdown("### 💡 Dicas de Aplicação")
-
-    dicas_prompt = (
-        f"Dê dicas práticas e detalhadas de como aplicar este lançamento digital. "
-        f"Nicho: {nicho}. Público: {d['publico']}. Promessa: {resultado}. "
-        f"Inclua dicas de tráfego pago, engajamento do grupo e conversão."
-    )
-    dicas_system = "Você é um especialista em lançamentos digitais e marketing de performance."
-
-    col_ia, col_admin = st.columns(2)
-
-    with col_ia:
-        if st.button("🤖 GERAR / REGENERAR DICAS COM IA"):
+    # Gerar dicas via IA (não mais hardcoded)
+    if 'dicas' not in st.session_state.dados:
+        if st.button("💡 GERAR DICAS DE APLICAÇÃO"):
             with st.spinner("Gerando dicas com IA..."):
-                st.session_state.dados['dicas'] = chamar_ia(dicas_prompt, dicas_system)
-                st.session_state.admin_mode_dicas = False
+                prompt = (
+                    f"Dê dicas práticas e detalhadas de como aplicar este lançamento digital. "
+                    f"Nicho: {nicho}. Público: {d['publico']}. Promessa: {resultado}. "
+                    f"Inclua dicas de tráfego pago, engajamento do grupo e conversão."
+                )
+                st.session_state.dados['dicas'] = chamar_ia(
+                    prompt,
+                    "Você é um especialista em lançamentos digitais e marketing de performance."
+                )
                 st.rerun()
-
-    with col_admin:
-        label_btn = "❌ FECHAR EDITOR" if st.session_state.admin_mode_dicas else "✏️ EDITAR DICAS MANUALMENTE"
-        if st.button(label_btn):
-            st.session_state.admin_mode_dicas = not st.session_state.admin_mode_dicas
-            st.rerun()
-
-    if st.session_state.admin_mode_dicas:
-        st.markdown("**✏️ Editor de Dicas — Admin**")
-        dicas_editadas = st.text_area(
-            "Edite o texto das dicas abaixo:",
-            value=st.session_state.dados.get('dicas', ''),
-            height=400,
-            key="editor_dicas"
-        )
-        if st.button("💾 SALVAR EDIÇÃO DAS DICAS"):
-            st.session_state.dados['dicas'] = dicas_editadas
-            st.session_state.admin_mode_dicas = False
-            st.success("✅ Dicas atualizadas com sucesso!")
-            st.rerun()
     else:
-        if 'dicas' in st.session_state.dados and st.session_state.dados['dicas']:
-            st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['dicas']}</div>", unsafe_allow_html=True)
-        else:
-            st.info("Nenhuma dica gerada ainda. Clique em 'Gerar com IA' ou edite manualmente.")
+        st.markdown("**💡 Dicas de Aplicação:**")
+        st.markdown(f"<div class='caixa-texto'>{st.session_state.dados['dicas']}</div>", unsafe_allow_html=True)
 
     if st.button("💾 SALVAR PROJETO"):
         nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
@@ -424,48 +396,8 @@ elif st.session_state.etapa == "Visualizacao":
         st.markdown(f"<div class='caixa-texto'>{conteudo}</div>", unsafe_allow_html=True)
 
     with st.expander("💡 DICAS PARA APLICAÇÃO"):
-        conteudo = st.session_state.dados.get('dicas', '')
-
-        col_ia2, col_admin2 = st.columns(2)
-        with col_ia2:
-            if st.button("🤖 REGENERAR DICAS COM IA", key="regen_dicas_viz"):
-                d_viz = st.session_state.dados
-                with st.spinner("Gerando dicas com IA..."):
-                    prompt_viz = (
-                        f"Dê dicas práticas e detalhadas de como aplicar este lançamento digital. "
-                        f"Nicho: {d_viz.get('nicho')}. Público: {d_viz.get('publico')}. Promessa: {d_viz.get('promessa')}. "
-                        f"Inclua dicas de tráfego pago, engajamento do grupo e conversão."
-                    )
-                    st.session_state.dados['dicas'] = chamar_ia(
-                        prompt_viz,
-                        "Você é um especialista em lançamentos digitais e marketing de performance."
-                    )
-                    st.session_state.admin_mode_dicas = False
-                    st.rerun()
-        with col_admin2:
-            label_viz = "❌ FECHAR EDITOR" if st.session_state.admin_mode_dicas else "✏️ EDITAR MANUALMENTE"
-            if st.button(label_viz, key="admin_dicas_viz"):
-                st.session_state.admin_mode_dicas = not st.session_state.admin_mode_dicas
-                st.rerun()
-
-        if st.session_state.admin_mode_dicas:
-            st.markdown("**✏️ Editor de Dicas — Admin**")
-            dicas_ed = st.text_area(
-                "Edite o texto das dicas:",
-                value=conteudo,
-                height=400,
-                key="editor_dicas_viz"
-            )
-            if st.button("💾 SALVAR EDIÇÃO", key="salvar_dicas_viz"):
-                st.session_state.dados['dicas'] = dicas_ed
-                st.session_state.admin_mode_dicas = False
-                st.success("✅ Dicas atualizadas!")
-                st.rerun()
-        else:
-            if conteudo:
-                st.markdown(f"<div class='caixa-texto'>{conteudo}</div>", unsafe_allow_html=True)
-            else:
-                st.info("Nenhuma dica gerada ainda.")
+        conteudo = st.session_state.dados.get('dicas', '_Não gerado ainda._')
+        st.markdown(f"<div class='caixa-texto'>{conteudo}</div>", unsafe_allow_html=True)
 
     # --- LAUNCERBOT (CHAT) ---
     st.divider()
