@@ -310,10 +310,25 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     nicho    = d['nicho']
     data     = d['data_lancto'].strftime('%d/%m/%Y')
     data_d1  = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
-    # CORREÇÃO: usa a promessa diretamente como frase completa,
-    # sem prefixos como "pode aprender a" que causavam redundância.
-    resultado = d['promessa']
-    dor       = d['dor']
+    dor      = d['dor']
+
+    # Normaliza a promessa para um fragmento no infinitivo, ex:
+    # "Aprenda como iniciar a criação de rãs do zero" → "iniciar a criação de rãs do zero"
+    # Faz isso apenas uma vez e armazena em 'promessa_curta'.
+    if 'promessa_curta' not in st.session_state.dados:
+        with st.spinner("Preparando mensagens..."):
+            fragmento = chamar_ia(
+                f"Reescreva a frase abaixo como um fragmento curto no infinitivo, "
+                f"sem sujeito, sem pontuação final, sem aspas, adequado para completar "
+                f"a frase 'Nele, mostro exatamente como ___'. "
+                f"Frase original: {d['promessa']}. "
+                f"Responda APENAS com o fragmento, nada mais.",
+                "Você é um assistente de copywriting. Responda somente com o fragmento solicitado, sem explicações."
+            )
+            st.session_state.dados['promessa_curta'] = fragmento.strip().rstrip('.')
+            st.rerun()
+
+    resultado = st.session_state.dados['promessa_curta']
 
     msg_template = f"""**Descrição do grupo:**
 Este grupo é silencioso. Você não será incomodado.
