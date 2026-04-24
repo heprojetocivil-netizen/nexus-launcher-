@@ -290,7 +290,8 @@ elif st.session_state.etapa == "Copy_LP":
             st.session_state.dados['lp_copy'] = chamar_ia(
                 prompt,
                 "Você é um especialista em Landing Pages de alta conversão. "
-                "Identifique cada variação com título em negrito (ex: **Variação 1: [Nome]**)."
+                "Identifique cada variação com título em negrito usando a tag HTML <strong> (ex: <strong>Variação 1: [Nome]</strong>). "
+                "Nunca use ** (asteriscos) para negrito, use sempre a tag HTML <strong>."
             )
 
     if 'lp_copy' in st.session_state.dados:
@@ -313,7 +314,6 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     resultado= d['promessa']
     dor      = d['dor']
 
-    # FIX: "você pode aprender a..." em vez de texto genérico/incorreto
     msg_template = f"""**Descrição do grupo:**
 Este grupo é silencioso. Você não será incomodado.
 Aqui você receberá apenas conteúdos e avisos relacionados ao tema.
@@ -341,7 +341,7 @@ O que você vai ver amanhã não é teoria — é um caminho direto que você po
 **🚀 Mensagem 3 – Lançamento ({data})**
 Chegou o momento.
 Como prometido, acabei de liberar o conteúdo completo.
-Nele, mostro exatamente como você pode aprender a {resultado}, mesmo começando do zero.
+Nele, mostro exatamente como você pode {resultado}, mesmo começando do zero.
 Se você quer parar de {dor} e finalmente ter resultado em {nicho}, esse é o próximo passo:
 👉 [LINK DA MONETIZZE]
 A partir de agora está disponível — mas não sei por quanto tempo vou deixar assim."""
@@ -395,10 +395,6 @@ elif st.session_state.etapa == "Visualizacao":
 
     with st.expander("📌 MENSAGENS DO GRUPO"):
         conteudo = st.session_state.dados.get('msg_grupo', '_Não gerado ainda._')
-        st.markdown(f"<div class='caixa-texto'>{conteudo}</div>", unsafe_allow_html=True)
-
-    with st.expander("💡 DICAS PARA APLICAÇÃO"):
-        conteudo = st.session_state.dados.get('dicas', '_Não gerado ainda._')
         st.markdown(f"<div class='caixa-texto'>{conteudo}</div>", unsafe_allow_html=True)
 
     # --- LAUNCERBOT (CHAT) ---
