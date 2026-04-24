@@ -106,10 +106,13 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📱 COPY PARA O FACEBOOK")
     if st.button("GERAR 5 VARIAÇÕES"):
+        # MODIFICAÇÃO SOLICITADA: Inclusão de imagem sugerida em todas as variações
         prompt = f"""Crie 5 variações de copy curta para Facebook Ads (o texto deve ser menor que uma LP). 
         Nicho: {st.session_state.dados['nicho']}. Lançamento: {st.session_state.dados['data_lancto']}. 
-        OBRIGATÓRIO: Identifique as variações com títulos em negrito como **Variação 1**, **Variação 2**, **Variação 3**, **Variação 4** e **Variação 5**. 
-        Ao final de cada variação, use EXATAMENTE esta chamada para ação: ⬇️ Clique abaixo e descubra como. 
+        OBRIGATÓRIO: 
+        1. Identifique as variações com títulos em negrito como **Variação 1**, **Variação 2**, etc.
+        2. Em TODAS as 5 variações, insira uma descrição de "Imagem Sugerida" que combine com o texto.
+        3. Ao final de cada variação, use EXATAMENTE esta chamada para ação: ⬇️ Clique abaixo e descubra como. 
         Separe parágrafos com linha em branco."""
         st.session_state.dados['fb_copy'] = chamar_ia(prompt, "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads.")
     
