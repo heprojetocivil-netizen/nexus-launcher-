@@ -405,7 +405,7 @@ def prompt_msg():
         f"**🚀 Mensagem 3 – Lançamento ({data})**\n"
         f"[mensagem de lançamento, diga que o conteúdo foi liberado, mencione o resultado, "
         f"finalize com: 👉 [LINK DA MONETIZZE]\n"
-        f"Disponível apenas até [coloque uma data concreta 3 dias após {data}] — após isso o preço sobe.]"
+        f"Este preço é válido só hoje, {data}. Amanhã o valor muda.]"
     )
 
 def system_msg():
