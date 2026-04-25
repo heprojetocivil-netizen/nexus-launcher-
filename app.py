@@ -195,7 +195,7 @@ st.markdown("""
         white-space: pre-wrap;
     }
 
-    /* ── NOVOS ESTILOS: cards de aquecimento ── */
+    /* ── ESTILOS: cards de aquecimento ── */
     .aquecimento-dia-header {
         background: linear-gradient(135deg, #7C3AED, #5B21B6);
         color: white;
@@ -247,6 +247,208 @@ st.markdown("""
     }
     .btn-roxo>button:hover {
         background-color: #5B21B6 !important;
+    }
+
+    /* ── ESTILOS: anúncio único e LP única ── */
+    .anuncio-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 28px 32px;
+        margin-bottom: 20px;
+    }
+
+    .anuncio-header {
+        background: linear-gradient(135deg, #F59E0B, #D97706);
+        color: white;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 18px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.15em;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .anuncio-corpo {
+        background: #FFFBEB;
+        border-left: 4px solid #F59E0B;
+        border-radius: 0 8px 8px 0;
+        padding: 16px 20px;
+        color: #1C1917;
+        font-size: 0.95em;
+        line-height: 1.75;
+        white-space: pre-wrap;
+    }
+
+    .anuncio-imagem-dica {
+        background: #FEF3C7;
+        border: 1px dashed #F59E0B;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 14px;
+        color: #92400E;
+        font-size: 0.82em;
+        font-style: italic;
+    }
+
+    .lp-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 28px 32px;
+        margin-bottom: 20px;
+    }
+
+    .lp-section-header {
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        border-radius: 6px;
+        padding: 8px 14px;
+        margin: 16px 0 10px 0;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 0.95em;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+
+    .lp-headline {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.6em;
+        font-weight: 700;
+        color: #0F172A;
+        line-height: 1.3;
+        margin: 10px 0 6px 0;
+    }
+
+    .lp-subtitulo {
+        color: #475569;
+        font-size: 1em;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+
+    .lp-dor {
+        background: #FFF1F2;
+        border-left: 4px solid #F43F5E;
+        border-radius: 0 8px 8px 0;
+        padding: 14px 18px;
+        color: #881337;
+        font-size: 0.92em;
+        line-height: 1.65;
+        margin: 10px 0;
+    }
+
+    .lp-solucao {
+        background: #F0FDF4;
+        border-left: 4px solid #22C55E;
+        border-radius: 0 8px 8px 0;
+        padding: 14px 18px;
+        color: #14532D;
+        font-size: 0.92em;
+        line-height: 1.65;
+        margin: 10px 0;
+    }
+
+    .lp-autor {
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        border-radius: 10px;
+        padding: 16px 20px;
+        color: #1E3A5F;
+        font-size: 0.92em;
+        line-height: 1.65;
+        margin: 10px 0;
+    }
+
+    .lp-beneficios {
+        background: #FAFAFA;
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        padding: 16px 20px;
+        color: #1E293B;
+        font-size: 0.9em;
+        line-height: 1.8;
+        margin: 10px 0;
+    }
+
+    .lp-cta {
+        background: linear-gradient(135deg, #00BFFF, #0099CC);
+        color: white;
+        border-radius: 10px;
+        padding: 18px;
+        text-align: center;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.2em;
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-top: 18px;
+    }
+
+    /* ── ESTILOS: mensagens de grupo ── */
+    .msg-card {
+        border-radius: 14px;
+        padding: 22px 26px;
+        margin-bottom: 18px;
+    }
+
+    .msg-card-bv {
+        background: #F0FDF4;
+        border: 1px solid #BBF7D0;
+        border-left: 5px solid #22C55E;
+    }
+
+    .msg-card-desafio {
+        background: #FFF7ED;
+        border: 1px solid #FED7AA;
+        border-left: 5px solid #F59E0B;
+    }
+
+    .msg-card-aquec {
+        background: #F5F3FF;
+        border: 1px solid #DDD6FE;
+        border-left: 5px solid #7C3AED;
+    }
+
+    .msg-card-lancto {
+        background: #FFF1F2;
+        border: 1px solid #FECDD3;
+        border-left: 5px solid #F43F5E;
+    }
+
+    .msg-card-desc {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-left: 5px solid #64748B;
+    }
+
+    .msg-label {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 0.8em;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .msg-body {
+        font-size: 0.93em;
+        line-height: 1.75;
+        color: #1E293B;
+        white-space: pre-wrap;
+    }
+
+    .desafio-box {
+        background: #FFFBEB;
+        border: 1px dashed #F59E0B;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-top: 12px;
+        color: #78350F;
+        font-size: 0.88em;
+        line-height: 1.7;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -363,7 +565,6 @@ def normalizar_markdown(texto: str) -> str:
 
 # --- PARSEAR BÔNUS EM 3 BLOCOS SEPARADOS ---
 def _linha_e_marcador_bonus(linha):
-    """Retorna (numero_str, nome_str) se a linha é um marcador de bônus, senão (None, None)."""
     l = linha.strip().replace("🎁", "").strip()
     lu = l.upper()
     for num in ("1", "2", "3"):
@@ -439,10 +640,6 @@ def parsear_bonus(texto: str) -> list:
 
 # --- PARSEAR DIAS DE AQUECIMENTO ---
 def parsear_aquecimento(texto: str) -> list:
-    """
-    Divide o texto de aquecimento em lista de dicts por dia.
-    [{"dia": "Dia 1", "titulo": ..., "conteudo": ..., "gancho": ...}, ...]
-    """
     linhas = texto.split("\n")
     marcadores = []
 
@@ -500,6 +697,134 @@ def parsear_aquecimento(texto: str) -> list:
     return dias_list
 
 
+# ── PARSEAR MENSAGENS ESTRUTURADAS ───────────────────────────────────────────
+def parsear_mensagens(texto: str) -> dict:
+    """
+    Retorna dict com chaves: descricao, msg1, msg2_desafio, msg3_aquec, msg4_lancto
+    Tenta identificar os blocos pelo marcador de cada mensagem.
+    """
+    resultado = {
+        "descricao": "",
+        "msg1": "",
+        "msg2_desafio": "",
+        "msg3_aquec": "",
+        "msg4_lancto": "",
+    }
+
+    # Dividir por separadores (---)
+    blocos = re.split(r'\n\s*---+\s*\n', texto)
+
+    for bloco in blocos:
+        bl = bloco.strip()
+        blu = bl.upper()
+
+        if "DESCRIÇÃO DO GRUPO" in blu or "DESCRICAO DO GRUPO" in blu:
+            # Remover o cabeçalho e pegar o texto
+            linhas = bl.split('\n')
+            corpo = '\n'.join(l for l in linhas if not (
+                'DESCRI' in l.upper() and 'GRUPO' in l.upper()
+            )).strip()
+            resultado["descricao"] = corpo
+
+        elif "MENSAGEM 1" in blu or "MSG 1" in blu or "BOAS-VINDAS" in blu:
+            linhas = bl.split('\n')
+            corpo = '\n'.join(l for l in linhas[1:]).strip()
+            resultado["msg1"] = corpo
+
+        elif "MENSAGEM 2" in blu or "MSG 2" in blu or "DESAFIO" in blu:
+            linhas = bl.split('\n')
+            corpo = '\n'.join(l for l in linhas[1:]).strip()
+            resultado["msg2_desafio"] = corpo
+
+        elif "MENSAGEM 3" in blu or "MSG 3" in blu or "AQUECIMENTO" in blu:
+            linhas = bl.split('\n')
+            corpo = '\n'.join(l for l in linhas[1:]).strip()
+            resultado["msg3_aquec"] = corpo
+
+        elif "MENSAGEM 4" in blu or "MSG 4" in blu or "LANÇAMENTO" in blu or "LANCAMENTO" in blu:
+            linhas = bl.split('\n')
+            corpo = '\n'.join(l for l in linhas[1:]).strip()
+            resultado["msg4_lancto"] = corpo
+
+    # fallback: se não parseou nada, retorna texto bruto em msg1
+    if not any(resultado.values()):
+        resultado["msg1"] = texto
+
+    return resultado
+
+
+# ── PARSEAR ANÚNCIO E LP ──────────────────────────────────────────────────────
+def parsear_anuncio(texto: str) -> dict:
+    """Extrai campos do anúncio único."""
+    resultado = {"corpo": texto.strip(), "imagem": ""}
+
+    # Tenta isolar sugestão de imagem
+    m = re.search(r'(imagem sugerida|sugest[aã]o de imagem)[:\s]+(.+?)(?:\n|$)', texto, re.IGNORECASE)
+    if m:
+        resultado["imagem"] = m.group(2).strip()
+        resultado["corpo"] = texto[:m.start()].strip() + "\n" + texto[m.end():].strip()
+        resultado["corpo"] = resultado["corpo"].strip()
+
+    return resultado
+
+
+def parsear_lp(texto: str) -> dict:
+    """Extrai seções da LP única."""
+    campos = {
+        "headline": "",
+        "subtitulo": "",
+        "dor": "",
+        "solucao": "",
+        "autor": "",
+        "beneficios": "",
+        "imagens": "",
+        "cta": "[ ENTRAR NO GRUPO ]",
+    }
+    linhas = texto.split('\n')
+    estado = None
+
+    for linha in linhas:
+        ls = linha.strip()
+        lu = ls.upper()
+
+        if lu.startswith("HEADLINE:") or lu.startswith("TÍTULO:") or lu.startswith("TITULO:"):
+            campos["headline"] = ls.split(":", 1)[1].strip() if ":" in ls else ""
+            estado = "headline"
+        elif lu.startswith("SUBTÍT") or lu.startswith("SUBTIT"):
+            campos["subtitulo"] = ls.split(":", 1)[1].strip() if ":" in ls else ""
+            estado = "subtitulo"
+        elif "DOR" in lu and estado not in ("beneficios",):
+            parte = ls.split(":", 1)[1].strip() if ":" in ls else ""
+            campos["dor"] = parte
+            estado = "dor"
+        elif "SOLU" in lu:
+            parte = ls.split(":", 1)[1].strip() if ":" in ls else ""
+            campos["solucao"] = parte
+            estado = "solucao"
+        elif "QUEM" in lu or "AUTOR" in lu:
+            parte = ls.split(":", 1)[1].strip() if ":" in ls else ""
+            campos["autor"] = parte
+            estado = "autor"
+        elif "BENEF" in lu:
+            parte = ls.split(":", 1)[1].strip() if ":" in ls else ""
+            campos["beneficios"] = parte
+            estado = "beneficios"
+        elif "IMAGEM" in lu or "VISUAL" in lu:
+            parte = ls.split(":", 1)[1].strip() if ":" in ls else ""
+            campos["imagens"] = parte
+            estado = "imagens"
+        elif "ENTRAR NO GRUPO" in lu or "CTA" in lu:
+            estado = None
+        elif estado and ls:
+            campos[estado] = (campos[estado] + "\n" + ls).strip()
+
+    # Se LP não parseou seções, usar texto bruto como dor (fallback visual)
+    if not any(v for k, v in campos.items() if k not in ("cta",)):
+        campos["dor"] = texto.strip()
+
+    return campos
+
+
 # --- COMPONENTE: BLOCO COM BOTÕES DE COPIAR E REGENERAR ---
 def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
     conteudo = st.session_state.dados.get(chave, '')
@@ -507,8 +832,61 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
         st.info(f"{titulo} ainda não foi gerado.")
         return
 
-    # Renderização especial para bônus
-    if chave == 'bonus_cont':
+    # ── Renderização especial: anúncio único ──
+    if chave == 'fb_copy':
+        parsed = parsear_anuncio(conteudo)
+        st.markdown("<div class='anuncio-header'>📣 ANÚNCIO — VERSÃO FINAL</div>", unsafe_allow_html=True)
+        corpo_html = normalizar_markdown(parsed["corpo"])
+        st.markdown(f"<div class='anuncio-corpo'>{corpo_html}</div>", unsafe_allow_html=True)
+        if parsed["imagem"]:
+            st.markdown(
+                f"<div class='anuncio-imagem-dica'>🖼️ <strong>Sugestão de imagem:</strong> {parsed['imagem']}</div>",
+                unsafe_allow_html=True
+            )
+
+    # ── Renderização especial: LP única ──
+    elif chave == 'lp_copy':
+        lp = parsear_lp(conteudo)
+        st.markdown("<div class='lp-card'>", unsafe_allow_html=True)
+
+        if lp["headline"]:
+            st.markdown("<span class='lp-section-header'>HEADLINE</span>", unsafe_allow_html=True)
+            st.markdown(f"<div class='lp-headline'>{lp['headline']}</div>", unsafe_allow_html=True)
+
+        if lp["subtitulo"]:
+            st.markdown(f"<div class='lp-subtitulo'>{lp['subtitulo']}</div>", unsafe_allow_html=True)
+
+        if lp["dor"]:
+            st.markdown("<span class='lp-section-header'>😣 SEÇÃO DE DOR</span>", unsafe_allow_html=True)
+            st.markdown(f"<div class='lp-dor'>{normalizar_markdown(lp['dor'])}</div>", unsafe_allow_html=True)
+
+        if lp["solucao"]:
+            st.markdown("<span class='lp-section-header'>✅ SOLUÇÃO</span>", unsafe_allow_html=True)
+            st.markdown(f"<div class='lp-solucao'>{normalizar_markdown(lp['solucao'])}</div>", unsafe_allow_html=True)
+
+        if lp["autor"]:
+            st.markdown("<span class='lp-section-header'>👤 QUEM SOU EU</span>", unsafe_allow_html=True)
+            st.markdown(f"<div class='lp-autor'>{normalizar_markdown(lp['autor'])}</div>", unsafe_allow_html=True)
+
+        if lp["beneficios"]:
+            st.markdown("<span class='lp-section-header'>🎯 BENEFÍCIOS</span>", unsafe_allow_html=True)
+            st.markdown(f"<div class='lp-beneficios'>{normalizar_markdown(lp['beneficios'])}</div>", unsafe_allow_html=True)
+
+        if lp["imagens"]:
+            st.markdown(
+                f"<div class='anuncio-imagem-dica'>🖼️ <strong>Sugestões visuais:</strong> {lp['imagens']}</div>",
+                unsafe_allow_html=True
+            )
+
+        st.markdown(f"<div class='lp-cta'>{lp['cta']}</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── Renderização especial: mensagens do grupo ──
+    elif chave == 'msg_grupo':
+        _renderizar_mensagens(conteudo)
+
+    # ── Renderização especial: bônus ──
+    elif chave == 'bonus_cont':
         bonus_list = parsear_bonus(conteudo)
         for b in bonus_list:
             st.markdown(f"<div class='bonus-card-header'>{b['titulo']}</div>", unsafe_allow_html=True)
@@ -518,7 +896,7 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
             st.markdown(f"<div class='bonus-conteudo'>{conteudo_html}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
-    # Renderização especial para aquecimento
+    # ── Renderização especial: aquecimento ──
     elif chave == 'aquecimento_cont':
         dias_list = parsear_aquecimento(conteudo)
         emojis = ["🔥", "💡", "🎯", "⚡", "🚀"]
@@ -561,6 +939,66 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
                     st.session_state.dados[chave] = chamar_ia(prompt_fn(), system_fn())
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
+
+
+def _renderizar_mensagens(texto: str):
+    """Renderiza as mensagens do grupo com cards visuais distintos."""
+    parsed = parsear_mensagens(texto)
+
+    # Descrição do grupo
+    if parsed["descricao"]:
+        st.markdown(
+            f"<div class='msg-card msg-card-desc'>"
+            f"<span class='msg-label' style='color:#64748B;'>📋 Descrição do Grupo</span>"
+            f"<div class='msg-body'>{parsed['descricao']}</div>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+    # Mensagem 1 — Boas-vindas
+    if parsed["msg1"]:
+        st.markdown(
+            f"<div class='msg-card msg-card-bv'>"
+            f"<span class='msg-label' style='color:#16A34A;'>📩 Mensagem 1 — Boas-vindas</span>"
+            f"<div class='msg-body'>{normalizar_markdown(parsed['msg1'])}</div>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+    # Mensagem 2 — Desafio interativo
+    if parsed["msg2_desafio"]:
+        st.markdown(
+            f"<div class='msg-card msg-card-desafio'>"
+            f"<span class='msg-label' style='color:#D97706;'>🏆 Mensagem 2 — Desafio Interativo (dia intermediário)</span>"
+            f"<div class='msg-body'>{normalizar_markdown(parsed['msg2_desafio'])}</div>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+    # Mensagem 3 — Aquecimento (véspera)
+    if parsed["msg3_aquec"]:
+        st.markdown(
+            f"<div class='msg-card msg-card-aquec'>"
+            f"<span class='msg-label' style='color:#7C3AED;'>⏳ Mensagem 3 — Aquecimento (véspera do lançamento)</span>"
+            f"<div class='msg-body'>{normalizar_markdown(parsed['msg3_aquec'])}</div>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+    # Mensagem 4 — Lançamento
+    if parsed["msg4_lancto"]:
+        st.markdown(
+            f"<div class='msg-card msg-card-lancto'>"
+            f"<span class='msg-label' style='color:#E11D48;'>🚀 Mensagem 4 — Lançamento</span>"
+            f"<div class='msg-body'>{normalizar_markdown(parsed['msg4_lancto'])}</div>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+
+    # Fallback: se nenhum bloco foi parseado, renderiza como texto simples
+    if not any(parsed.values()):
+        st.markdown(f"<div class='caixa-texto'>{normalizar_markdown(texto)}</div>", unsafe_allow_html=True)
+
 
 # --- INDICADOR DE PROGRESSO ---
 def mostrar_progresso():
@@ -639,7 +1077,6 @@ def system_bonus():
     return "Você é um especialista em conteúdo digital educativo. Crie ebooks bônus práticos, diretos e que agreguem valor real ao produto principal."
 
 
-# ── NOVO: PROMPT DE AQUECIMENTO ──────────────────────────────────────────────
 def prompt_aquecimento():
     d = st.session_state.dados
     nicho      = d.get('nicho', '')
@@ -692,115 +1129,177 @@ def system_aquecimento():
         "e criam desejo pelo produto — tudo antes de qualquer oferta. "
         "Escreva como um ser humano, não como um robô de vendas."
     )
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 def prompt_fb():
     d = st.session_state.dados
+    nome_eb    = d.get('nome_eb', '')
+    nicho      = d.get('nicho', '')
+    publico    = d.get('publico', '')
+    dor        = d.get('dor', '')
+    promessa   = d.get('promessa', '')
+    diferencial = d.get('diferencial', '')
+    data_lancto = d.get('data_lancto')
+    data_fmt   = data_lancto.strftime('%d/%m/%Y') if data_lancto else 'em breve'
+
     return (
-        f"Crie 5 variações de copy curta para Facebook Ads. "
-        f"Nicho: {d['nicho']}. Público: {d['publico']}. Dor: {d['dor']}. "
-        f"Lançamento: {d['data_lancto'].strftime('%d/%m/%Y')}. "
-        f"OBRIGATÓRIO para cada variação: "
-        f"1. Identifique com título em negrito HTML usando a tag <strong> (ex: <strong>Variação 1: [Nome]</strong>). "
-        f"2. Inclua sugestão detalhada de imagem/criativo visual. "
-        f"3. Finalize com: ⬇️ Clique abaixo e descubra como. "
-        f"4. Separe parágrafos com linha em branco."
+        f"Crie UM ÚNICO anúncio para Facebook/Instagram sobre o ebook '{nome_eb}'.\n\n"
+        f"CONTEXTO DO PRODUTO:\n"
+        f"- Nicho: {nicho}\n"
+        f"- Público: {publico}\n"
+        f"- Dor principal: {dor}\n"
+        f"- Promessa: {promessa}\n"
+        f"- Diferencial: {diferencial}\n"
+        f"- Data de lançamento: {data_fmt}\n\n"
+        f"REGRAS DO ANÚNCIO:\n"
+        f"1. O anúncio deve estar 100% alinhado com o tema do ebook '{nome_eb}'\n"
+        f"2. Comece tocando DIRETAMENTE na dor: {dor}\n"
+        f"3. Apresente a solução com base na promessa: {promessa}\n"
+        f"4. Inclua a data {data_fmt} como urgência\n"
+        f"5. Finalize com: ⬇️ Clique abaixo e descubra como.\n"
+        f"6. Após o texto, adicione uma linha: 'Imagem sugerida: [descrição detalhada de imagem visual "
+        f"diretamente relacionada ao tema {nicho}, mostrando a transformação desejada pelo público]'\n\n"
+        f"Gere APENAS UM anúncio, direto e poderoso. Sem variações, sem numeração, sem título de 'Variação'."
     )
 
 def system_fb():
     return (
-        "Você é um copywriter especialista em anúncios diretos e curtos para Facebook Ads. "
-        "Use sempre tags HTML <strong> para títulos em negrito, nunca use ** (asteriscos)."
+        "Você é um copywriter especialista em anúncios diretos para Facebook e Instagram. "
+        "Escreva anúncios que tocam na dor real do público e apresentam a solução de forma clara. "
+        "Use linguagem humana, empática e persuasiva. Nunca use ** (asteriscos) para negrito."
     )
 
 def prompt_lp():
     d = st.session_state.dados
+    nome_eb    = d.get('nome_eb', '')
+    nicho      = d.get('nicho', '')
+    publico    = d.get('publico', '')
+    dor        = d.get('dor', '')
+    promessa   = d.get('promessa', '')
+    diferencial = d.get('diferencial', '')
+    atual      = d.get('atual', '')
+    desejada   = d.get('desejada', '')
     nome_autor = d.get('autor_nome', '')
     experiencia = d.get('autor_experiencia', '')
     credenciais = d.get('autor_credenciais', '')
+
     secao_autor = ''
     if nome_autor or experiencia:
         secao_autor = (
-            f"Informações do autor para usar na seção 'Quem sou eu': "
-            f"Nome: {nome_autor}. Experiência: {experiencia}. Credenciais/conquistas: {credenciais}. "
-            f"Use essas informações para criar uma seção de autoridade que gere confiança no leitor. "
+            f"Autor: {nome_autor}. Experiência: {experiencia}. Conquistas: {credenciais}. "
         )
+
     return (
-        f"Crie 5 variações de copy completa para Landing Page. "
-        f"Situação atual: {d['atual']}. Situação desejada: {d['desejada']}. "
-        f"Promessa: {d['promessa']}. Diferencial: {d['diferencial']}. "
-        f"{secao_autor}"
-        f"Cada variação deve ter: headline, subtítulo, seção de dor, seção de solução, "
-        f"seção 'Quem sou eu' com os dados do autor (se informados), benefícios em lista, "
-        f"e sugestões de imagens e elementos visuais. "
-        f"Finalize cada variação com o botão de ação: [ ENTRAR NO GRUPO ]."
+        f"Crie UMA ÚNICA Landing Page completa para o ebook '{nome_eb}' sobre {nicho}.\n\n"
+        f"CONTEXTO DO PRODUTO:\n"
+        f"- Público: {publico}\n"
+        f"- Dor principal: {dor}\n"
+        f"- Situação atual: {atual}\n"
+        f"- Situação desejada: {desejada}\n"
+        f"- Promessa: {promessa}\n"
+        f"- Diferencial: {diferencial}\n"
+        f"- {secao_autor}\n\n"
+        f"ESTRUTURA OBRIGATÓRIA — use EXATAMENTE estes marcadores:\n\n"
+        f"Headline: [título principal impactante diretamente ligado à promessa '{promessa}']\n\n"
+        f"Subtítulo: [subtítulo complementar que reforça o diferencial]\n\n"
+        f"Seção de Dor: [texto que descreve a situação atual do público de forma empática, tocando na dor '{dor}']\n\n"
+        f"Solução: [texto que apresenta o ebook '{nome_eb}' como solução clara e direta]\n\n"
+        "Quem sou eu: [" + (secao_autor if secao_autor else "Breve apresentacao do autor com credibilidade") + "]\n\n"
+        f"Benefícios:\n"
+        f"- [Benefício 1 direto e específico]\n"
+        f"- [Benefício 2]\n"
+        f"- [Benefício 3]\n"
+        f"- [Benefício 4]\n\n"
+        f"Imagens sugeridas: [descrição de 2-3 imagens/elementos visuais alinhados ao tema {nicho}]\n\n"
+        f"Gere APENAS UMA Landing Page, sem variações. A LP deve estar 100% alinhada com o anúncio e com o tema do ebook."
     )
 
 def system_lp():
     return (
         "Você é um especialista em Landing Pages de alta conversão. "
-        "Identifique cada variação com título em negrito usando a tag HTML <strong>. "
-        "Nunca use ** (asteriscos) para negrito, use sempre a tag HTML <strong>."
+        "Crie uma LP coerente, persuasiva e diretamente alinhada com o produto e o anúncio. "
+        "Use sempre os marcadores de seção exatos pedidos no prompt. "
+        "Nunca use ** (asteriscos) para negrito. Nunca crie variações."
     )
 
 def prompt_msg():
     d = st.session_state.dados
-    data = d['data_lancto'].strftime('%d/%m/%Y')
-    data_d1 = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
-    preco = d.get('preco', 47)
-    nome_eb = d.get('nome_eb', '')
+    data_lancto = d['data_lancto']
+    data_fmt    = data_lancto.strftime('%d/%m/%Y')
+    data_d1     = (data_lancto - timedelta(days=1)).strftime('%d/%m/%Y')
+    data_desafio = (data_lancto - timedelta(days=7)).strftime('%d/%m/%Y')
+    preco       = d.get('preco', 47)
+    nome_eb     = d.get('nome_eb', '')
+    nicho       = d.get('nicho', '')
+    publico     = d.get('publico', '')
+    dor         = d.get('dor', '')
+    promessa    = d.get('promessa', '')
     bonus_resumo = d.get('bonus_resumo', '')
+
     if bonus_resumo:
         bonus_list = '\n'.join([f'  🎁 {b.strip()}' for b in bonus_resumo.split(',') if b.strip()])
     else:
         bonus_list = '  🎁 Bônus complementares inclusos'
+
     return (
-        f"Crie 3 mensagens curtas e diretas para um grupo de WhatsApp/Telegram de lançamento digital.\n\n"
+        f"Crie 4 mensagens para um grupo de WhatsApp/Telegram de lançamento do ebook '{nome_eb}' sobre {nicho}.\n\n"
         f"DADOS DO LANÇAMENTO:\n"
-        f"- Nicho: {d['nicho']}\n"
-        f"- Público-alvo: {d['publico']}\n"
-        f"- E-book principal: {nome_eb}\n"
-        f"- Dor principal: {d['dor']}\n"
-        f"- Promessa: {d['promessa']}\n"
+        f"- Público: {publico}\n"
+        f"- Dor principal: {dor}\n"
+        f"- Promessa: {promessa}\n"
         f"- Preço: R${preco}\n"
         f"- Bônus: {bonus_resumo}\n"
-        f"- Data de lançamento: {data}\n"
-        f"- Data de aquecimento: {data_d1}\n\n"
-        f"REGRAS IMPORTANTES:\n"
-        f"- Mensagens 1 e 2 devem ser CURTAS (máximo 5 linhas cada)\n"
-        f"- Mensagem 3 deve ser COMPACTA mas completa (máximo 15 linhas)\n"
-        f"- Tom humano, direto, sem enrolação\n\n"
-        f"Estruture EXATAMENTE assim:\n\n"
-        f"**Descrição do grupo:**\n"
-        f"Este grupo é silencioso. Você não será incomodado. Aqui você receberá apenas conteúdos e avisos sobre {d['nicho']}.\n\n"
+        f"- Data de lançamento: {data_fmt}\n"
+        f"- Data do desafio (dia intermediário): {data_desafio}\n"
+        f"- Data de aquecimento (véspera): {data_d1}\n\n"
+        f"REGRAS GERAIS:\n"
+        f"- Tom humano, direto, sem incoerências\n"
+        f"- Toda mensagem deve estar 100% alinhada ao tema '{nicho}' e ao ebook '{nome_eb}'\n"
+        f"- A jornada do grupo deve ser coerente: boas-vindas → desafio → aquecimento → lançamento\n\n"
+        f"Gere EXATAMENTE nesta estrutura, com os separadores ---:\n\n"
+        f"Descrição do grupo:\n"
+        f"Este grupo é silencioso. Você não será incomodado. Aqui você receberá apenas conteúdos e avisos sobre {nicho}.\n\n"
         f"---\n\n"
-        f"**📩 Mensagem 1 – Boas-vindas**\n"
-        f"[Boas-vindas calorosa e curta. Diga que o grupo foi criado para entregar conteúdo sobre {d['nicho']}. "
-        f"Informe que em {data} vai liberar algo especial. Peça para ficarem atentos. Máximo 5 linhas.]\n\n"
+        f"Mensagem 1 – Boas-vindas\n"
+        f"[Boas-vindas calorosas e curtas (máximo 5 linhas). Diga que o grupo foi criado para entregar "
+        f"conteúdo sobre {nicho}. Informe que em {data_fmt} haverá algo especial. Peça para ficarem atentos. "
+        f"NÃO mencione produto ou preço.]\n\n"
         f"---\n\n"
-        f"**⏳ Mensagem 2 – Aquecimento ({data_d1})**\n"
-        f"[Mensagem curta de antecipação. Amanhã é o grande dia. Toque na dor '{d['dor']}' de forma humana. "
-        f"Crie expectativa sem revelar o produto. Máximo 5 linhas.]\n\n"
+        f"Mensagem 2 – Desafio Interativo ({data_desafio})\n"
+        f"[Mensagem com 3 desafios práticos e simples que a pessoa pode fazer EM CASA, "
+        f"diretamente relacionados ao tema {nicho} e à dor '{dor}'. "
+        f"Cada desafio deve ser claro, acionável e divertido. Peça para a pessoa responder no grupo "
+        f"como foi. Isso gera engajamento real. Máximo 15 linhas. Exemplo de formato:\n"
+        f"🏆 DESAFIO DO DIA!\n"
+        f"Hoje temos 3 desafios para você experimentar agora mesmo:\n\n"
+        f"Desafio 1: [desafio específico e simples relacionado a {nicho}]\n"
+        f"Desafio 2: [desafio específico e simples]\n"
+        f"Desafio 3: [desafio específico e simples]\n\n"
+        f"Responda aqui: como foi? Conseguiu fazer? ]\n\n"
         f"---\n\n"
-        f"**🚀 Mensagem 3 – Lançamento ({data})**\n"
-        f"[Escreva a mensagem de lançamento COMPACTA com EXATAMENTE esta estrutura, sem inventar nada:\n\n"
-        f"🔥 [frase de abertura de impacto sobre o lançamento]\n\n"
+        f"Mensagem 3 – Aquecimento ({data_d1})\n"
+        f"[Mensagem curta de antecipação (máximo 5 linhas). Amanhã é o grande dia. "
+        f"Toque na dor '{dor}' de forma humana. Crie expectativa sem revelar o produto.]\n\n"
+        f"---\n\n"
+        f"Mensagem 4 – Lançamento ({data_fmt})\n"
+        f"🔥 [frase de abertura de impacto sobre o lançamento, alinhada ao tema {nicho}]\n\n"
         f"📘 *{nome_eb}*\n"
-        f"[uma linha descrevendo o que o leitor vai conseguir]\n\n"
+        f"[uma linha: o que o leitor vai conseguir com base na promessa '{promessa}']\n\n"
         f"🎁 *Bônus inclusos:*\n"
         f"{bonus_list}\n\n"
         f"💰 Preço de lançamento: R${preco}\n"
         f"✅ Garantia: 7 dias ou seu dinheiro de volta\n\n"
         f"👉 [LINK DA MONETIZZE]\n\n"
-        f"⚠️ Este preço é válido só hoje, {data}. Amanhã o valor muda.]"
+        f"⚠️ Este preço é válido só hoje, {data_fmt}. Amanhã o valor muda."
     )
 
 def system_msg():
     return (
         "Você é um especialista em copywriting para lançamentos digitais no WhatsApp e Telegram. "
-        "Escreva mensagens naturais, humanas e sem incoerências gramaticais. "
-        "Nunca repita textos longos na íntegra. Use linguagem simples e direta."
+        "Escreva mensagens naturais, humanas e 100% coerentes entre si. "
+        "Toda a sequência de mensagens deve contar uma história lógica e alinhada ao produto. "
+        "Nunca repita textos longos na íntegra. Use linguagem simples e direta. "
+        "Siga rigorosamente a estrutura e os separadores --- pedidos no prompt."
     )
 
 # ============================================================
@@ -899,22 +1398,18 @@ elif st.session_state.etapa == "Formulario":
     st.markdown("#### Suas credenciais como autor")
     st.caption(
         "Essas informações aparecem na Landing Page na seção 'Quem sou eu' e geram confiança no leitor. "
-        "Não precisa ser famoso — qualquer experiência real vale. Exemplos: "
-        "'Invisto em cripto há 3 anos e já errei muito antes de acertar' ou "
-        "'Emagreci 12kg em 4 meses e aprendi o que realmente funciona'."
+        "Não precisa ser famoso — qualquer experiência real vale."
     )
     d['autor_nome']         = st.text_input("Seu nome (como quer aparecer):", value=d.get('autor_nome', ''), placeholder="ex: João Silva")
     d['autor_experiencia']  = st.text_area(
         "Sua experiência com o tema:",
         value=d.get('autor_experiencia', ''),
-        placeholder="ex: Invisto em criptomoedas há 4 anos. Já perdi dinheiro no início por falta de conhecimento, aprendi na prática e hoje tenho uma carteira diversificada.",
-        help="Conte sua história com o tema de forma honesta. Isso humaniza a LP e gera identificação."
+        placeholder="ex: Pratico ioga há 5 anos e já ajudei dezenas de pessoas a reduzirem a dor crônica.",
     )
     d['autor_credenciais']  = st.text_area(
         "Resultados ou conquistas que pode mencionar:",
         value=d.get('autor_credenciais', ''),
-        placeholder="ex: Já ajudei mais de 200 pessoas a dar os primeiros passos em cripto. Minha carteira valorizou 180% em 2023.",
-        help="Números, resultados concretos ou histórias de quem você já ajudou. Deixe em branco se preferir não usar."
+        placeholder="ex: Já orientei mais de 200 alunos iniciantes a conquistarem flexibilidade em 30 dias.",
     )
     from datetime import date
     data_sugerida = d.get('data_lancto', date.today() + timedelta(days=15))
@@ -961,9 +1456,9 @@ elif st.session_state.etapa == "Formulario":
         🎁 <strong>3 E-books Bônus</strong> complementares ao produto principal<br>
         🔥 <strong>5 Mini-aulas de Aquecimento</strong> para o grupo — entrega valor antes de vender<br>
         🎯 <strong>Público:</strong> {d.get('publico')}<br>
-        💬 <strong>5 anúncios</strong> focados na dor: <em>{d.get('dor')}</em><br>
-        🌐 <strong>5 variações de Landing Page</strong> com CTA para o grupo<br>
-        📩 <strong>3 mensagens</strong> de aquecimento e lançamento<br>
+        📣 <strong>1 anúncio único</strong> focado na dor: <em>{d.get('dor')}</em><br>
+        🌐 <strong>1 Landing Page completa</strong> com CTA para o grupo<br>
+        📩 <strong>4 mensagens</strong> de boas-vindas, desafio, aquecimento e lançamento<br>
         🚀 <strong>Data de lançamento:</strong> {d['data_lancto'].strftime('%d/%m/%Y')}
         </div>
         """, unsafe_allow_html=True)
@@ -1022,7 +1517,7 @@ elif st.session_state.etapa == "Gerar_Bonus":
             st.rerun()
 
 # ============================================================
-# TELA: GERAR AQUECIMENTO ← NOVA ETAPA
+# TELA: GERAR AQUECIMENTO
 # ============================================================
 elif st.session_state.etapa == "Gerar_Aquecimento":
     barra_navegacao()
@@ -1069,31 +1564,48 @@ elif st.session_state.etapa == "Gerar_Aquecimento":
             st.rerun()
 
 # ============================================================
-# TELA: COPY FACEBOOK
+# TELA: ANÚNCIO ÚNICO
 # ============================================================
 elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
-    st.title("📱 COPY PARA O FACEBOOK")
+    st.title("📣 ANÚNCIO PARA FACEBOOK / INSTAGRAM")
 
-    if st.button("GERAR 5 VARIAÇÕES"):
-        with st.spinner("Gerando copies com IA..."):
+    st.markdown("""
+    <div class="preview-box">
+    <strong>Anúncio único e coerente</strong><br><br>
+    O anúncio gerado estará 100% alinhado ao tema do seu e-book, à dor do seu público
+    e à promessa do produto. Ele serve como porta de entrada para a sua Landing Page.
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("📣 GERAR ANÚNCIO"):
+        with st.spinner("Gerando anúncio com IA..."):
             st.session_state.dados['fb_copy'] = chamar_ia(prompt_fb(), system_fb())
 
     if 'fb_copy' in st.session_state.dados:
-        bloco_conteudo('fb_copy', 'Anúncios', prompt_fb, system_fb)
+        bloco_conteudo('fb_copy', 'Anúncio', prompt_fb, system_fb)
         if st.button("AVANÇAR →"):
             st.session_state.etapa = "Copy_LP"
             st.rerun()
 
 # ============================================================
-# TELA: COPY LANDING PAGE
+# TELA: LANDING PAGE ÚNICA
 # ============================================================
 elif st.session_state.etapa == "Copy_LP":
     barra_navegacao()
-    st.title("🌐 COPY PARA A LANDING PAGE")
+    st.title("🌐 LANDING PAGE")
 
-    if st.button("GERAR 5 VARIAÇÕES LP"):
-        with st.spinner("Gerando landing pages com IA..."):
+    st.markdown("""
+    <div class="preview-box">
+    <strong>Landing Page coerente com o anúncio</strong><br><br>
+    A LP gerada é 100% alinhada ao anúncio e ao tema do seu e-book.
+    Ela apresenta a dor, a solução, sua autoridade como autor e conduz o visitante
+    a entrar no grupo com o botão <strong>[ ENTRAR NO GRUPO ]</strong>.
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🌐 GERAR LANDING PAGE"):
+        with st.spinner("Gerando Landing Page com IA..."):
             st.session_state.dados['lp_copy'] = chamar_ia(prompt_lp(), system_lp())
 
     if 'lp_copy' in st.session_state.dados:
@@ -1108,6 +1620,15 @@ elif st.session_state.etapa == "Copy_LP":
 elif st.session_state.etapa == "Mensagens_Grupo":
     barra_navegacao()
     st.title("📌 MENSAGENS PARA O GRUPO")
+
+    st.markdown("""
+    <div class="preview-box">
+    <strong>4 mensagens com jornada coerente</strong><br><br>
+    As mensagens seguem uma progressão lógica e alinhada ao seu produto:<br><br>
+    📩 <strong>Boas-vindas</strong> → 🏆 <strong>Desafio interativo</strong> (dia intermediário)
+    → ⏳ <strong>Aquecimento</strong> (véspera) → 🚀 <strong>Lançamento</strong>
+    </div>
+    """, unsafe_allow_html=True)
 
     if 'msg_grupo' not in st.session_state.dados:
         if st.button("✉️ GERAR MENSAGENS DO GRUPO"):
@@ -1155,7 +1676,7 @@ PREÇO: R${d.get('preco', 47)}
 {'-'*40}
 {limpar_html(d.get('aquecimento_cont', 'Não gerado.'))}
 
-🎬 ANÚNCIOS (FACEBOOK)
+📣 ANÚNCIO (FACEBOOK / INSTAGRAM)
 {'-'*40}
 {limpar_html(d.get('fb_copy', 'Não gerado.'))}
 
@@ -1190,8 +1711,8 @@ PREÇO: R${d.get('preco', 47)}
         st.caption("Envie uma por dia nos 5 dias anteriores ao lançamento.")
         bloco_conteudo('aquecimento_cont', 'Aquecimento', prompt_aquecimento, system_aquecimento)
 
-    with st.expander("🎬 ANÚNCIO (Facebook)"):
-        bloco_conteudo('fb_copy', 'Anúncios', prompt_fb, system_fb)
+    with st.expander("📣 ANÚNCIO (Facebook / Instagram)"):
+        bloco_conteudo('fb_copy', 'Anúncio', prompt_fb, system_fb)
 
     with st.expander("🌐 LANDING PAGE"):
         bloco_conteudo('lp_copy', 'Landing Page', prompt_lp, system_lp)
@@ -1205,10 +1726,11 @@ PREÇO: R${d.get('preco', 47)}
         from datetime import date, timedelta as td
         data_lancto = d.get('data_lancto', date.today())
         data_lancto_fmt = data_lancto.strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else str(data_lancto)
-        data_msg2 = (data_lancto - td(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
+        data_msg3 = (data_lancto - td(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
         data_aq_ini = (data_lancto - td(days=6)).strftime('%d/%m') if hasattr(data_lancto, 'strftime') else ''
         data_aq_fim = (data_lancto - td(days=2)).strftime('%d/%m') if hasattr(data_lancto, 'strftime') else ''
-        data_bv = (data_lancto - td(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
+        data_bv = (data_lancto - td(days=14)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
+        data_desafio = (data_lancto - td(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
 
         fases = [
             {
@@ -1221,22 +1743,31 @@ PREÇO: R${d.get('preco', 47)}
                     ("Hoje", "Cadastre o e-book principal + 3 bônus na Monetizze como produto"),
                     ("Hoje", f"Defina o preço: R${d.get('preco', 47)} e configure o checkout"),
                     ("Hoje", "Copie o link da Monetizze e salve — você vai precisar dele no dia do lançamento"),
-                    ("Hoje", "Suba os anúncios no Facebook/Instagram usando as copies geradas"),
-                    ("Hoje", "Aponte os anúncios para o link do grupo (WhatsApp/Telegram)"),
+                    ("Hoje", "Suba o anúncio no Facebook/Instagram usando o copy gerado"),
+                    ("Hoje", "Aponte o anúncio para o link do grupo (WhatsApp/Telegram)"),
                 ]
             },
             {
                 "fase": f"FASE 2 — SEMANA 1: Encher o grupo",
                 "cor": "#8B5CF6",
                 "items": [
-                    ("Dias 1 a 7", "Deixe os anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
+                    ("Dias 1 a 7", "Deixe o anúncio rodando — objetivo: 500 a 1.000 pessoas no grupo"),
                     ("Diariamente", "Monitore o custo por lead nos anúncios (meta: até R$2,00 por pessoa)"),
                     (f"{data_bv}", "Envie a Mensagem 1 (boas-vindas) — primeira comunicação com o grupo"),
                     ("Importante", "NÃO mencione produto ou preço ainda — só boas-vindas"),
                 ]
             },
             {
-                "fase": f"FASE 3 — AQUECIMENTO ({data_aq_ini} a {data_aq_fim}): 5 Mini-aulas",
+                "fase": f"FASE 3 — DIA INTERMEDIÁRIO ({data_desafio}): Engajamento com Desafio",
+                "cor": "#F59E0B",
+                "items": [
+                    (f"{data_desafio}", "Envie a Mensagem 2 com os 3 desafios práticos — peça para responderem no grupo"),
+                    (f"{data_desafio}", "Responda as participações: isso aumenta a confiança e o engajamento"),
+                    (f"{data_desafio}", "Não mencione produto — foque em entregar valor e criar comunidade"),
+                ]
+            },
+            {
+                "fase": f"FASE 4 — AQUECIMENTO ({data_aq_ini} a {data_aq_fim}): 5 Mini-aulas",
                 "cor": "#7C3AED",
                 "items": [
                     (f"{data_aq_ini} — Dia 1", "Envie a Mini-aula 1 no grupo — conteúdo gratuito, sem mencionar venda"),
@@ -1244,22 +1775,22 @@ PREÇO: R${d.get('preco', 47)}
                     ("Dia 3", "Envie a Mini-aula 3 — o grupo já começa a confiar em você"),
                     ("Dia 4", "Envie a Mini-aula 4 — crie mais expectativa com o gancho do dia"),
                     (f"{data_aq_fim} — Dia 5", "Envie a Mini-aula 5 — última antes do lançamento, gancho forte"),
-                    (f"{data_msg2}", "Envie a Mensagem 2 (aquecimento) — véspera do lançamento"),
-                    (f"{data_msg2}", "Confirme se o link da Monetizze está funcionando corretamente"),
+                    (f"{data_msg3}", "Envie a Mensagem 3 (aquecimento/véspera) — crie expectativa máxima"),
+                    (f"{data_msg3}", "Confirme se o link da Monetizze está funcionando corretamente"),
                 ]
             },
             {
-                "fase": f"FASE 4 — DIA DO LANÇAMENTO ({data_lancto_fmt}): Vender",
+                "fase": f"FASE 5 — DIA DO LANÇAMENTO ({data_lancto_fmt}): Vender",
                 "cor": "#22C55E",
                 "items": [
-                    (f"{data_lancto_fmt} — manhã", "Envie a Mensagem 3 com o link da Monetizze para o grupo"),
-                    (f"{data_lancto_fmt}", "Pause os anúncios ou redirecione direto para o link de venda"),
+                    (f"{data_lancto_fmt} — manhã", "Envie a Mensagem 4 (lançamento) com o link da Monetizze para o grupo"),
+                    (f"{data_lancto_fmt}", "Pause o anúncio ou redirecione direto para o link de venda"),
                     (f"{data_lancto_fmt}", "Fique online para responder dúvidas rapidamente no grupo ou no direct"),
                     (f"{data_lancto_fmt} — noite", "Envie um lembrete final: 'Poucas horas para garantir o preço de lançamento'"),
                 ]
             },
             {
-                "fase": "FASE 5 — PÓS-LANÇAMENTO: Analisar e escalar",
+                "fase": "FASE 6 — PÓS-LANÇAMENTO: Analisar e escalar",
                 "cor": "#64748B",
                 "items": [
                     ("Após lançamento", "Anote: quantas pessoas no grupo, quantas compraram, qual foi a taxa de conversão"),
