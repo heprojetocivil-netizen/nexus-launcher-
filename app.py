@@ -449,13 +449,17 @@ def prompt_msg():
 
         f"VESPERA:\n"
         f"[Mensagem da véspera da venda. "
-        f"CONSTRUA ASSIM: Comece dizendo que nos últimos dias recebeu mensagens no WhatsApp e ficou impressionado. "
-        f"Cite A DOR ESPECÍFICA que as pessoas relataram — use exatamente: '{dor}'. "
-        f"Exemplo de estrutura: 'Fiquei impressionado com o que recebi... a maioria de vocês falou sobre [dor específica]... "
-        f"li essas mensagens e percebi que é exatamente o mesmo obstáculo repetindo.' "
-        f"Diga que isso te fez pensar em como poderia ajudar de forma mais completa e que amanhã vai compartilhar algo "
-        f"preparado como resposta direta a tudo isso. "
-        f"NUNCA revele preço, produto ou que é pago. Tom de quem ouviu e está respondendo. Máximo 10 linhas.]\n\n"
+        f"ESCREVA EXATAMENTE ASSIM — sem fugir desse roteiro:\n"
+        f"1. Abertura: diga que nos últimos dias recebeu muitas mensagens no WhatsApp e ficou impressionado.\n"
+        f"2. A dor específica: nomeie EXATAMENTE a dificuldade que as pessoas relataram — '{dor}'. "
+        f"Use a dor textualmente, não de forma vaga. Exemplo: "
+        f"'A maioria de vocês falou sobre [COLOQUE AQUI A DOR EXATA: {dor}]. "
+        f"Li essas mensagens e percebi que é sempre o mesmo obstáculo aparecendo.'\n"
+        f"3. Reação: diga que isso te fez parar e pensar em como ajudar de forma mais completa.\n"
+        f"4. Antecipação: amanhã vai compartilhar algo preparado como resposta direta a isso — sem revelar o quê, sem revelar preço.\n"
+        f"PROIBIDO: palavras genéricas como 'obstáculos', 'dificuldades', 'desafios' sem especificar qual. "
+        f"PROIBIDO: mencionar equipe, produto, ebook ou qualquer coisa paga. "
+        f"Tom: humano, de quem realmente leu e está respondendo. Máximo 10 linhas.]\n\n"
 
         f"VENDA_MANHA:\n"
         f"[Mensagem do dia da venda — manhã. "
@@ -559,9 +563,14 @@ elif st.session_state.etapa == "Formulario":
     d['autor_credenciais'] = st.text_area("Resultados ou conquistas:", value=d.get('autor_credenciais',''), placeholder="ex: Já ajudei mais de 200 pessoas.")
 
     st.divider()
-    st.markdown("#### WhatsApp para contato direto")
-    st.caption("Usado nas Mensagens do grupo para receber respostas da enquete e dúvidas.")
-    d['whatsapp_contato'] = st.text_input("Seu número de WhatsApp:", value=d.get('whatsapp_contato',''), placeholder="ex: (11) 99999-9999")
+    st.markdown("#### WhatsApp para receber respostas da enquete")
+    st.markdown("""<div style="background:#FEF9C3;border:1px solid #FDE047;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#713F12;font-size:0.88em;line-height:1.6;">
+    ⚠️ <strong>ATENÇÃO: use um número DIFERENTE do grupo.</strong><br>
+    O grupo ficará fechado para mensagens — os membros não conseguem responder lá dentro.<br>
+    Por isso, as respostas da enquete e dúvidas devem ir para um número pessoal ou comercial separado.<br>
+    <strong>Pode ser seu celular pessoal, um chip extra ou um número de atendimento.</strong>
+    </div>""", unsafe_allow_html=True)
+    d['whatsapp_contato'] = st.text_input("Número para receber respostas (diferente do grupo):", value=d.get('whatsapp_contato',''), placeholder="ex: (11) 99999-9999")
 
     data_sugerida = d.get('data_lancto', date.today() + timedelta(days=15))
     d['data_lancto'] = st.date_input("Data de lançamento", value=data_sugerida, min_value=date.today(),
