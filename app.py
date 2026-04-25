@@ -253,9 +253,18 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
 
     elif chave == 'msg_grupo':
         secoes = parsear_mensagens(conteudo)
-        for s in secoes:
+        for i, s in enumerate(secoes):
             st.markdown(f"<div class='msg-dia-header'>{s['label']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='msg-conteudo'>{normalizar_markdown(s['conteudo'])}</div>", unsafe_allow_html=True)
+            texto_limpo = limpar_html(s['conteudo'])
+            st.download_button(
+                label="📋 Copiar esta mensagem",
+                data=texto_limpo,
+                file_name=f"{s['chave'].lower()}.txt",
+                mime="text/plain",
+                key=f"copy_msg_{i}_{chave}",
+                use_container_width=False,
+            )
             st.markdown("<br>", unsafe_allow_html=True)
 
     else:
@@ -395,6 +404,7 @@ def prompt_msg():
     dor = d.get('dor', '')
     publico = d.get('publico', '')
     whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
+    link_venda = d.get('link_monetizze', '').strip() or '[LINK MONETIZZE]'
     bonus_resumo = d.get('bonus_resumo', '')
     bonus_lista = '\n'.join([f'🎁 Bônus {i+1} \u2013 {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
 
@@ -435,10 +445,12 @@ def prompt_msg():
         f"=== FIM ===\n\n"
 
         f"DIA_7:\n"
-        f"[IA] Bom dia + abertura do programa sobre {nicho}. "
-        f"Apresente brevemente o que vem nos próximos dias. "
-        f"Diga que dúvidas podem ser enviadas pelo WhatsApp {whatsapp_num}. "
-        f"Compacto, máximo 5 linhas, parágrafos curtos. Zero menção a produto.\n\n"
+        f"=== FIXO ===\n"
+        f"Bom dia!\n"
+        f"Nos próximos dias, vamos compartilhar conteúdos valiosos sobre {nicho}.\n"
+        f"Teremos dicas práticas, curiosidades e insights para te ajudar a evoluir de verdade.\n"
+        f"Se tiver alguma dúvida, você pode enviar uma mensagem para o nosso WhatsApp: ({whatsapp_num})\n"
+        f"=== FIM ===\n\n"
 
         f"DIA_6:\n"
         f"=== FIXO (adapte só as 4 opções ao nicho {nicho} e dor: {dor}) ===\n"
@@ -499,7 +511,7 @@ def prompt_msg():
         f"Tudo isso por apenas R$ {preco}.\n"
         f"Mas atenção:\n"
         f"Esse valor estará disponível só hoje\n"
-        f"👉 [LINK MONETIZZE]\n"
+        f"👉 {link_venda}\n"
         f"⏰ Válido até 23:59\n"
         f"✅ Garantia de 7 dias\n"
         f"Agora a decisão está nas suas mãos.\n"
@@ -516,7 +528,7 @@ def prompt_msg():
         f"Mas a verdade é:\n"
         f"Quem aplica o método certo, evolui muito mais rápido.\n"
         f"Se fizer sentido pra você, ainda dá tempo:\n"
-        f"👉 [LINK MONETIZZE]\n"
+        f"👉 {link_venda}\n"
         f"⏰ Até 23:59\n"
         f"✅ Garantia de 7 dias\n"
         f"Dá uma olhada com calma… e decide.\n"
@@ -594,9 +606,14 @@ elif st.session_state.etapa == "Formulario":
     d['dor']         = st.text_input("Principal dor que resolve:", value=d.get('dor',''))
     d['atual']       = st.text_area("Situação atual da pessoa:", value=d.get('atual',''))
     d['desejada']    = st.text_area("Situação desejada:", value=d.get('desejada',''))
-    d['promessa']    = st.text_input("Promessa do e-book:", value=d.get('promessa',''))
+    d['promessa']    = st.text_input("Transformação do programa:", value=d.get('promessa',''), help="Qual mudança real o público vai viver durante os 15 dias? (usado no anúncio e na LP)")
     d['diferencial'] = st.text_input("Diferencial:", value=d.get('diferencial',''))
     d['preco']       = st.number_input("Preço do e-book (R$):", min_value=9, max_value=997, value=int(d.get('preco',47)), step=1)
+
+    st.divider()
+    st.markdown("#### Link de venda (Monetizze)")
+    st.caption("Cole o link aqui e ele entrará automaticamente nas mensagens de lançamento — sem precisar editar depois.")
+    d['link_monetizze'] = st.text_input("Link da Monetizze:", value=d.get('link_monetizze',''), placeholder="ex: https://go.monetizze.com.br/...")
 
     st.divider()
     st.markdown("#### Suas credenciais como autor")
@@ -715,10 +732,17 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     st.title("💬 MENSAGENS DO GRUPO")
 
     st.markdown("""<div class="preview-box">
-    <strong>Funil completo de mensagens — 10 peças prontas para copiar e enviar:</strong><br><br>
-    💬 Boas-vindas → 📅 D-7 Abertura → 🎯 D-6 Enquete → 🔥 D-5 Dica →
-    📌 D-4 Atividade → 💡 D-3 Conteúdo → 📈 D-2 Prova social →
-    ⏳ D-1 Véspera → 🚀 Manhã da venda → ⏰ Lembrete noturno
+    <strong>Funil completo — 10 peças prontas para copiar e enviar:</strong><br><br>
+    📋 Descrição (bio) → 💬 D-8 Boas-vindas → 📅 D-9 Abertura →
+    🎯 D-10 Enquete → 🔥 D-11 Dica → 📌 D-12 Atividade →
+    💡 D-13 Prova social → ⏳ D-14 Véspera → 🚀 Manhã da venda → ⏰ Noite (19h)
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-bottom:8px;color:#78350F;font-size:0.87em;line-height:1.6;">
+    ⚠️ <strong>Atenção antes de usar:</strong><br>
+    Os textos em destaque são <strong>fixos</strong> — copiados palavra por palavra do modelo aprovado.<br>
+    Apenas <strong>D-10 (enquete), D-11 (dica), D-12 (atividade) e D-13 (prova social)</strong> são gerados pela IA.<br>
+    <strong>Revise esses 4 blocos antes de enviar.</strong>
     </div>""", unsafe_allow_html=True)
 
     if not st.session_state.dados.get('whatsapp_contato'):
