@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 from groq import Groq
 from datetime import timedelta
 import re
@@ -390,11 +390,24 @@ def system_fb():
 
 def prompt_lp():
     d = st.session_state.dados
+    nome_autor = d.get('autor_nome', '')
+    experiencia = d.get('autor_experiencia', '')
+    credenciais = d.get('autor_credenciais', '')
+    secao_autor = ''
+    if nome_autor or experiencia:
+        secao_autor = (
+            f"Informações do autor para usar na seção 'Quem sou eu': "
+            f"Nome: {nome_autor}. Experiência: {experiencia}. Credenciais/conquistas: {credenciais}. "
+            f"Use essas informações para criar uma seção de autoridade que gere confiança no leitor. "
+        )
     return (
         f"Crie 5 variações de copy completa para Landing Page. "
         f"Situação atual: {d['atual']}. Situação desejada: {d['desejada']}. "
         f"Promessa: {d['promessa']}. Diferencial: {d['diferencial']}. "
-        f"Para cada variação, sugira imagens e elementos visuais. "
+        f"{secao_autor}"
+        f"Cada variação deve ter: headline, subtítulo, seção de dor, seção de solução, "
+        f"seção 'Quem sou eu' com os dados do autor (se informados), benefícios em lista, "
+        f"e sugestões de imagens e elementos visuais. "
         f"Finalize cada variação com o botão de ação: [ ENTRAR NO GRUPO ]."
     )
 
@@ -410,42 +423,52 @@ def prompt_msg():
     data = d['data_lancto'].strftime('%d/%m/%Y')
     data_d1 = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
     preco = d.get('preco', 47)
-    nome_eb = d['nome_eb']
-    bonus_resumo = d.get('bonus_resumo', 'Bônus 1, Bônus 2 e Bônus 3 complementares')
+    nome_eb = d.get('nome_eb', '')
+    bonus_resumo = d.get('bonus_resumo', '')
+    # Monta lista de bônus formatada
+    if bonus_resumo:
+        bonus_list = '\n'.join([f'  🎁 {b.strip()}' for b in bonus_resumo.split(',') if b.strip()])
+    else:
+        bonus_list = '  🎁 Bônus complementares inclusos'
     return (
-        f"Crie 3 mensagens para um grupo de WhatsApp/Telegram de lançamento digital. "
-        f"Use os dados abaixo para personalizar as mensagens de forma natural e fluida, "
-        f"sem repetir textos longos e sem incoerências gramaticais.\n\n"
+        f"Crie 3 mensagens curtas e diretas para um grupo de WhatsApp/Telegram de lançamento digital.\n\n"
+        f"DADOS DO LANÇAMENTO:\n"
         f"- Nicho: {d['nicho']}\n"
         f"- Público-alvo: {d['publico']}\n"
-        f"- Nome do e-book principal: {nome_eb}\n"
-        f"- Principal dor: {d['dor']}\n"
-        f"- Promessa/resultado: {d['promessa']}\n"
+        f"- E-book principal: {nome_eb}\n"
+        f"- Dor principal: {d['dor']}\n"
+        f"- Promessa: {d['promessa']}\n"
         f"- Preço: R${preco}\n"
-        f"- Bônus inclusos: {bonus_resumo}\n"
+        f"- Bônus: {bonus_resumo}\n"
         f"- Data de lançamento: {data}\n"
-        f"- Data de aquecimento (1 dia antes): {data_d1}\n\n"
+        f"- Data de aquecimento: {data_d1}\n\n"
+        f"REGRAS IMPORTANTES:\n"
+        f"- Mensagens 1 e 2 devem ser CURTAS (máximo 5 linhas cada)\n"
+        f"- Mensagem 3 deve ser COMPACTA mas completa (máximo 15 linhas)\n"
+        f"- Tom humano, direto, sem enrolação\n\n"
         f"Estruture EXATAMENTE assim:\n\n"
         f"**Descrição do grupo:**\n"
-        f"Este grupo é silencioso. Você não será incomodado.\n"
-        f"Aqui você receberá apenas conteúdos e avisos relacionados ao tema.\n\n"
+        f"Este grupo é silencioso. Você não será incomodado. Aqui você receberá apenas conteúdos e avisos sobre {d['nicho']}.\n\n"
         f"---\n\n"
-        f"**📩 Mensagem 1 – Boas-vindas + Pré-lançamento**\n"
-        f"[mensagem de boas-vindas calorosa, mencione o nicho, diga que vai liberar conteúdo no dia {data}]\n\n"
+        f"**📩 Mensagem 1 – Boas-vindas**\n"
+        f"[Boas-vindas calorosa e curta. Diga que o grupo foi criado para entregar conteúdo sobre {d['nicho']}. "
+        f"Informe que em {data} vai liberar algo especial. Peça para ficarem atentos. Máximo 5 linhas.]\n\n"
         f"---\n\n"
-        f"**⏳ Mensagem 2 – 1 dia antes ({data_d1}) — aquecimento**\n"
-        f"[mensagem de aquecimento, mencione a dor, crie expectativa para amanhã]\n\n"
+        f"**⏳ Mensagem 2 – Aquecimento ({data_d1})**\n"
+        f"[Mensagem curta de antecipação. Amanhã é o grande dia. Toque na dor '{d['dor']}' de forma humana. "
+        f"Crie expectativa sem revelar o produto. Máximo 5 linhas.]\n\n"
         f"---\n\n"
         f"**🚀 Mensagem 3 – Lançamento ({data})**\n"
-        f"[Escreva uma mensagem de lançamento completa com esta estrutura exata:\n"
-        f"- Anuncie que foi liberado o ebook '{nome_eb}'\n"
-        f"- Diga que é um ebook completo sobre {d['nicho']} para {d['publico']}\n"
-        f"- Mencione o resultado: {d['promessa']}\n"
-        f"- Liste os bônus: {bonus_resumo}\n"
-        f"- Preço de lançamento: R${preco} — válido só hoje, {data}\n"
-        f"- Garantia: 7 dias ou seu dinheiro de volta, sem perguntas\n"
-        f"- Finalize com: 👉 [LINK DA MONETIZZE]\n"
-        f"- Última linha: Este preço é válido só hoje, {data}. Amanhã o valor muda.]"
+        f"[Escreva a mensagem de lançamento COMPACTA com EXATAMENTE esta estrutura, sem inventar nada:\n\n"
+        f"🔥 [frase de abertura de impacto sobre o lançamento]\n\n"
+        f"📘 *{nome_eb}*\n"
+        f"[uma linha descrevendo o que o leitor vai conseguir]\n\n"
+        f"🎁 *Bônus inclusos:*\n"
+        f"{bonus_list}\n\n"
+        f"💰 Preço de lançamento: R${preco}\n"
+        f"✅ Garantia: 7 dias ou seu dinheiro de volta\n\n"
+        f"👉 [LINK DA MONETIZZE]\n\n"
+        f"⚠️ Este preço é válido só hoje, {data}. Amanhã o valor muda.]"
     )
 
 def system_msg():
@@ -540,6 +563,28 @@ elif st.session_state.etapa == "Formulario":
     d['promessa']    = st.text_input("Promessa do e-book:", value=d.get('promessa', ''))
     d['diferencial'] = st.text_input("Diferencial:", value=d.get('diferencial', ''))
     d['preco']       = st.number_input("Preço do e-book (R$):", min_value=9, max_value=997, value=int(d.get('preco', 47)), step=1)
+
+    st.divider()
+    st.markdown("#### Suas credenciais como autor")
+    st.caption(
+        "Essas informações aparecem na Landing Page na seção 'Quem sou eu' e geram confiança no leitor. "
+        "Não precisa ser famoso — qualquer experiência real vale. Exemplos: "
+        "'Invisto em cripto há 3 anos e já errei muito antes de acertar' ou "
+        "'Emagreci 12kg em 4 meses e aprendi o que realmente funciona'."
+    )
+    d['autor_nome']         = st.text_input("Seu nome (como quer aparecer):", value=d.get('autor_nome', ''), placeholder="ex: João Silva")
+    d['autor_experiencia']  = st.text_area(
+        "Sua experiência com o tema:",
+        value=d.get('autor_experiencia', ''),
+        placeholder="ex: Invisto em criptomoedas há 4 anos. Já perdi dinheiro no início por falta de conhecimento, aprendi na prática e hoje tenho uma carteira diversificada.",
+        help="Conte sua história com o tema de forma honesta. Isso humaniza a LP e gera identificação."
+    )
+    d['autor_credenciais']  = st.text_area(
+        "Resultados ou conquistas que pode mencionar:",
+        value=d.get('autor_credenciais', ''),
+        placeholder="ex: Já ajudei mais de 200 pessoas a dar os primeiros passos em cripto. Minha carteira valorizou 180% em 2023.",
+        help="Números, resultados concretos ou histórias de quem você já ajudou. Deixe em branco se preferir não usar."
+    )
     from datetime import date
     data_sugerida = d.get('data_lancto', date.today() + timedelta(days=15))
     d['data_lancto'] = st.date_input(
@@ -775,30 +820,86 @@ PREÇO: R${d.get('preco', 47)}
     # --- MELHORIA 6: Checklist de lançamento ---
     st.divider()
     with st.expander("✅ CHECKLIST DE LANÇAMENTO — O QUE FAZER AGORA"):
-        data_lancto = d.get('data_lancto', '')
-        checklist = [
-            ("Hoje", "Criar o grupo no WhatsApp ou Telegram com o nome do nicho"),
-            ("Hoje", "Cadastrar o e-book na Monetizze e pegar o link de venda"),
-            ("Hoje", "Subir o arquivo do e-book na Monetizze (PDF ou link)"),
-            ("Hoje", "Definir o preço e configurar o checkout"),
-            ("Hoje", "Postar o anúncio no Facebook/Instagram apontando para a LP ou grupo"),
-            ("Hoje", "Enviar a Mensagem 1 (boas-vindas) para quem entrar no grupo"),
-            (f"Dia anterior ao lançamento", "Enviar a Mensagem 2 (aquecimento) para o grupo"),
-            (f"Dia do lançamento ({data_lancto})", "Enviar a Mensagem 3 com o link da Monetizze"),
-            (f"Dia do lançamento", "Monitorar as vendas na Monetizze e responder dúvidas"),
-            ("Após lançamento", "Analisar: quantas pessoas no grupo vs. quantas compraram"),
-            ("Após lançamento", "Guardar a base para o próximo lançamento — custo zero de tráfego!"),
+        from datetime import date, timedelta as td
+        data_lancto = d.get('data_lancto', date.today())
+        data_lancto_fmt = data_lancto.strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else str(data_lancto)
+        data_msg1 = (data_lancto - td(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
+        data_msg2 = (data_lancto - td(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
+
+        fases = [
+            {
+                "fase": "FASE 1 — HOJE: Preparação (antes de ligar os anúncios)",
+                "cor": "#0EA5E9",
+                "items": [
+                    ("Hoje", "Salve e baixe todo o conteúdo gerado pelo Nexus Launcher (.txt)"),
+                    ("Hoje", "Crie o grupo no WhatsApp ou Telegram com o nome do nicho"),
+                    ("Hoje", "Configure a descrição do grupo com o texto gerado (grupo silencioso)"),
+                    ("Hoje", "Cadastre o e-book principal + 3 bônus na Monetizze como produto"),
+                    ("Hoje", f"Defina o preço: R${d.get('preco', 47)} e configure o checkout"),
+                    ("Hoje", "Copie o link da Monetizze e salve — você vai precisar dele no dia do lançamento"),
+                    ("Hoje", "Suba os anúncios no Facebook/Instagram usando as copies geradas"),
+                    ("Hoje", "Aponte os anúncios para o link do grupo (WhatsApp/Telegram)"),
+                ]
+            },
+            {
+                "fase": f"FASE 2 — SEMANA 1 ({(data_lancto - td(days=14)).strftime('%d/%m')} a {(data_lancto - td(days=8)).strftime('%d/%m')}): Encher o grupo",
+                "cor": "#8B5CF6",
+                "items": [
+                    ("Dias 1 a 7", "Deixe os anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
+                    ("Diariamente", "Monitore o custo por lead nos anúncios (meta: até R$2,00 por pessoa)"),
+                    ("Se necessário", "Teste variações de anúncio diferentes para melhorar o custo"),
+                    ("Importante", "NÃO envie nenhuma mensagem no grupo ainda — apenas aguarde o grupo encher"),
+                ]
+            },
+            {
+                "fase": f"FASE 3 — SEMANA 2 ({(data_lancto - td(days=7)).strftime('%d/%m')} a {data_msg2}): Aquecimento",
+                "cor": "#F59E0B",
+                "items": [
+                    (f"{data_msg1}", "Envie a Mensagem 1 (boas-vindas) para o grupo — primeira vez que o grupo vai receber algo"),
+                    ("Dias seguintes", "Continue com os anúncios rodando para encher mais o grupo"),
+                    (f"{data_msg2}", "Envie a Mensagem 2 (aquecimento) — 1 dia antes do lançamento"),
+                    (f"{data_msg2}", "Confira se o link da Monetizze está funcionando e o checkout está ok"),
+                ]
+            },
+            {
+                "fase": f"FASE 4 — DIA DO LANÇAMENTO ({data_lancto_fmt}): Vender",
+                "cor": "#22C55E",
+                "items": [
+                    (f"{data_lancto_fmt} — manhã", "Envie a Mensagem 3 com o link da Monetizze para o grupo"),
+                    (f"{data_lancto_fmt}", "Pause os anúncios ou redirecione direto para o link de venda"),
+                    (f"{data_lancto_fmt}", "Fique online para responder dúvidas rapidamente no grupo ou no direct"),
+                    (f"{data_lancto_fmt} — noite", "Envie um lembrete final: 'Poucas horas para garantir o preço de lançamento'"),
+                ]
+            },
+            {
+                "fase": "FASE 5 — PÓS-LANÇAMENTO: Analisar e escalar",
+                "cor": "#64748B",
+                "items": [
+                    ("Após lançamento", "Anote: quantas pessoas no grupo, quantas compraram, qual foi a taxa de conversão"),
+                    ("Após lançamento", "Calcule o ROI: faturamento ÷ custo de tráfego"),
+                    ("Próximos dias", "Entregue o e-book e os bônus para quem comprou — mantenha a promessa"),
+                    ("Próxima semana", "O grupo continua ativo — use a base para o próximo lançamento sem custo de tráfego"),
+                    ("Longo prazo", "Repita o processo com outro produto para a mesma base ou novo nicho"),
+                ]
+            },
         ]
-        for i, (quando, acao) in enumerate(checklist, 1):
+
+        for fase in fases:
             st.markdown(f"""
-            <div class="checklist-item">
-                <div class="checklist-num">{i}</div>
-                <div>
-                    <div style="font-size:0.75em;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">{quando}</div>
-                    <div style="font-size:0.95em;color:#1E293B">{acao}</div>
-                </div>
+            <div style="margin:18px 0 8px 0;padding:8px 14px;background:{fase['cor']};border-radius:8px;color:white;font-weight:600;font-size:0.85em;letter-spacing:0.5px">
+                {fase['fase']}
             </div>
             """, unsafe_allow_html=True)
+            for i, (quando, acao) in enumerate(fase['items']):
+                st.markdown(f"""
+                <div class="checklist-item">
+                    <div style="width:10px;height:10px;border-radius:50%;background:{fase['cor']};margin-top:5px;flex-shrink:0"></div>
+                    <div>
+                        <div style="font-size:0.72em;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">{quando}</div>
+                        <div style="font-size:0.92em;color:#1E293B">{acao}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # --- MELHORIA 8: Calculadora de meta na visualização ---
     st.divider()
