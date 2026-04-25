@@ -345,7 +345,7 @@ def prompt_fb():
         f"3. Lista rápida: ✅ Gratuito ✅ Grupo fechado ✅ Dicas diárias ✅ Vagas limitadas\n"
         f"4. Sugestão de criativo visual (1 linha)\n"
         f"5. CTA: ⬇️ Clique abaixo e garanta sua vaga\n\n"
-        f"REGRAS: Sem exageros. Tom humano. Parece um convite, não um anúncio de produto."
+        f"REGRAS: Deixe BEM EXPLÍCITO que o programa é 100% GRATUITO — use essa palavra em destaque. Sem exageros. Tom humano. Parece um convite, não um anúncio de produto."
     )
 
 def system_fb():
@@ -391,107 +391,99 @@ def prompt_msg():
     d = st.session_state.dados
     data_lancto = d.get('data_lancto')
     data_fmt = data_lancto.strftime('%d/%m/%Y') if data_lancto else 'em breve'
-    data_d1 = (data_lancto - timedelta(days=1)).strftime('%d/%m/%Y') if data_lancto else ''
     preco = d.get('preco', 47)
     nome_eb = d.get('nome_eb', '')
     nicho = d.get('nicho', '')
     dor = d.get('dor', '')
     publico = d.get('publico', '')
-    promessa = d.get('promessa', '')
     whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
     bonus_resumo = d.get('bonus_resumo', '')
     bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
 
     return (
-        f"Crie as mensagens completas do funil de WhatsApp/Telegram para um lançamento digital.\n\n"
-        f"CONTEXTO:\n"
-        f"- Nicho: {nicho}\n- Público: {publico}\n- Dor: {dor}\n"
-        f"- Ebook: {nome_eb}\n- Promessa: {promessa}\n"
-        f"- Preço: R${preco}\n- Data de lançamento: {data_fmt}\n"
-        f"- WhatsApp direto: {whatsapp_num}\n"
-        f"- Bônus: {bonus_resumo}\n\n"
-        f"CONCEITO: O grupo é chamado de 'Programa gratuito de X dias para [objetivo]'. "
-        f"A venda é a conclusão natural — o cliente não sente que foi vendido, sente que encontrou a resposta.\n\n"
-        f"Gere EXATAMENTE neste formato (rótulos exatos seguidos de dois pontos):\n\n"
+        f"Gere as mensagens do funil de WhatsApp/Telegram para o lançamento do ebook sobre {nicho}.\n\n"
+        f"DADOS: Nicho: {nicho}. Público: {publico}. Dor: {dor}. "
+        f"Ebook: {nome_eb}. Preço: R${preco}. Bônus: {bonus_resumo}. "
+        f"WhatsApp: {whatsapp_num}. Lançamento: {data_fmt}.\n\n"
+        f"Gere EXATAMENTE neste formato com os rótulos exatos abaixo:\n\n"
 
         f"DESCRICAO_GRUPO:\n"
-        f"[Texto fixo para a DESCRIÇÃO do grupo (campo de bio/informações do WhatsApp/Telegram). "
-        f"Escreva assim:\n"
-        f"Seja muito bem-vindo ao grupo de [nome do programa sobre {nicho}]!\n"
-        f"Nos próximos dias você vai receber conteúdos gratuitos, simples e práticos sobre {nicho} — "
-        f"tudo de forma leve e aplicável no dia a dia.\n"
-        f"Criamos esse espaço com um único objetivo: entregar valor de verdade.\n"
-        f"Para manter a organização, o grupo permanecerá silencioso — "
-        f"você não será incomodado e receberá apenas mensagens importantes e diretamente relacionadas ao conteúdo.\n"
-        f"Fique atento… o que vamos compartilhar aqui pode fazer mais diferença do que você imagina.\n"
-        f"Adapte apenas o nome do programa e o nicho. Mantenha o restante fiel a esse modelo.]\n\n"
+        f"Seja muito bem-vindo ao nosso grupo de [nome do programa sobre {nicho}]!\n"
+        f"Nos próximos dias, você vai receber conteúdos gratuitos, simples e práticos sobre {nicho} — tudo de forma leve e aplicável no seu dia a dia.\n"
+        f"Criamos esse espaço com um único objetivo: te entregar valor de verdade.\n"
+        f"Para manter a organização e garantir a melhor experiência, o grupo permanecerá silencioso.\n"
+        f"Assim, você não será incomodado e receberá apenas mensagens importantes e diretamente relacionadas ao conteúdo.\n"
+        f"Fique atento… o que vamos compartilhar aqui pode fazer mais diferença do que você imagina.\n\n"
 
         f"BOAS_VINDAS:\n"
-        f"[Mensagem automática ao entrar. Calorosa, curta, sem mencionar venda. "
-        f"Diga que durante os próximos dias o grupo recebe conteúdo gratuito sobre {nicho}. "
-        f"Máximo 5 linhas.]\n\n"
+        f"[Cole aqui exatamente o mesmo texto da DESCRICAO_GRUPO acima — é a mensagem automática enviada ao entrar no grupo.]\n\n"
 
         f"DIA_7:\n"
-        f"[Bom dia + abertura do programa. Apresente o tema dos próximos dias. "
-        f"Diga que quem tiver dúvidas pode mandar mensagem no WhatsApp {whatsapp_num}. "
-        f"Máximo 8 linhas. Zero menção a produto.]\n\n"
+        f"[Bom dia + abertura do programa. Apresente brevemente os próximos dias de conteúdo sobre {nicho}. "
+        f"Diga que dúvidas podem ser enviadas pelo WhatsApp {whatsapp_num}. Máximo 8 linhas. Zero menção a produto.]\n\n"
 
         f"DIA_6:\n"
-        f"[Enquete interativa sobre a maior dificuldade do público com {nicho}. "
-        f"Apresente 4 opções numeradas. "
-        f"IMPORTANTE: NÃO prometa responder pessoalmente. Escreva apenas: "
-        f"'Manda aqui no WhatsApp ({whatsapp_num}) qual é a sua — quero entender sua maior dificuldade.' "
-        f"Tom curioso, sem compromisso de retorno individual. Máximo 8 linhas.]\n\n"
+        f"Bom dia! isso é muito importante\n"
+        f"Se você quer realmente sair desse programa com resultado de verdade, por favor, responda essa enquete 👇\n\n"
+        f"[Crie uma enquete com 4 opções relacionadas à dor: {dor} — no nicho {nicho}]\n\n"
+        f"Manda aqui no WhatsApp ({whatsapp_num}) qual é a sua — quero entender sua maior dificuldade.\n\n"
 
         f"DIA_5:\n"
-        f"[Dica prática acionável sobre {nicho}. 1 ensinamento real que a pessoa pode aplicar hoje. "
-        f"Máximo 8 linhas. Zero CTA de venda.]\n\n"
+        f"[Dica prática sobre {nicho}. 1 ensinamento acionável hoje. Máximo 6 linhas. Zero CTA de venda.]\n\n"
 
         f"DIA_4:\n"
-        f"[Atividade rápida ou pergunta reflexiva ligada à dor '{dor}'. "
-        f"Gera engajamento sem revelar que existe produto. Máximo 8 linhas.]\n\n"
+        f"[Curiosidade ou insight sobre {nicho} ligado à dor: {dor}. Máximo 6 linhas.]\n\n"
 
         f"DIA_3:\n"
-        f"[Conteúdo de valor aprofundando um ponto ligado à dor '{dor}'. "
-        f"Ensina algo concreto. Máximo 8 linhas.]\n\n"
-
-        f"DIA_2:\n"
-        f"[Simule um relato curto de alguém que superou a dor '{dor}' e alcançou a promessa '{promessa}'. "
-        f"Apresente como conquista real de alguém da 'turma passada'. Tom humano. Máximo 8 linhas.]\n\n"
+        f"[Simule um relato curto de alguém da turma passada que superou: {dor}. "
+        f"Tom humano, como se fosse real. Exemplo: 'Já estamos no nosso terceiro programa graças a resultados "
+        f"dos nossos alunos como [nome inventado], que [situação antes] e hoje [resultado depois].' Máximo 6 linhas.]\n\n"
 
         f"VESPERA:\n"
-        f"Escreva EXATAMENTE este texto, sem alterar nenhuma palavra:\n"
-        f"---\n"
         f"Fiquei impressionado com tudo o que recebi nos últimos dias… A maioria de vocês está enfrentando praticamente os mesmos obstáculos.\n\n"
         f"E isso me fez parar e pensar: como posso ajudar de forma mais completa, direta e transformadora?\n\n"
         f"Então eu me reuni com a minha equipe e decidimos preparar algo realmente especial pra vocês.\n\n"
         f"Algo que não só explica… Mas mostra o caminho de forma simples, prática e aplicável.\n\n"
-        f"Amanhã, nós vamos enviar aqui no grupo — e eu recomendo que você esteja atento, porque o que vem pode mudar completamente a forma como você vem tentando até agora.\n"
-        f"---\n\n"
+        f"Amanhã, nós vamos enviar aqui no grupo — e eu recomendo que você esteja atento, porque o que vem pode mudar completamente a forma como você vem tentando até agora.\n\n"
+
         f"VENDA_MANHA:\n"
-        f"[Mensagem do dia da venda — manhã. "
-        f"COMECE assim: faça referência direta à dúvida/dificuldade que as pessoas mandaram no WhatsApp — "
-        f"'Lembra daquela mensagem que você me mandou sobre [dor]?' ou similar. "
-        f"Diga que criou o '{nome_eb}' como resposta coletiva a tudo que recebeu. "
-        f"Apresente como a resposta que eles estavam esperando, não como produto pronto de prateleira. "
-        f"De R${preco*2} por apenas R${preco} hoje. "
-        f"Liste os bônus:\n{bonus_lista}\n"
+        f"Hoje é o grande dia.\n\n"
+        f"Com a ajuda da minha equipe — e anos de experiência na prática — eu reuni as principais dificuldades que impedem a maioria das pessoas de evoluir em {nicho}… e transformei tudo em um guia direto ao ponto.\n\n"
+        f"📘 {nome_eb} — um e-book completo, feito pra te dar clareza e mostrar exatamente o que fazer.\n\n"
+        f"E pra garantir que você não fique com nenhuma dúvida no caminho, você ainda recebe 3 e-books bônus exclusivos:\n"
+        f"{bonus_lista}\n\n"
+        f"Tudo isso por apenas R$ {preco}.\n\n"
+        f"E deixa eu te falar com transparência:\n"
+        f"esse conteúdo não vai ficar nesse valor por muito tempo.\n"
+        f"A partir de amanhã, ele pode ser disponibilizado em outras plataformas por um preço muito mais alto.\n"
+        f"Ou seja… essa é a sua melhor chance de entrar agora.\n\n"
+        f"Não deixa pra depois — essa oferta termina hoje.\n\n"
         f"👉 [LINK MONETIZZE]\n"
-        f"⏰ Promoção válida até 23:59 de hoje. ✅ Garantia de 7 dias pela Monetizze. "
-        f"Máximo 15 linhas.]\n\n"
+        f"⏰ Promoção válida até 23:59 de hoje\n"
+        f"✅ Garantia de 7 dias pela Monetizze\n\n"
+        f"Agora a decisão está nas suas mãos.\n\n"
 
         f"VENDA_NOITE:\n"
-        f"[Lembrete noturno. Curto e direto. Lembra que encerra hoje à meia-noite. "
-        f"Reforça a garantia de 7 dias. Máximo 5 linhas.]\n"
+        f"Boa noite! 👋\n\n"
+        f"Quero passar aqui de forma mais tranquila pra te lembrar de algo importante…\n\n"
+        f"Mais cedo eu te apresentei o material que preparei com a minha equipe — reunindo exatamente as dificuldades que a maioria das pessoas enfrenta em {nicho}, junto com um passo a passo simples pra evoluir de verdade.\n\n"
+        f"📘 É um conteúdo direto, sem complicação\n"
+        f"🎁 E ainda com 3 e-books bônus pra complementar seu aprendizado\n\n"
+        f"Se você viu a mensagem anterior e ficou na dúvida, tá tudo bem.\n"
+        f"Essa não é uma decisão pra ser feita na pressa — mas também não é algo que vale ignorar.\n\n"
+        f"A verdade é: quem aplica o método certo, evolui muito mais rápido.\n\n"
+        f"Se fizer sentido pra você, o acesso ainda está disponível hoje:\n\n"
+        f"👉 [LINK MONETIZZE]\n"
+        f"⏰ Disponível até 23:59\n"
+        f"✅ Garantia de 7 dias\n\n"
+        f"Dá uma olhada com calma… e decide com consciência.\n"
     )
-
 def system_msg():
     return (
         "Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
-        "A oferta deve parecer o próximo passo lógico da jornada que a pessoa viveu no grupo — não uma surpresa. "
-        "A véspera deve soar como alguém que realmente leu as mensagens e está respondendo a elas. "
-        "A mensagem de venda deve começar conectando com o que as pessoas compartilharam — não com energia de vendedor. "
-        "Use linguagem simples, humana e direta. Respeite o formato solicitado com os rótulos exatos."
+        "Os textos fixos devem ser reproduzidos EXATAMENTE como fornecidos — sem alterar uma vírgula. "
+        "Apenas os blocos com instruções entre colchetes devem ser gerados pela IA. "
+        "Respeite o formato com os rótulos exatos. Tom humano e direto em tudo que gerar."
     )
 
 # =============================================================
