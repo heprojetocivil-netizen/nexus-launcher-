@@ -194,6 +194,60 @@ st.markdown("""
         line-height: 1.7;
         white-space: pre-wrap;
     }
+
+    /* ── NOVOS ESTILOS: cards de aquecimento ── */
+    .aquecimento-dia-header {
+        background: linear-gradient(135deg, #7C3AED, #5B21B6);
+        color: white;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 12px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.05em;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .aquecimento-card {
+        background: #F5F3FF;
+        border: 1px solid #DDD6FE;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+    }
+
+    .aquecimento-conteudo {
+        background: #FFFFFF;
+        border: 1px solid #EDE9FE;
+        border-radius: 8px;
+        padding: 16px 20px;
+        color: #334155;
+        font-size: 0.88em;
+        line-height: 1.7;
+        white-space: pre-wrap;
+    }
+
+    .aquecimento-gancho {
+        background: #EDE9FE;
+        border-left: 4px solid #7C3AED;
+        border-radius: 0 6px 6px 0;
+        padding: 10px 16px;
+        margin-top: 12px;
+        color: #4C1D95;
+        font-size: 0.85em;
+        font-style: italic;
+    }
+
+    .btn-roxo>button {
+        background-color: #7C3AED !important;
+        height: 3.5em !important;
+    }
+    .btn-roxo>button:hover {
+        background-color: #5B21B6 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -212,15 +266,16 @@ for k, v in defaults.items():
         st.session_state[k] = v
 
 # --- ETAPAS PARA INDICADOR DE PROGRESSO ---
-ETAPAS = ["Formulario", "Gerar_Ebook", "Gerar_Bonus", "Copy_Face", "Copy_LP", "Mensagens_Grupo", "Visualizacao"]
+ETAPAS = ["Formulario", "Gerar_Ebook", "Gerar_Bonus", "Gerar_Aquecimento", "Copy_Face", "Copy_LP", "Mensagens_Grupo", "Visualizacao"]
 ETAPAS_LABELS = {
-    "Formulario": "1. Formulário",
-    "Gerar_Ebook": "2. E-book",
-    "Gerar_Bonus": "3. Bônus",
-    "Copy_Face": "4. Anúncio",
-    "Copy_LP": "5. Landing Page",
-    "Mensagens_Grupo": "6. Mensagens",
-    "Visualizacao": "7. Projeto Final",
+    "Formulario":        "1. Formulário",
+    "Gerar_Ebook":       "2. E-book",
+    "Gerar_Bonus":       "3. Bônus",
+    "Gerar_Aquecimento": "4. Aquecimento",
+    "Copy_Face":         "5. Anúncio",
+    "Copy_LP":           "6. Landing Page",
+    "Mensagens_Grupo":   "7. Mensagens",
+    "Visualizacao":      "8. Projeto Final",
 }
 
 # --- EXEMPLOS POR NICHO ---
@@ -316,7 +371,6 @@ def _linha_e_marcador_bonus(linha):
             if lu.startswith(pref):
                 nome = l[len(pref):].strip(" :-")
                 return num, nome
-        # variantes com Ô (já está em upper)
         for pref in (f"BÔNUS {num}:", f"BÔNUS{num}:", f"BÔNUS {num} -"):
             if lu.startswith(pref.upper()):
                 nome = l[len(pref):].strip(" :-")
@@ -325,20 +379,13 @@ def _linha_e_marcador_bonus(linha):
 
 
 def parsear_bonus(texto: str) -> list:
-    """
-    Divide o texto dos bônus em lista de dicts sem usar regex complexo.
-    [{"titulo": ..., "descricao": ..., "conteudo": ...}, ...]
-    """
     linhas = texto.split("\n")
-
-    # 1. Acha as linhas que são cabeçalho de bônus
     marcadores = []
     for idx, linha in enumerate(linhas):
         num, nome = _linha_e_marcador_bonus(linha)
         if num is not None:
             marcadores.append((idx, num, nome))
 
-    # Fallback: sem marcadores detectáveis
     if not marcadores:
         return [{"titulo": "🎁 Bônus", "descricao": "", "conteudo": texto.strip()}]
 
@@ -350,14 +397,14 @@ def parsear_bonus(texto: str) -> list:
         titulo = "🎁 BÔNUS " + num + (": " + nome_bonus if nome_bonus else "")
         descricao_partes = []
         conteudo_partes = []
-        estado = "cabecalho"  # cabecalho → descricao → conteudo
+        estado = "cabecalho"
 
         for linha in bloco:
             ls = linha.strip()
             lu = ls.upper()
 
             if estado == "cabecalho" and not ls:
-                continue  # pula linhas vazias antes de tudo
+                continue
 
             if lu.startswith("DESCRI") and ":" in ls:
                 estado = "descricao"
@@ -378,7 +425,6 @@ def parsear_bonus(texto: str) -> list:
             elif estado == "conteudo":
                 conteudo_partes.append(linha)
             else:
-                # cabecalho sem seções marcadas: joga tudo no conteúdo
                 conteudo_partes.append(linha)
 
         descricao = "\n".join(descricao_partes).strip()
@@ -389,6 +435,69 @@ def parsear_bonus(texto: str) -> list:
         bonus_list.append({"titulo": titulo, "descricao": descricao, "conteudo": conteudo})
 
     return bonus_list
+
+
+# --- PARSEAR DIAS DE AQUECIMENTO ---
+def parsear_aquecimento(texto: str) -> list:
+    """
+    Divide o texto de aquecimento em lista de dicts por dia.
+    [{"dia": "Dia 1", "titulo": ..., "conteudo": ..., "gancho": ...}, ...]
+    """
+    linhas = texto.split("\n")
+    marcadores = []
+
+    for idx, linha in enumerate(linhas):
+        ls = linha.strip()
+        lu = ls.upper()
+        for num in ("1", "2", "3", "4", "5"):
+            for pref in (f"DIA {num}:", f"DIA {num} -", f"DIA{num}:", f"📅 DIA {num}", f"📅DIA {num}"):
+                if lu.startswith(pref.upper()):
+                    nome = ls[len(pref):].strip(" :-")
+                    marcadores.append((idx, num, nome))
+                    break
+
+    if not marcadores:
+        return [{"dia": "Dia 1", "titulo": "Aquecimento", "conteudo": texto.strip(), "gancho": ""}]
+
+    dias_list = []
+    for i, (idx_ini, num, titulo_dia) in enumerate(marcadores):
+        idx_fim = marcadores[i + 1][0] if i + 1 < len(marcadores) else len(linhas)
+        bloco = linhas[idx_ini + 1: idx_fim]
+
+        conteudo_partes = []
+        gancho_partes = []
+        estado = "conteudo"
+
+        for linha in bloco:
+            ls = linha.strip()
+            lu = ls.upper()
+
+            if not ls and estado == "conteudo" and not conteudo_partes:
+                continue
+
+            if lu.startswith("GANCHO") and ":" in ls:
+                estado = "gancho"
+                parte = ls[ls.index(":") + 1:].strip()
+                if parte:
+                    gancho_partes.append(parte)
+                continue
+
+            if estado == "conteudo":
+                conteudo_partes.append(linha)
+            elif estado == "gancho":
+                gancho_partes.append(ls)
+
+        conteudo = "\n".join(conteudo_partes).strip()
+        gancho = " ".join(gancho_partes).strip()
+
+        dias_list.append({
+            "dia": f"Dia {num}",
+            "titulo": titulo_dia,
+            "conteudo": conteudo,
+            "gancho": gancho,
+        })
+
+    return dias_list
 
 
 # --- COMPONENTE: BLOCO COM BOTÕES DE COPIAR E REGENERAR ---
@@ -408,6 +517,27 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
             conteudo_html = normalizar_markdown(b['conteudo'])
             st.markdown(f"<div class='bonus-conteudo'>{conteudo_html}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
+
+    # Renderização especial para aquecimento
+    elif chave == 'aquecimento_cont':
+        dias_list = parsear_aquecimento(conteudo)
+        emojis = ["🔥", "💡", "🎯", "⚡", "🚀"]
+        for i, d in enumerate(dias_list):
+            emoji = emojis[i % len(emojis)]
+            st.markdown(
+                f"<div class='aquecimento-dia-header'>{emoji} {d['dia']}"
+                f"{' — ' + d['titulo'] if d['titulo'] else ''}</div>",
+                unsafe_allow_html=True
+            )
+            conteudo_html = normalizar_markdown(d['conteudo'])
+            st.markdown(f"<div class='aquecimento-conteudo'>{conteudo_html}</div>", unsafe_allow_html=True)
+            if d['gancho']:
+                st.markdown(
+                    f"<div class='aquecimento-gancho'>🔗 <strong>Gancho para amanhã:</strong> {d['gancho']}</div>",
+                    unsafe_allow_html=True
+                )
+            st.markdown("<br>", unsafe_allow_html=True)
+
     else:
         conteudo_html = normalizar_markdown(conteudo)
         st.markdown(f"<div class='caixa-texto'>{conteudo_html}</div>", unsafe_allow_html=True)
@@ -468,7 +598,7 @@ def barra_navegacao():
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- PROMPTS (funções para regeneração) ---
+# --- PROMPTS ---
 def prompt_ebook():
     d = st.session_state.dados
     return (
@@ -507,6 +637,63 @@ def prompt_bonus():
 
 def system_bonus():
     return "Você é um especialista em conteúdo digital educativo. Crie ebooks bônus práticos, diretos e que agreguem valor real ao produto principal."
+
+
+# ── NOVO: PROMPT DE AQUECIMENTO ──────────────────────────────────────────────
+def prompt_aquecimento():
+    d = st.session_state.dados
+    nicho      = d.get('nicho', '')
+    publico    = d.get('publico', '')
+    dor        = d.get('dor', '')
+    promessa   = d.get('promessa', '')
+    nome_eb    = d.get('nome_eb', '')
+    diferencial = d.get('diferencial', '')
+    data_lancto = d.get('data_lancto')
+    data_fmt   = data_lancto.strftime('%d/%m/%Y') if data_lancto else 'em breve'
+
+    return (
+        f"Crie 5 mensagens de aquecimento para um grupo de WhatsApp/Telegram sobre {nicho}.\n\n"
+        f"CONTEXTO:\n"
+        f"- Público: {publico}\n"
+        f"- Dor principal: {dor}\n"
+        f"- Ebook que será lançado: {nome_eb}\n"
+        f"- Promessa do produto: {promessa}\n"
+        f"- Diferencial: {diferencial}\n"
+        f"- Data de lançamento: {data_fmt}\n\n"
+        f"OBJETIVO: Entregar valor real ANTES de qualquer venda. "
+        f"Cada mensagem deve ensinar algo útil sobre {nicho}, criar identificação com a dor e "
+        f"construir autoridade de forma natural. NÃO mencione produto ou preço.\n\n"
+        f"Gere EXATAMENTE neste formato para cada dia:\n\n"
+        f"DIA 1: [Título curto e poderoso]\n"
+        f"[Mensagem completa: 1 ensinamento prático sobre {nicho}, em linguagem humana e direta, "
+        f"máximo 10 linhas. Use emojis com moderação. Inclua 1 dica acionável que a pessoa pode "
+        f"aplicar HOJE.]\n"
+        f"Gancho: [1 frase curta criando expectativa para o próximo dia, sem revelar o produto]\n\n"
+        f"DIA 2: [Título]\n"
+        f"[Mensagem]\n"
+        f"Gancho: [frase]\n\n"
+        f"DIA 3: [Título]\n"
+        f"[Mensagem]\n"
+        f"Gancho: [frase]\n\n"
+        f"DIA 4: [Título]\n"
+        f"[Mensagem]\n"
+        f"Gancho: [frase]\n\n"
+        f"DIA 5: [Título — pode tocar levemente que algo especial chega em breve, sem revelar o produto]\n"
+        f"[Mensagem de encerramento do aquecimento, reforçando transformação possível]\n"
+        f"Gancho: [Amanhã tem uma novidade especial para você — fique de olho neste grupo]\n\n"
+        f"REGRAS: Tom humano, sem parecer robô. Cada dia deve ensinar algo DIFERENTE. "
+        f"Nada de 'clique aqui', 'compre agora' ou qualquer CTA de venda."
+    )
+
+def system_aquecimento():
+    return (
+        "Você é um especialista em marketing de conteúdo e lançamentos digitais. "
+        "Sua missão é criar mensagens de aquecimento que entregam valor real, constroem confiança "
+        "e criam desejo pelo produto — tudo antes de qualquer oferta. "
+        "Escreva como um ser humano, não como um robô de vendas."
+    )
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 def prompt_fb():
     d = st.session_state.dados
@@ -564,7 +751,6 @@ def prompt_msg():
     preco = d.get('preco', 47)
     nome_eb = d.get('nome_eb', '')
     bonus_resumo = d.get('bonus_resumo', '')
-    # Monta lista de bônus formatada
     if bonus_resumo:
         bonus_list = '\n'.join([f'  🎁 {b.strip()}' for b in bonus_resumo.split(',') if b.strip()])
     else:
@@ -624,7 +810,6 @@ if st.session_state.etapa == "Login":
     st.title("NEXUS LAUNCHER")
     st.subheader("ACESSO RESTRITO A ASSOCIADOS DO QUIZ MAIS PRÊMIOS")
 
-    # --- LINK DO QUIZ MAIS PRÊMIOS ---
     st.markdown(
         '<p style="margin-top:-8px; margin-bottom:20px; font-size:0.95em;">'
         '🔗 <a href="https://www.quizmaispremios.com.br" target="_blank" '
@@ -653,7 +838,6 @@ elif st.session_state.etapa == "Formulario":
     st.title("PREENCHA O FORMULÁRIO")
     d = st.session_state.dados
 
-    # --- MELHORIA 1: Exemplos clicáveis ---
     st.markdown("#### Começar com um exemplo pronto")
     st.caption("Escolha um nicho de exemplo e preencha tudo automaticamente — depois é só ajustar.")
     cols = st.columns(len(EXEMPLOS))
@@ -668,7 +852,6 @@ elif st.session_state.etapa == "Formulario":
 
     st.divider()
 
-    # --- MELHORIA 2: IA preenche pelo nicho ---
     st.markdown("#### Ou deixe a IA preencher pelo nicho")
     nicho_rapido = st.text_input("Digite só o assunto do seu ebook:", placeholder="ex: meditação, finanças pessoais, culinária saudável")
     if st.button("✨ PREENCHER COM IA"):
@@ -701,7 +884,6 @@ elif st.session_state.etapa == "Formulario":
 
     st.divider()
 
-    # --- Campos do formulário ---
     st.markdown("#### Revise ou preencha manualmente")
     d['nicho']       = st.text_input("Nicho:", value=d.get('nicho', ''), help="ex: emagrecimento, renda extra")
     d['publico']     = st.text_input("Público-alvo:", value=d.get('publico', ''), help="ex: homens de 25 a 40")
@@ -744,7 +926,6 @@ elif st.session_state.etapa == "Formulario":
     )
     st.caption("💡 Dica: Use os primeiros 7 dias para encher o grupo com tráfego e os próximos 7 para aquecer com as mensagens. Lance no 15º dia.")
 
-    # --- MELHORIA 3: Calculadora de meta ---
     st.divider()
     st.markdown("#### Calculadora de faturamento")
     st.caption("Veja o potencial antes de avançar.")
@@ -767,7 +948,6 @@ elif st.session_state.etapa == "Formulario":
     col2.metric("Faturamento bruto", f"R${faturamento:,.0f}".replace(',', '.'))
     col3.metric("Lucro estimado", f"R${lucro:,.0f}".replace(',', '.'), delta="após tráfego ~R$1,50/lead")
 
-    # --- MELHORIA 3: Preview antes de avançar ---
     campos_obrigatorios = ['nicho', 'publico', 'nome_eb', 'dor', 'atual', 'desejada', 'promessa', 'diferencial']
     tudo_preenchido = all(d.get(c, '').strip() for c in campos_obrigatorios)
 
@@ -778,6 +958,8 @@ elif st.session_state.etapa == "Formulario":
         <div class="preview-box">
         Vamos gerar um lançamento completo para você:<br><br>
         📚 <strong>E-book:</strong> {d.get('nome_eb')} — 60 cartões educativos sobre {d.get('nicho')}<br>
+        🎁 <strong>3 E-books Bônus</strong> complementares ao produto principal<br>
+        🔥 <strong>5 Mini-aulas de Aquecimento</strong> para o grupo — entrega valor antes de vender<br>
         🎯 <strong>Público:</strong> {d.get('publico')}<br>
         💬 <strong>5 anúncios</strong> focados na dor: <em>{d.get('dor')}</em><br>
         🌐 <strong>5 variações de Landing Page</strong> com CTA para o grupo<br>
@@ -822,7 +1004,6 @@ elif st.session_state.etapa == "Gerar_Bonus":
     if st.button("GERAR 3 EBOOKS BÔNUS"):
         with st.spinner("Gerando ebooks bônus com IA..."):
             st.session_state.dados['bonus_cont'] = chamar_ia(prompt_bonus(), system_bonus())
-            # Extrai só os nomes dos bônus para usar na Mensagem 3
             bonus_texto = st.session_state.dados['bonus_cont']
             linhas = bonus_texto.split('\n')
             nomes = []
@@ -836,6 +1017,53 @@ elif st.session_state.etapa == "Gerar_Bonus":
 
     if 'bonus_cont' in st.session_state.dados:
         bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
+        if st.button("AVANÇAR →"):
+            st.session_state.etapa = "Gerar_Aquecimento"
+            st.rerun()
+
+# ============================================================
+# TELA: GERAR AQUECIMENTO ← NOVA ETAPA
+# ============================================================
+elif st.session_state.etapa == "Gerar_Aquecimento":
+    barra_navegacao()
+    st.title("🔥 MINI-AULAS DE AQUECIMENTO")
+
+    st.markdown("""
+    <div class="preview-box">
+    <strong>Por que isso importa?</strong><br><br>
+    As mini-aulas são enviadas no grupo <strong>antes</strong> do lançamento, uma por dia.
+    Elas entregam valor real, constroem sua autoridade e criam desejo pelo produto —
+    tudo <em>sem mencionar preço ou venda</em>.<br><br>
+    Quando a mensagem de lançamento chegar, o grupo já vai confiar em você. Isso aumenta muito a conversão.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
+    <strong style="color:#5B21B6;">📅 Como usar no grupo:</strong><br>
+    <span style="color:#4C1D95;font-size:0.9em;">
+    Envie 1 mensagem por dia nos 5 dias anteriores ao lançamento.<br>
+    Dia 1 → Dia 2 → Dia 3 → Dia 4 → Dia 5 → 🚀 Lançamento
+    </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-roxo">', unsafe_allow_html=True)
+    gerar_btn = st.button("🔥 GERAR 5 MINI-AULAS DE AQUECIMENTO")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if gerar_btn:
+        with st.spinner("Criando conteúdo de aquecimento personalizado..."):
+            st.session_state.dados['aquecimento_cont'] = chamar_ia(prompt_aquecimento(), system_aquecimento())
+            st.rerun()
+
+    if 'aquecimento_cont' in st.session_state.dados:
+        st.divider()
+        st.markdown("#### Suas 5 mini-aulas prontas para enviar")
+        st.caption("Copie cada mensagem e envie no grupo dia a dia, nos 5 dias antes do lançamento.")
+        bloco_conteudo('aquecimento_cont', 'Aquecimento', prompt_aquecimento, system_aquecimento)
+
+        st.divider()
         if st.button("AVANÇAR →"):
             st.session_state.etapa = "Copy_Face"
             st.rerun()
@@ -904,7 +1132,6 @@ elif st.session_state.etapa == "Visualizacao":
     nome_projeto = st.session_state.dados.get('nome_eb', 'Projeto')
     st.title(f"PROJETO: {nome_projeto}")
 
-    # --- MELHORIA 5: Download completo ---
     d = st.session_state.dados
     texto_completo = f"""
 NEXUS LAUNCHER — PROJETO COMPLETO
@@ -923,6 +1150,10 @@ PREÇO: R${d.get('preco', 47)}
 🎁 E-BOOKS BÔNUS
 {'-'*40}
 {limpar_html(d.get('bonus_cont', 'Não gerado.'))}
+
+🔥 MINI-AULAS DE AQUECIMENTO (enviar no grupo dia a dia)
+{'-'*40}
+{limpar_html(d.get('aquecimento_cont', 'Não gerado.'))}
 
 🎬 ANÚNCIOS (FACEBOOK)
 {'-'*40}
@@ -955,6 +1186,10 @@ PREÇO: R${d.get('preco', 47)}
     with st.expander("🎁 E-BOOKS BÔNUS"):
         bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
 
+    with st.expander("🔥 MINI-AULAS DE AQUECIMENTO"):
+        st.caption("Envie uma por dia nos 5 dias anteriores ao lançamento.")
+        bloco_conteudo('aquecimento_cont', 'Aquecimento', prompt_aquecimento, system_aquecimento)
+
     with st.expander("🎬 ANÚNCIO (Facebook)"):
         bloco_conteudo('fb_copy', 'Anúncios', prompt_fb, system_fb)
 
@@ -964,18 +1199,20 @@ PREÇO: R${d.get('preco', 47)}
     with st.expander("📌 MENSAGENS DO GRUPO"):
         bloco_conteudo('msg_grupo', 'Mensagens', prompt_msg, system_msg)
 
-    # --- MELHORIA 6: Checklist de lançamento ---
+    # --- CHECKLIST DE LANÇAMENTO ---
     st.divider()
     with st.expander("✅ CHECKLIST DE LANÇAMENTO — O QUE FAZER AGORA"):
         from datetime import date, timedelta as td
         data_lancto = d.get('data_lancto', date.today())
         data_lancto_fmt = data_lancto.strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else str(data_lancto)
-        data_msg1 = (data_lancto - td(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
         data_msg2 = (data_lancto - td(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
+        data_aq_ini = (data_lancto - td(days=6)).strftime('%d/%m') if hasattr(data_lancto, 'strftime') else ''
+        data_aq_fim = (data_lancto - td(days=2)).strftime('%d/%m') if hasattr(data_lancto, 'strftime') else ''
+        data_bv = (data_lancto - td(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto, 'strftime') else ''
 
         fases = [
             {
-                "fase": "FASE 1 — HOJE: Preparação (antes de ligar os anúncios)",
+                "fase": "FASE 1 — HOJE: Preparação",
                 "cor": "#0EA5E9",
                 "items": [
                     ("Hoje", "Salve e baixe todo o conteúdo gerado pelo Nexus Launcher (.txt)"),
@@ -989,23 +1226,26 @@ PREÇO: R${d.get('preco', 47)}
                 ]
             },
             {
-                "fase": f"FASE 2 — SEMANA 1 ({(data_lancto - td(days=14)).strftime('%d/%m')} a {(data_lancto - td(days=8)).strftime('%d/%m')}): Encher o grupo",
+                "fase": f"FASE 2 — SEMANA 1: Encher o grupo",
                 "cor": "#8B5CF6",
                 "items": [
                     ("Dias 1 a 7", "Deixe os anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
                     ("Diariamente", "Monitore o custo por lead nos anúncios (meta: até R$2,00 por pessoa)"),
-                    ("Se necessário", "Teste variações de anúncio diferentes para melhorar o custo"),
-                    ("Importante", "NÃO envie nenhuma mensagem no grupo ainda — apenas aguarde o grupo encher"),
+                    (f"{data_bv}", "Envie a Mensagem 1 (boas-vindas) — primeira comunicação com o grupo"),
+                    ("Importante", "NÃO mencione produto ou preço ainda — só boas-vindas"),
                 ]
             },
             {
-                "fase": f"FASE 3 — SEMANA 2 ({(data_lancto - td(days=7)).strftime('%d/%m')} a {data_msg2}): Aquecimento",
-                "cor": "#F59E0B",
+                "fase": f"FASE 3 — AQUECIMENTO ({data_aq_ini} a {data_aq_fim}): 5 Mini-aulas",
+                "cor": "#7C3AED",
                 "items": [
-                    (f"{data_msg1}", "Envie a Mensagem 1 (boas-vindas) para o grupo — primeira vez que o grupo vai receber algo"),
-                    ("Dias seguintes", "Continue com os anúncios rodando para encher mais o grupo"),
-                    (f"{data_msg2}", "Envie a Mensagem 2 (aquecimento) — 1 dia antes do lançamento"),
-                    (f"{data_msg2}", "Confira se o link da Monetizze está funcionando e o checkout está ok"),
+                    (f"{data_aq_ini} — Dia 1", "Envie a Mini-aula 1 no grupo — conteúdo gratuito, sem mencionar venda"),
+                    ("Dia 2", "Envie a Mini-aula 2 — responda dúvidas e crie engajamento"),
+                    ("Dia 3", "Envie a Mini-aula 3 — o grupo já começa a confiar em você"),
+                    ("Dia 4", "Envie a Mini-aula 4 — crie mais expectativa com o gancho do dia"),
+                    (f"{data_aq_fim} — Dia 5", "Envie a Mini-aula 5 — última antes do lançamento, gancho forte"),
+                    (f"{data_msg2}", "Envie a Mensagem 2 (aquecimento) — véspera do lançamento"),
+                    (f"{data_msg2}", "Confirme se o link da Monetizze está funcionando corretamente"),
                 ]
             },
             {
@@ -1037,7 +1277,7 @@ PREÇO: R${d.get('preco', 47)}
                 {fase['fase']}
             </div>
             """, unsafe_allow_html=True)
-            for i, (quando, acao) in enumerate(fase['items']):
+            for quando, acao in fase['items']:
                 st.markdown(f"""
                 <div class="checklist-item">
                     <div style="width:10px;height:10px;border-radius:50%;background:{fase['cor']};margin-top:5px;flex-shrink:0"></div>
@@ -1048,7 +1288,7 @@ PREÇO: R${d.get('preco', 47)}
                 </div>
                 """, unsafe_allow_html=True)
 
-    # --- MELHORIA 8: Calculadora de meta na visualização ---
+    # --- CALCULADORA ---
     st.divider()
     with st.expander("📊 CALCULADORA DE FATURAMENTO"):
         col_a, col_b = st.columns(2)
@@ -1068,7 +1308,7 @@ PREÇO: R${d.get('preco', 47)}
         c2.metric("Faturamento", f"R${fat_v:,.0f}".replace(',', '.'))
         c3.metric("Lucro", f"R${lucro_v:,.0f}".replace(',', '.'))
 
-    # --- LAUNCERBOT (CHAT) ---
+    # --- LAUNCERBOT ---
     st.divider()
     st.markdown("### 🤖 Launcerbot")
     st.info(
