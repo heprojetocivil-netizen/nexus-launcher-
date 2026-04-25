@@ -59,11 +59,16 @@ st.markdown("""
     .msg-dia-header { background: linear-gradient(135deg, #059669, #047857); color: white; border-radius: 8px; padding: 10px 16px; margin: 14px 0 8px 0; font-family: 'Rajdhani', sans-serif; font-size: 1.0em; font-weight: 700; letter-spacing: 0.5px; }
     .msg-conteudo { background: #FFFFFF; border: 1px solid #D1FAE5; border-radius: 8px; padding: 14px 18px; color: #1E293B; font-size: 0.88em; line-height: 1.75; white-space: pre-wrap; }
     .msg-alerta { background: #ECFDF5; border: 1px solid #6EE7B7; border-radius: 8px; padding: 12px 16px; color: #064E3B; font-size: 0.85em; margin-bottom: 16px; }
+
+    /* AGENDADOR */
+    .agenda-aviso { background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 16px 20px; color: #7C2D12; font-size: 0.88em; line-height: 1.7; margin-bottom: 16px; }
+    .agenda-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #F1F5F9; }
+    .agenda-data { color: #64748B; font-size: 0.78em; font-weight: 600; min-width: 48px; }
+    .agenda-label { color: #1E293B; font-size: 0.88em; flex: 1; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- INICIALIZAÇÃO DE ESTADO ---
-# Initialize all state — projetos persists, never gets cleared
 _one_time = {'etapa': "Login", 'dados': {}, 'projetos': {},
     'chat_hist': [], 'usuario': '', 'api_key': '', 'chat_input_key': 0}
 for k, v in _one_time.items():
@@ -78,7 +83,8 @@ ETAPAS_LABELS = {
     "Copy_Face":       "4. Anúncio",
     "Copy_LP":         "5. Landing Page",
     "Mensagens_Grupo": "6. Mensagens",
-    "Visualizacao":    "7. Projeto Final",
+    "Agendador":       "7. Agendador",
+    "Visualizacao":    "8. Projeto Final",
 }
 
 # --- EXEMPLOS ---
@@ -137,10 +143,6 @@ def limpar_html(texto: str) -> str:
     return limpo.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').strip()
 
 def gerar_ics(eventos: list) -> str:
-    """
-    Gera um arquivo .ics com múltiplos eventos.
-    eventos = [{'titulo': str, 'data': date, 'hora': str (HH:MM), 'descricao': str}]
-    """
     linhas = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
@@ -236,10 +238,6 @@ def parsear_bonus(texto: str) -> list:
     return bonus_list
 
 def parsear_mensagens(texto: str) -> list:
-    """
-    Divide as mensagens em blocos por seção.
-    Detecta: BOAS_VINDAS, DIA_7, DIA_6, DIA_5, DIA_4, DIA_3, DIA_2, VESPERA, VENDA_MANHA, VENDA_NOITE
-    """
     SECOES = ["DESCRICAO_GRUPO","BOAS_VINDAS","DIA_7","DIA_6","DIA_5","DIA_4","DIA_3","VESPERA","VENDA_MANHA","VENDA_NOITE"]
     LABELS = {
         "DESCRICAO_GRUPO": "📋 Descrição do grupo (bio)",
@@ -274,6 +272,20 @@ def parsear_mensagens(texto: str) -> list:
     if not secoes:
         secoes = [{"label": "Mensagens", "chave": "RAW", "conteudo": texto.strip()}]
     return secoes
+
+# --- AGENDA DEF (reutilizado em 2 telas) ---
+AGENDA_DEF = [
+    {"chave": "DESCRICAO_GRUPO", "label": "📋 Descrição do grupo (bio)",      "offset": -15, "hora_pad": "08:00"},
+    {"chave": "BOAS_VINDAS",     "label": "💬 D-8 Boas-vindas (automática)",  "offset": -8,  "hora_pad": "08:00"},
+    {"chave": "DIA_7",           "label": "📅 D-9 Abertura do programa",       "offset": -7,  "hora_pad": "08:00"},
+    {"chave": "DIA_6",           "label": "🎯 D-10 Enquete",                   "offset": -6,  "hora_pad": "08:00"},
+    {"chave": "DIA_5",           "label": "🔥 D-11 Dica prática",             "offset": -5,  "hora_pad": "08:00"},
+    {"chave": "DIA_4",           "label": "📌 D-12 Atividade",                "offset": -4,  "hora_pad": "08:00"},
+    {"chave": "DIA_3",           "label": "💡 D-13 Prova social",             "offset": -3,  "hora_pad": "08:00"},
+    {"chave": "VESPERA",         "label": "⏳ D-14 Véspera",                  "offset": -1,  "hora_pad": "08:00"},
+    {"chave": "VENDA_MANHA",     "label": "🚀 Lançamento — Manhã",            "offset":  0,  "hora_pad": "08:00"},
+    {"chave": "VENDA_NOITE",     "label": "⏰ Lançamento — Noite",            "offset":  0,  "hora_pad": "19:00"},
+]
 
 # --- BLOCO DE CONTEÚDO ---
 def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
@@ -347,6 +359,105 @@ def barra_navegacao():
                 if c_deletar.button("🗑️", key=f"del_{nome}", help="Excluir projeto"):
                     del st.session_state.projetos[nome]; st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
+
+# --- BLOCO DO AGENDADOR (reutilizado em 2 telas) ---
+def bloco_agendador(prefixo_key="agd"):
+    d = st.session_state.dados
+    data_lancto = d.get('data_lancto')
+
+    if not data_lancto:
+        st.warning("Defina a data de lançamento no formulário para usar o agendador.")
+        return
+    if not d.get('msg_grupo'):
+        st.info("Gere as mensagens primeiro para usar o agendador.")
+        return
+
+    # Aviso claro sobre funcionamento
+    st.markdown("""
+    <div class="agenda-aviso">
+        <strong>⚠️ Como funciona o agendador — leia antes de usar</strong><br><br>
+        O agendador <strong>NÃO envia as mensagens automaticamente.</strong><br>
+        O que ele faz é criar um arquivo de calendário (<strong>.ics</strong>) que você importa no
+        Google Calendar, Apple Calendar ou Outlook.<br><br>
+        Na hora certa, o seu celular vai <strong>te notificar com um lembrete</strong> — aí você abre o app,
+        copia o texto da mensagem e cola no grupo do WhatsApp ou Telegram.<br><br>
+        🟢 <strong>Vantagem:</strong> simples, gratuito e funciona em qualquer celular.<br>
+        🔴 <strong>Limitação:</strong> o envio ainda depende de você apertar "enviar" na hora.
+    </div>
+    """, unsafe_allow_html=True)
+
+    secoes_map = {s['chave']: limpar_html(s['conteudo']) for s in parsear_mensagens(d['msg_grupo'])}
+    horas_config = d.get('agenda_horas', {})
+
+    st.markdown("**Configure o horário de cada mensagem:**")
+    st.caption("O lembrete chegará 30 minutos antes com o texto pronto para copiar e colar.")
+    st.markdown("")
+
+    cols_h = st.columns([3, 1])
+    cols_h[0].markdown("**Mensagem**")
+    cols_h[1].markdown("**Horário**")
+
+    for item in AGENDA_DEF:
+        chave = item['chave']
+        data_msg = data_lancto + timedelta(days=item['offset'])
+        data_str = data_msg.strftime('%d/%m')
+        col_label, col_hora = st.columns([3, 1])
+        with col_label:
+            st.markdown(
+                f"<div style='padding:6px 0;font-size:0.88em;color:#1E293B;'>"
+                f"<span style='color:#64748B;font-size:0.8em;font-weight:600;'>{data_str}&nbsp;&nbsp;</span>"
+                f"{item['label']}</div>",
+                unsafe_allow_html=True
+            )
+        with col_hora:
+            hora_val = horas_config.get(chave, item['hora_pad'])
+            hora_input = st.text_input(
+                "h", value=hora_val,
+                key=f"{prefixo_key}_{chave}",
+                label_visibility="collapsed",
+                placeholder="HH:MM"
+            )
+            horas_config[chave] = hora_input
+
+    d['agenda_horas'] = horas_config
+    st.markdown("")
+
+    if st.button("📅 GERAR ARQUIVO DE CALENDÁRIO (.ics)", use_container_width=True, key=f"btn_ics_{prefixo_key}"):
+        eventos = []
+        for item in AGENDA_DEF:
+            chave = item['chave']
+            data_msg = data_lancto + timedelta(days=item['offset'])
+            hora = horas_config.get(chave, item['hora_pad'])
+            texto = secoes_map.get(chave, '')
+            if not texto:
+                continue
+            eventos.append({
+                'chave':     chave,
+                'titulo':    f"[Nexus] {item['label']}",
+                'data':      data_msg,
+                'hora':      hora,
+                'descricao': texto,
+            })
+        ics_content = gerar_ics(eventos)
+        nome_eb = d.get('nome_eb', 'lancamento').replace(' ', '_')
+        st.download_button(
+            label="⬇️ Baixar arquivo .ics",
+            data=ics_content.encode('utf-8'),
+            file_name=f"{nome_eb}.ics",
+            mime="text/calendar",
+            use_container_width=True,
+            key=f"dl_ics_{prefixo_key}",
+        )
+        st.success("✅ Arquivo gerado! Baixe e importe no seu calendário.")
+
+    st.markdown("""
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;margin-top:12px;color:#64748B;font-size:0.8em;line-height:1.8;">
+    <strong>📲 Como importar o arquivo no seu calendário:</strong><br>
+    <strong>Google Calendar:</strong> Acesse calendar.google.com → Configurações (⚙️) → Importar → selecione o .ics<br>
+    <strong>iPhone / Apple Calendar:</strong> Abra o arquivo no celular → toque em "Adicionar ao Calendário"<br>
+    <strong>Outlook:</strong> Arquivo → Abrir e Exportar → Importar/Exportar → selecione o .ics
+    </div>
+    """, unsafe_allow_html=True)
 
 # =============================================================
 # PROMPTS
@@ -445,7 +556,7 @@ def prompt_msg():
     whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
     link_venda = d.get('link_monetizze', '').strip() or '[LINK MONETIZZE]'
     bonus_resumo = d.get('bonus_resumo', '')
-    bonus_lista = '\n'.join([f'🎁 Bônus {i+1} \u2013 {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
+    bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
 
     return (
         f"Gere as mensagens do funil para o lançamento sobre {nicho}.\n"
@@ -573,6 +684,7 @@ def prompt_msg():
         f"Dá uma olhada com calma… e decide.\n"
         f"=== FIM ===\n"
     )
+
 def system_msg():
     return (
         "Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
@@ -645,10 +757,9 @@ elif st.session_state.etapa == "Formulario":
     d['dor']         = st.text_input("Principal dor que resolve:", value=d.get('dor',''))
     d['atual']       = st.text_area("Situação atual da pessoa:", value=d.get('atual',''))
     d['desejada']    = st.text_area("Situação desejada:", value=d.get('desejada',''))
-    d['promessa']    = st.text_input("Transformação do programa:", value=d.get('promessa',''), help="Qual mudança real o público vai viver durante os 15 dias? (usado no anúncio e na LP)")
+    d['promessa']    = st.text_input("Transformação do programa:", value=d.get('promessa',''), help="Qual mudança real o público vai viver durante os 15 dias?")
     d['diferencial'] = st.text_input("Diferencial:", value=d.get('diferencial',''))
     d['preco']       = st.number_input("Preço do e-book (R$):", min_value=9, max_value=997, value=int(d.get('preco',47)), step=1)
-
 
     st.divider()
     st.markdown("#### Suas credenciais como autor")
@@ -700,6 +811,7 @@ elif st.session_state.etapa == "Formulario":
         📣 <strong>1 Anúncio</strong> alinhado com a landing page<br>
         🌐 <strong>1 Landing Page</strong> alinhada com o anúncio<br>
         💬 <strong>Funil completo de Mensagens</strong> — boas-vindas + aquecimento + véspera + venda<br>
+        📅 <strong>Agendador de Mensagens</strong> — calendário com lembrete 30 min antes<br>
         🚀 <strong>Lançamento:</strong> {d['data_lancto'].strftime('%d/%m/%Y')}
         </div>""", unsafe_allow_html=True)
 
@@ -798,7 +910,7 @@ elif st.session_state.etapa == "Mensagens_Grupo":
         st.caption("Cada bloco corresponde a um dia. Copie e envie no momento certo.")
         bloco_conteudo('msg_grupo', 'Mensagens', prompt_msg, system_msg)
 
-        # ── LINK MONETIZZE — após as mensagens ───────────────
+        # ── LINK MONETIZZE ────────────────────────────────────
         st.divider()
         st.markdown("#### 🔗 Inserir link da Monetizze")
         st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#14532D;font-size:0.87em;line-height:1.6;">
@@ -824,10 +936,24 @@ elif st.session_state.etapa == "Mensagens_Grupo":
                     st.warning("Cole o link antes de aplicar.")
 
         st.divider()
-        if st.button("💾 SALVAR PROJETO"):
-            nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
-            st.session_state.projetos[nome_projeto] = st.session_state.dados.copy()
-            st.session_state.etapa = "Visualizacao"; st.rerun()
+        if st.button("AVANÇAR → AGENDADOR"):
+            st.session_state.etapa = "Agendador"
+            st.rerun()
+
+# ── AGENDADOR ─────────────────────────────────────────────────
+elif st.session_state.etapa == "Agendador":
+    barra_navegacao()
+    st.title("📅 AGENDADOR DE MENSAGENS")
+    st.caption("Configure quando cada mensagem deve ser enviada e exporte para o seu calendário.")
+
+    bloco_agendador(prefixo_key="agd_etapa")
+
+    st.divider()
+    if st.button("💾 SALVAR E VER PROJETO FINAL"):
+        nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
+        st.session_state.projetos[nome_projeto] = st.session_state.dados.copy()
+        st.session_state.etapa = "Visualizacao"
+        st.rerun()
 
 # ── VISUALIZAÇÃO FINAL ────────────────────────────────────────
 elif st.session_state.etapa == "Visualizacao":
@@ -882,105 +1008,8 @@ PREÇO: R${d.get('preco',47)}
     with st.expander("💬 MENSAGENS DO GRUPO — FUNIL COMPLETO"):
         st.caption("Boas-vindas → D-7 a D-1 → Venda manhã → Lembrete noturno")
         bloco_conteudo('msg_grupo','Mensagens',prompt_msg,system_msg)
-
-    # ── AGENDADOR DE MENSAGENS ───────────────────────────────
-    st.divider()
     with st.expander("📅 AGENDADOR — Calendário de envio das mensagens"):
-        data_lancto = d.get('data_lancto')
-
-        if not data_lancto:
-            st.warning("Defina a data de lançamento no formulário para usar o agendador.")
-        elif not d.get('msg_grupo'):
-            st.info("Gere as mensagens primeiro para usar o agendador.")
-        else:
-            # Define cada mensagem com seu offset em relação ao lançamento
-            AGENDA_DEF = [
-                {"chave": "DESCRICAO_GRUPO", "label": "📋 Descrição do grupo (bio)",        "offset": -15, "hora_pad": "08:00", "fixo": True},
-                {"chave": "BOAS_VINDAS",     "label": "💬 D-8 Boas-vindas (automática)",    "offset": -8,  "hora_pad": "08:00", "fixo": True},
-                {"chave": "DIA_7",           "label": "📅 D-9 Abertura do programa",         "offset": -7,  "hora_pad": "08:00", "fixo": False},
-                {"chave": "DIA_6",           "label": "🎯 D-10 Enquete",                     "offset": -6,  "hora_pad": "08:00", "fixo": False},
-                {"chave": "DIA_5",           "label": "🔥 D-11 Dica prática",               "offset": -5,  "hora_pad": "08:00", "fixo": False},
-                {"chave": "DIA_4",           "label": "📌 D-12 Atividade",                  "offset": -4,  "hora_pad": "08:00", "fixo": False},
-                {"chave": "DIA_3",           "label": "💡 D-13 Prova social",               "offset": -3,  "hora_pad": "08:00", "fixo": False},
-                {"chave": "VESPERA",         "label": "⏳ D-14 Véspera",                    "offset": -1,  "hora_pad": "08:00", "fixo": False},
-                {"chave": "VENDA_MANHA",     "label": "🚀 Lançamento — Manhã",              "offset":  0,  "hora_pad": "08:00", "fixo": False},
-                {"chave": "VENDA_NOITE",     "label": "⏰ Lançamento — Noite",              "offset":  0,  "hora_pad": "19:00", "fixo": False},
-            ]
-
-            # Parse mensagens geradas para pegar o texto de cada bloco
-            secoes_map = {s['chave']: limpar_html(s['conteudo']) for s in parsear_mensagens(d['msg_grupo'])}
-
-            st.markdown("**Configure o horário de cada mensagem e exporte para o seu calendário.**")
-            st.caption("O lembrete chegará 30 minutos antes com o texto da mensagem — é só copiar e colar no grupo.")
-            st.markdown("")
-
-            # Build UI — date + time per message
-            horas_config = st.session_state.dados.get('agenda_horas', {})
-
-            cols_h = st.columns([3, 1])
-            cols_h[0].markdown("**Mensagem**")
-            cols_h[1].markdown("**Horário**")
-
-            for item in AGENDA_DEF:
-                chave = item['chave']
-                data_msg = data_lancto + timedelta(days=item['offset'])
-                data_str = data_msg.strftime('%d/%m')
-                col_label, col_hora = st.columns([3, 1])
-                with col_label:
-                    st.markdown(
-                        f"<div style='padding:6px 0;font-size:0.88em;color:#1E293B;'>"
-                        f"<span style='color:#64748B;font-size:0.8em;font-weight:600;'>{data_str}&nbsp;&nbsp;</span>"
-                        f"{item['label']}</div>",
-                        unsafe_allow_html=True
-                    )
-                with col_hora:
-                    hora_val = horas_config.get(chave, item['hora_pad'])
-                    hora_input = st.text_input(
-                        "h",
-                        value=hora_val,
-                        key=f"hora_{chave}",
-                        label_visibility="collapsed",
-                        placeholder="HH:MM"
-                    )
-                    horas_config[chave] = hora_input
-
-            st.session_state.dados['agenda_horas'] = horas_config
-
-            st.markdown("")
-
-            # Generate ICS
-            if st.button("📅 EXPORTAR CALENDÁRIO (.ics)", use_container_width=True):
-                eventos = []
-                for item in AGENDA_DEF:
-                    chave = item['chave']
-                    data_msg = data_lancto + timedelta(days=item['offset'])
-                    hora = horas_config.get(chave, item['hora_pad'])
-                    texto = secoes_map.get(chave, '')
-                    if not texto:
-                        continue
-                    eventos.append({
-                        'chave':     chave,
-                        'titulo':    f"[Nexus] {item['label']}",
-                        'data':      data_msg,
-                        'hora':      hora,
-                        'descricao': texto,
-                    })
-                ics_content = gerar_ics(eventos)
-                st.download_button(
-                    label="⬇️ Baixar arquivo .ics",
-                    data=ics_content.encode('utf-8'),
-                    file_name=f"lancamento_{d.get('nome_eb','').replace(' ','_')}.ics",
-                    mime="text/calendar",
-                    use_container_width=True,
-                )
-                st.success("Pronto! Importe o arquivo no Google Calendar, Apple Calendar ou Outlook. O lembrete chega 30 min antes com o texto da mensagem.")
-
-            st.markdown("""<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;margin-top:12px;color:#64748B;font-size:0.8em;line-height:1.6;">
-            💡 <strong>Como importar:</strong>
-            Google Calendar → Configurações → Importar → selecione o .ics &nbsp;|&nbsp;
-            Apple Calendar → Arquivo → Importar &nbsp;|&nbsp;
-            Outlook → Arquivo → Abrir e Exportar → Importar
-            </div>""", unsafe_allow_html=True)
+        bloco_agendador(prefixo_key="agd_vis")
 
     # ── DICA MESTRE ──────────────────────────────────────────
     st.divider()
@@ -996,7 +1025,7 @@ PREÇO: R${d.get('preco',47)}
         Use esse grupo com estratégia… e ele pode continuar gerando resultados por muito tempo.
         </div>""", unsafe_allow_html=True)
 
-        # ── CHECKLIST ─────────────────────────────────────────────
+    # ── CHECKLIST ─────────────────────────────────────────────
     st.divider()
     with st.expander("✅ CHECKLIST DE LANÇAMENTO — O QUE FAZER AGORA"):
         data_lancto = d.get('data_lancto', date.today())
@@ -1019,7 +1048,8 @@ PREÇO: R${d.get('preco',47)}
                 ("Hoje","Configure a mensagem de BOAS-VINDAS automática ao entrar"),
                 ("Hoje","Suba o ANÚNCIO apontando para a LANDING PAGE"),
                 ("Hoje","Configure a LANDING PAGE com CTA apontando para o grupo"),
-                ("Hoje","Configure RESPOSTA AUTOMÁTICA no WhatsApp de contato: 'Recebi sua mensagem. Eu e minha equipe já estamos analisando 🙏'"),
+                ("Hoje","Importe o arquivo .ics no Google Calendar / iPhone / Outlook para receber os lembretes de envio"),
+                ("Hoje","Configure RESPOSTA AUTOMÁTICA no WhatsApp de contato"),
             ]},
             {"fase":"FASE 2 — SEMANA 1: Encher o grupo","cor":"#8B5CF6","items":[
                 ("Dias 1 a 8","Anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
@@ -1027,18 +1057,18 @@ PREÇO: R${d.get('preco',47)}
                 ("Automático","Mensagem de boas-vindas já configurada — enviada a cada novo membro"),
             ]},
             {"fase":"FASE 3 — SEMANA 2: Aquecimento (D-7 a D-1)","cor":"#059669","items":[
-                (f"{d7} — D-7","Envie: Abertura do programa"),
-                (f"{d6} — D-6","Envie: Enquete — peça para responder no WhatsApp de contato"),
-                (f"{d5} — D-5","Envie: Dica prática"),
-                (f"{d4} — D-4","Envie: Atividade rápida"),
-                (f"{d3} — D-3","Envie: Relato de resultado (prova social)"),
-                (f"{dm1} — D-1","Envie: Véspera da venda"),
+                (f"{d7} — D-7","Lembrete no celular → copie e envie: Abertura do programa"),
+                (f"{d6} — D-6","Lembrete no celular → copie e envie: Enquete"),
+                (f"{d5} — D-5","Lembrete no celular → copie e envie: Dica prática"),
+                (f"{d4} — D-4","Lembrete no celular → copie e envie: Atividade"),
+                (f"{d3} — D-3","Lembrete no celular → copie e envie: Prova social"),
+                (f"{dm1} — D-1","Lembrete no celular → copie e envie: Véspera da venda"),
                 (f"{dm1}","Confirme se o link da Monetizze está funcionando"),
             ]},
             {"fase":f"FASE 4 — {dlf}: Dia da venda","cor":"#22C55E","items":[
-                (f"{dlf} — manhã","Envie a mensagem de lançamento com o link da Monetizze"),
+                (f"{dlf} — manhã","Lembrete no celular → copie e envie: Mensagem de lançamento"),
                 (f"{dlf}","Fique disponível no WhatsApp de contato para responder dúvidas"),
-                (f"{dlf} — 19h","Envie o lembrete noturno"),
+                (f"{dlf} — 19h","Lembrete no celular → copie e envie: Lembrete noturno"),
             ]},
             {"fase":"FASE 5 — PÓS-LANÇAMENTO","cor":"#64748B","items":[
                 ("Após","Anote: pessoas no grupo, compradores, taxa de conversão"),
@@ -1075,14 +1105,12 @@ PREÇO: R${d.get('preco',47)}
     st.markdown("### 🤖 Launcerbot")
     st.caption(f"Olá, {st.session_state.usuario}! Pode me perguntar qualquer coisa sobre seu lançamento.")
 
-    # Show history first (oldest to newest)
     if st.session_state.chat_hist:
         for q, r in st.session_state.chat_hist:
             st.markdown(f"**Você:** {q}")
             st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
         st.markdown("")
 
-    # Input always at bottom
     pergunta = st.text_input("Sua pergunta:", key=f"chat_input_{st.session_state.chat_input_key}", label_visibility="collapsed", placeholder="Digite sua pergunta aqui...")
     if st.button("ENVIAR"):
         if pergunta.strip():
