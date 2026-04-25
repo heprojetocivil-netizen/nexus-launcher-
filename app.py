@@ -1,6 +1,6 @@
 import streamlit as st
 from groq import Groq
-from datetime import timedelta
+from datetime import timedelta, date
 import re
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -37,8 +37,6 @@ st.markdown("""
     .btn-verde>button   { background-color: #22c55e !important; height: 2.5em !important; font-size: 0.85em !important; }
     .btn-roxo>button    { background-color: #7C3AED !important; height: 3.5em !important; }
     .btn-roxo>button:hover { background-color: #5B21B6 !important; }
-    .btn-fio>button     { background-color: #D97706 !important; height: 3.5em !important; }
-    .btn-fio>button:hover { background-color: #B45309 !important; }
     .btn-verde15>button { background-color: #059669 !important; height: 3.5em !important; }
     .btn-verde15>button:hover { background-color: #047857 !important; }
 
@@ -57,22 +55,10 @@ st.markdown("""
     .bonus-descricao { background: #EFF6FF; border-left: 4px solid #0EA5E9; border-radius: 6px; padding: 12px 16px; margin-bottom: 14px; color: #1E3A5F; font-size: 0.92em; line-height: 1.6; }
     .bonus-conteudo { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px 20px; color: #334155; font-size: 0.88em; line-height: 1.7; white-space: pre-wrap; }
 
-    .aquecimento-dia-header { background: linear-gradient(135deg, #7C3AED, #5B21B6); color: white; border-radius: 8px; padding: 12px 18px; margin-bottom: 12px; font-family: 'Rajdhani', sans-serif; font-size: 1.05em; font-weight: 700; letter-spacing: 0.5px; }
-    .aquecimento-conteudo { background: #FFFFFF; border: 1px solid #EDE9FE; border-radius: 8px; padding: 16px 20px; color: #334155; font-size: 0.88em; line-height: 1.7; white-space: pre-wrap; }
-    .aquecimento-gancho { background: #EDE9FE; border-left: 4px solid #7C3AED; border-radius: 0 6px 6px 0; padding: 10px 16px; margin-top: 12px; color: #4C1D95; font-size: 0.85em; font-style: italic; }
-
-    /* FIO CONDUTOR */
-    .fio-card { background: #FFFBEB; border: 2px solid #F59E0B; border-radius: 14px; padding: 24px 28px; margin-bottom: 20px; }
-    .fio-secao { background: #FFFFFF; border-left: 4px solid #F59E0B; border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 14px; color: #1E293B; font-size: 0.9em; line-height: 1.7; }
-    .fio-label { font-family: 'Rajdhani', sans-serif; font-size: 0.75em; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #92400E; margin-bottom: 6px; }
-    .fio-alerta { background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 8px; padding: 12px 16px; color: #78350F; font-size: 0.85em; margin-bottom: 16px; }
-
-    /* PROGRAMA 15 DIAS */
-    .p15-header { background: linear-gradient(135deg, #059669, #047857); color: white; border-radius: 10px; padding: 16px 22px; margin-bottom: 16px; font-family: 'Rajdhani', sans-serif; font-size: 1.15em; font-weight: 700; letter-spacing: 0.5px; }
-    .p15-dia-header { background: linear-gradient(135deg, #10B981, #059669); color: white; border-radius: 8px; padding: 10px 16px; margin: 14px 0 8px 0; font-family: 'Rajdhani', sans-serif; font-size: 0.95em; font-weight: 700; letter-spacing: 0.5px; }
-    .p15-bloco { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 18px 22px; margin-bottom: 18px; }
-    .p15-conteudo { background: #FFFFFF; border: 1px solid #D1FAE5; border-radius: 8px; padding: 14px 18px; color: #1E293B; font-size: 0.88em; line-height: 1.75; white-space: pre-wrap; }
-    .p15-alerta { background: #ECFDF5; border: 1px solid #6EE7B7; border-radius: 8px; padding: 12px 16px; color: #064E3B; font-size: 0.85em; margin-bottom: 16px; }
+    /* MENSAGENS */
+    .msg-dia-header { background: linear-gradient(135deg, #059669, #047857); color: white; border-radius: 8px; padding: 10px 16px; margin: 14px 0 8px 0; font-family: 'Rajdhani', sans-serif; font-size: 1.0em; font-weight: 700; letter-spacing: 0.5px; }
+    .msg-conteudo { background: #FFFFFF; border: 1px solid #D1FAE5; border-radius: 8px; padding: 14px 18px; color: #1E293B; font-size: 0.88em; line-height: 1.75; white-space: pre-wrap; }
+    .msg-alerta { background: #ECFDF5; border: 1px solid #6EE7B7; border-radius: 8px; padding: 12px 16px; color: #064E3B; font-size: 0.85em; margin-bottom: 16px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -87,16 +73,13 @@ for k, v in defaults.items():
 
 # --- ETAPAS ---
 ETAPAS_LABELS = {
-    "Formulario":        "1. Formulário",
-    "Fio_Condutor":      "2. Fio Condutor",
-    "Gerar_Ebook":       "3. E-book",
-    "Gerar_Bonus":       "4. Bônus",
-    "Gerar_Aquecimento": "5. Aquecimento",
-    "Prog15Dias":        "6. Prog. 15 Dias",
-    "Copy_Face":         "7. Anúncio",
-    "Copy_LP":           "8. Landing Page",
-    "Mensagens_Grupo":   "9. Mensagens",
-    "Visualizacao":      "10. Projeto Final",
+    "Formulario":      "1. Formulário",
+    "Gerar_Ebook":     "2. E-book",
+    "Gerar_Bonus":     "3. Bônus",
+    "Copy_Face":       "4. Anúncio",
+    "Copy_LP":         "5. Landing Page",
+    "Mensagens_Grupo": "6. Mensagens",
+    "Visualizacao":    "7. Projeto Final",
 }
 
 # --- EXEMPLOS ---
@@ -150,9 +133,6 @@ def chamar_ia(prompt: str, system_prompt: str) -> str:
     except Exception as e:
         return f"⚠️ Erro na API: {e}"
 
-def fio() -> str:
-    return st.session_state.dados.get('fio_condutor', '')
-
 def limpar_html(texto: str) -> str:
     limpo = re.sub(r'<[^>]+>', '', texto)
     return limpo.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').strip()
@@ -171,39 +151,6 @@ def normalizar_markdown(texto: str) -> str:
     return '\n'.join(resultado)
 
 # --- PARSERS ---
-def parsear_fio(texto: str) -> list:
-    secoes_chave = ["PROMESSA_CALIBRADA","TOM_E_VOZ","PONTO_A","PONTO_B","MECANISMO","ANCORA_DA_OFERTA","FRASE_DO_ANUNCIO","HEADLINE_LP"]
-    labels_legiveis = {
-        "PROMESSA_CALIBRADA": "🎯 Promessa calibrada",
-        "TOM_E_VOZ":          "🗣️ Tom e voz do autor",
-        "PONTO_A":            "😔 Ponto A — situação atual",
-        "PONTO_B":            "✨ Ponto B — situação desejada",
-        "MECANISMO":          "⚙️ Mecanismo (como o ebook resolve)",
-        "ANCORA_DA_OFERTA":   "🔗 Âncora da oferta",
-        "FRASE_DO_ANUNCIO":   "📣 Frase-chave do anúncio",
-        "HEADLINE_LP":        "🌐 Headline da Landing Page",
-    }
-    linhas = texto.split('\n')
-    secoes, atual_label, atual_linhas = [], None, []
-    for linha in linhas:
-        ls = linha.strip()
-        achou = False
-        for chave in secoes_chave:
-            if ls.upper().startswith(chave + ":"):
-                if atual_label:
-                    secoes.append({"label": labels_legiveis.get(atual_label, atual_label), "chave": atual_label, "conteudo": '\n'.join(atual_linhas).strip()})
-                atual_label = chave
-                atual_linhas = [ls[len(chave)+1:].strip()]
-                achou = True
-                break
-        if not achou and atual_label:
-            atual_linhas.append(ls)
-    if atual_label:
-        secoes.append({"label": labels_legiveis.get(atual_label, atual_label), "chave": atual_label, "conteudo": '\n'.join(atual_linhas).strip()})
-    if not secoes:
-        secoes = [{"label": "Fio Condutor", "chave": "RAW", "conteudo": texto.strip()}]
-    return secoes
-
 def _linha_e_marcador_bonus(linha):
     l = linha.strip().replace("🎁", "").strip()
     lu = l.upper()
@@ -250,53 +197,23 @@ def parsear_bonus(texto: str) -> list:
         bonus_list.append({"titulo": "🎁 BÔNUS " + num + (": " + nome_bonus if nome_bonus else ""), "descricao": descricao, "conteudo": conteudo})
     return bonus_list
 
-def parsear_aquecimento(texto: str) -> list:
-    linhas = texto.split("\n"); marcadores = []
-    for idx, linha in enumerate(linhas):
-        ls = linha.strip(); lu = ls.upper()
-        for num in ("1","2","3","4","5"):
-            for pref in (f"DIA {num}:", f"DIA {num} -", f"DIA{num}:", f"📅 DIA {num}", f"📅DIA {num}"):
-                if lu.startswith(pref.upper()):
-                    marcadores.append((idx, num, ls[len(pref):].strip(" :-")))
-                    break
-    if not marcadores: return [{"dia": "Dia 1", "titulo": "Aquecimento", "conteudo": texto.strip(), "gancho": ""}]
-    dias_list = []
-    for i, (idx_ini, num, titulo_dia) in enumerate(marcadores):
-        idx_fim = marcadores[i+1][0] if i+1 < len(marcadores) else len(linhas)
-        bloco = linhas[idx_ini+1:idx_fim]
-        conteudo_partes, gancho_partes, estado = [], [], "conteudo"
-        for linha in bloco:
-            ls = linha.strip(); lu = ls.upper()
-            if not ls and estado == "conteudo" and not conteudo_partes: continue
-            if lu.startswith("GANCHO") and ":" in ls:
-                estado = "gancho"
-                parte = ls[ls.index(":")+1:].strip()
-                if parte: gancho_partes.append(parte)
-                continue
-            if estado == "conteudo": conteudo_partes.append(linha)
-            elif estado == "gancho": gancho_partes.append(ls)
-        dias_list.append({"dia": f"Dia {num}", "titulo": titulo_dia, "conteudo": "\n".join(conteudo_partes).strip(), "gancho": " ".join(gancho_partes).strip()})
-    return dias_list
-
-def parsear_prog15(texto: str) -> list:
+def parsear_mensagens(texto: str) -> list:
     """
-    Divide o Programa 15 Dias em blocos por seção.
-    Detecta cabeçalhos como: ANUNCIO:, LP:, BOAS_VINDAS:, DIA_X:, VENDA_MANHA:, VENDA_NOITE:
+    Divide as mensagens em blocos por seção.
+    Detecta: BOAS_VINDAS, DIA_7, DIA_6, DIA_5, DIA_4, DIA_3, DIA_2, VESPERA, VENDA_MANHA, VENDA_NOITE
     """
-    SECOES = ["ANUNCIO","LP","BOAS_VINDAS","DIA_7","DIA_6","DIA_5","DIA_4","DIA_3","DIA_2","VESPERA","VENDA_MANHA","VENDA_TARDE"]
+    SECOES = ["BOAS_VINDAS","DIA_7","DIA_6","DIA_5","DIA_4","DIA_3","DIA_2","VESPERA","VENDA_MANHA","VENDA_NOITE"]
     LABELS = {
-        "ANUNCIO":      "📣 Anúncio",
-        "LP":           "🌐 Página de Captura (LP)",
-        "BOAS_VINDAS":  "💬 Mensagem de Boas-vindas",
-        "DIA_7":        "📅 Dia 7 — Abertura do programa",
-        "DIA_6":        "🎯 Dia 6 — Atividade interativa",
-        "DIA_5":        "🔥 Dia 5 — Dica prática",
-        "DIA_4":        "📌 Dia 4 — Atividade rápida",
-        "DIA_3":        "💡 Dia 3 — Conteúdo de valor",
-        "DIA_2":        "📈 Dia 2 — Prova social / depoimento",
-        "VESPERA":      "⏳ Véspera da venda",
+        "BOAS_VINDAS":  "💬 Boas-vindas ao grupo",
+        "DIA_7":        "📅 D-7 — Abertura do programa",
+        "DIA_6":        "🎯 D-6 — Enquete interativa",
+        "DIA_5":        "🔥 D-5 — Dica prática",
+        "DIA_4":        "📌 D-4 — Atividade rápida",
+        "DIA_3":        "💡 D-3 — Conteúdo de valor",
+        "DIA_2":        "📈 D-2 — Prova social",
+        "VESPERA":      "⏳ D-1 — Véspera da venda",
         "VENDA_MANHA":  "🚀 Dia da venda — Manhã",
-        "VENDA_TARDE":  "⏰ Dia da venda — Lembrete noturno",
+        "VENDA_NOITE":  "⏰ Dia da venda — Lembrete noturno",
     }
     linhas = texto.split('\n')
     secoes, atual_label, atual_linhas = [], None, []
@@ -317,7 +234,7 @@ def parsear_prog15(texto: str) -> list:
     if atual_label:
         secoes.append({"label": LABELS.get(atual_label, atual_label), "chave": atual_label, "conteudo": '\n'.join(atual_linhas).strip()})
     if not secoes:
-        secoes = [{"label": "Programa 15 Dias", "chave": "RAW", "conteudo": texto.strip()}]
+        secoes = [{"label": "Mensagens", "chave": "RAW", "conteudo": texto.strip()}]
     return secoes
 
 # --- BLOCO DE CONTEÚDO ---
@@ -335,25 +252,11 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
             st.markdown(f"<div class='bonus-conteudo'>{normalizar_markdown(b['conteudo'])}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
-    elif chave == 'aquecimento_cont':
-        emojis = ["🔥","💡","🎯","⚡","🚀"]
-        for i, d in enumerate(parsear_aquecimento(conteudo)):
-            st.markdown(f"<div class='aquecimento-dia-header'>{emojis[i%len(emojis)]} {d['dia']}{' — '+d['titulo'] if d['titulo'] else ''}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='aquecimento-conteudo'>{normalizar_markdown(d['conteudo'])}</div>", unsafe_allow_html=True)
-            if d['gancho']:
-                st.markdown(f"<div class='aquecimento-gancho'>🔗 <strong>Gancho para amanhã:</strong> {d['gancho']}</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-
-    elif chave == 'fio_condutor':
-        for s in parsear_fio(conteudo):
-            st.markdown(f"<div class='fio-label'>{s['label']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='fio-secao'>{normalizar_markdown(s['conteudo'])}</div>", unsafe_allow_html=True)
-
-    elif chave == 'prog15_cont':
-        secoes = parsear_prog15(conteudo)
+    elif chave == 'msg_grupo':
+        secoes = parsear_mensagens(conteudo)
         for s in secoes:
-            st.markdown(f"<div class='p15-dia-header'>{s['label']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='p15-conteudo'>{normalizar_markdown(s['conteudo'])}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='msg-dia-header'>{s['label']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='msg-conteudo'>{normalizar_markdown(s['conteudo'])}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
 
     else:
@@ -402,52 +305,17 @@ def barra_navegacao():
 # PROMPTS
 # =============================================================
 
-def prompt_fio_condutor():
-    d = st.session_state.dados
-    return (
-        f"Você vai criar o FIO CONDUTOR de um lançamento digital. "
-        f"Esse documento é a espinha dorsal de toda a comunicação — "
-        f"anúncio, landing page, aquecimento e mensagem de lançamento vão usar ele como base. "
-        f"Seja preciso, realista e coerente com o que um ebook pode entregar.\n\n"
-        f"DADOS DO PRODUTO:\n"
-        f"- Nicho: {d.get('nicho')}\n- Público-alvo: {d.get('publico')}\n"
-        f"- Nome do ebook: {d.get('nome_eb')}\n- Dor principal: {d.get('dor')}\n"
-        f"- Situação atual: {d.get('atual')}\n- Situação desejada: {d.get('desejada')}\n"
-        f"- Promessa bruta: {d.get('promessa')}\n- Diferencial: {d.get('diferencial')}\n"
-        f"- Preço: R${d.get('preco',47)}\n- Autor: {d.get('autor_nome','não informado')}\n"
-        f"- Experiência do autor: {d.get('autor_experiencia','não informada')}\n\n"
-        f"Gere EXATAMENTE neste formato, sem texto extra antes ou depois:\n\n"
-        f"PROMESSA_CALIBRADA: [promessa real e crível que um ebook pode cumprir]\n\n"
-        f"TOM_E_VOZ: [como o autor deve soar em toda comunicação. Máximo 2 frases.]\n\n"
-        f"PONTO_A: [situação atual do público — o que sentem, pensam, já tentaram. Máximo 3 frases.]\n\n"
-        f"PONTO_B: [transformação específica e realista que o ebook proporciona. Máximo 3 frases.]\n\n"
-        f"MECANISMO: [método central do ebook em 1 frase]\n\n"
-        f"ANCORA_DA_OFERTA: [como posicionar o ebook como próximo passo natural do que foi aprendido grátis. 2 frases.]\n\n"
-        f"FRASE_DO_ANUNCIO: [frase de abertura poderosa para os anúncios — crível e coerente com o ebook]\n\n"
-        f"HEADLINE_LP: [headline principal para a landing page — baseada na promessa calibrada]\n"
-    )
-
-def system_fio_condutor():
-    return (
-        "Você é um estrategista de lançamentos digitais. Crie a narrativa central de forma que todas as peças "
-        "contem a mesma história de ângulos diferentes. Seja realista: o produto é um ebook. "
-        "A coerência entre as peças é mais valiosa do que promessas grandiosas. "
-        "Responda APENAS no formato solicitado, sem introduções ou comentários extras."
-    )
-
 def prompt_ebook():
     d = st.session_state.dados
-    fio_ctx = f"\n\nFIO CONDUTOR (use como referência de tom e promessa):\n{fio()}" if fio() else ""
     return (f"Gere 60 cartões educativos numerados para o e-book '{d['nome_eb']}'. "
             f"Público-alvo: {d['publico']}. Dor principal: {d['dor']}. "
-            f"Diferencial: {d['diferencial']}. Cada cartão deve ter título e conteúdo útil.{fio_ctx}")
+            f"Diferencial: {d['diferencial']}. Cada cartão deve ter título e conteúdo útil.")
 
 def system_ebook():
     return "Você é um especialista em conteúdo digital educativo. Seja objetivo e prático."
 
 def prompt_bonus():
     d = st.session_state.dados
-    fio_ctx = f"\n\nFIO CONDUTOR (mantenha coerência de tom e promessa):\n{fio()}" if fio() else ""
     return (
         f"Crie 3 ebooks bônus complementares para quem comprou o ebook principal sobre {d.get('nicho')}. "
         f"Ebook principal: {d.get('nome_eb')}. Publico-alvo: {d.get('publico')}. "
@@ -456,151 +324,29 @@ def prompt_bonus():
         f"BONUS 1: [Nome]\nDescricao: [2 linhas]\nConteudo: [20 cartoes educativos numerados]\n\n"
         f"BONUS 2: [Nome]\nDescricao: [2 linhas]\nConteudo: [20 cartoes educativos numerados]\n\n"
         f"BONUS 3: [Nome]\nDescricao: [2 linhas]\nConteudo: [20 cartoes educativos numerados]"
-        f"{fio_ctx}"
     )
 
 def system_bonus():
     return "Você é um especialista em conteúdo digital educativo. Crie ebooks bônus práticos que agreguem valor real ao produto principal."
 
-def prompt_aquecimento():
-    d = st.session_state.dados
-    data_fmt = d['data_lancto'].strftime('%d/%m/%Y') if d.get('data_lancto') else 'em breve'
-    fio_ctx = f"\n\nFIO CONDUTOR (use TOM_E_VOZ, PONTO_A e MECANISMO para guiar cada mensagem):\n{fio()}" if fio() else ""
-    return (
-        f"Crie 5 mensagens de aquecimento para um grupo de WhatsApp/Telegram sobre {d.get('nicho')}.\n\n"
-        f"CONTEXTO: Público: {d.get('publico')}. Dor: {d.get('dor')}. "
-        f"Ebook: {d.get('nome_eb')}. Promessa: {d.get('promessa')}. Lançamento: {data_fmt}.\n"
-        f"{fio_ctx}\n\n"
-        f"OBJETIVO: Entregar valor real ANTES de qualquer venda. Cada mensagem cobre temas que o ebook aprofunda — "
-        f"assim a oferta parecerá o próximo passo natural, não uma surpresa.\n\n"
-        f"Gere EXATAMENTE neste formato:\n\n"
-        f"DIA 1: [Título]\n[Mensagem prática, máximo 10 linhas, 1 dica acionável hoje]\nGancho: [1 frase criando expectativa]\n\n"
-        f"DIA 2: [Título]\n[Mensagem]\nGancho: [frase]\n\n"
-        f"DIA 3: [Título]\n[Mensagem]\nGancho: [frase]\n\n"
-        f"DIA 4: [Título]\n[Mensagem]\nGancho: [frase]\n\n"
-        f"DIA 5: [Título — toque que algo especial vem aí]\n[Mensagem de encerramento]\n"
-        f"Gancho: [Amanhã tem uma novidade especial — fique de olho neste grupo]\n\n"
-        f"REGRAS: Tom humano. Cada dia ensina algo diferente. ZERO CTA de venda."
-    )
-
-def system_aquecimento():
-    return ("Você é um especialista em marketing de conteúdo e lançamentos digitais. "
-            "O conteúdo gratuito deve ser a antessala natural do produto pago. "
-            "Escreva como um ser humano, não como um robô de vendas.")
-
-# ── PROMPT PROGRAMA 15 DIAS ──────────────────────────────────
-def prompt_prog15():
-    d = st.session_state.dados
-    nicho       = d.get('nicho', '')
-    publico     = d.get('publico', '')
-    nome_eb     = d.get('nome_eb', '')
-    dor         = d.get('dor', '')
-    promessa    = d.get('promessa', '')
-    preco       = d.get('preco', 47)
-    bonus_resumo = d.get('bonus_resumo', '')
-    data_lancto = d.get('data_lancto')
-    data_fmt    = data_lancto.strftime('%d/%m/%Y') if data_lancto else 'em breve'
-    autor_nome  = d.get('autor_nome', 'o criador')
-    whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
-
-    bonus_lista = ''
-    if bonus_resumo:
-        bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()])
-    else:
-        bonus_lista = '🎁 Bônus 1 – [Nome]\n🎁 Bônus 2 – [Nome]\n🎁 Bônus 3 – [Nome]'
-
-    fio_ctx = f"\n\nFIO CONDUTOR (use TOM_E_VOZ, PROMESSA_CALIBRADA e ANCORA_DA_OFERTA em todas as peças):\n{fio()}" if fio() else ""
-
-    return (
-        f"Crie o PROGRAMA 15 DIAS completo para o lançamento do ebook sobre {nicho}.\n\n"
-        f"CONTEXTO DO LANÇAMENTO:\n"
-        f"- Nicho: {nicho}\n"
-        f"- Público-alvo: {publico}\n"
-        f"- Nome do ebook: {nome_eb}\n"
-        f"- Dor principal: {dor}\n"
-        f"- Promessa: {promessa}\n"
-        f"- Preço de lançamento: R${preco}\n"
-        f"- Bônus: {bonus_resumo if bonus_resumo else 'serão 3 bônus complementares'}\n"
-        f"- Data do lançamento: {data_fmt}\n"
-        f"- Autor: {autor_nome}\n"
-        f"- WhatsApp de contato para DM: {whatsapp_num}\n"
-        f"{fio_ctx}\n\n"
-        f"CONCEITO CENTRAL: Você não chama de lançamento. Você chama de 'Programa gratuito de 15 dias para [objetivo]'. "
-        f"O grupo, o anúncio e a LP ficam todos alinhados a esse conceito. A venda acontece naturalmente no final.\n\n"
-        f"Gere EXATAMENTE neste formato (use os rótulos exatamente como estão, seguidos de dois pontos):\n\n"
-        f"ANUNCIO:\n"
-        f"[Headline: 🚀 Participe gratuitamente do Programa 15 Dias para [objetivo adaptado ao nicho]\n"
-        f"Texto do anúncio: Durante os próximos 15 dias você vai receber dicas práticas, atividades simples e orientações para conquistar [objetivo]. "
-        f"✅ Gratuito ✅ Grupo fechado ✅ Conteúdo diário ✅ Vagas limitadas\n"
-        f"Adapte ao nicho {nicho} e ao público {publico}. Tom humano e direto.]\n\n"
-        f"LP:\n"
-        f"[Headline: Programa 15 Dias para [objetivo]\n"
-        f"Subheadline explicando o que receberão nos 15 dias.\n"
-        f"Lista de 4 benefícios com ✔.\n"
-        f"Botão: QUERO PARTICIPAR\n"
-        f"Adapte ao nicho {nicho}.]\n\n"
-        f"BOAS_VINDAS:\n"
-        f"[Mensagem automática ao entrar no grupo. Calorosa, curta, sem mencionar venda. "
-        f"Adapte ao nicho {nicho}.]\n\n"
-        f"DIA_7:\n"
-        f"[Bom dia + apresentação do programa. Diga que durante os próximos dias receberão conteúdos práticos sobre {nicho}. "
-        f"Mencione que responderá mensagens pessoalmente pelo WhatsApp {whatsapp_num}. Máximo 8 linhas.]\n\n"
-        f"DIA_6:\n"
-        f"[Atividade interativa: enquete sobre a maior dificuldade do público em relação a {nicho}. "
-        f"4 opções numeradas. Peça para responder no WhatsApp {whatsapp_num} — explique que o grupo é fechado. "
-        f"Máximo 8 linhas.]\n\n"
-        f"DIA_5:\n"
-        f"[Dica prática + mini conteúdo real sobre {nicho}. 1 ensinamento acionável hoje. Máximo 8 linhas.]\n\n"
-        f"DIA_4:\n"
-        f"[Atividade rápida + engajamento. Pode ser uma pergunta reflexiva ou desafio simples. Máximo 8 linhas.]\n\n"
-        f"DIA_3:\n"
-        f"[Conteúdo de valor sobre {nicho}. Aprofunda um ponto ligado à dor '{dor}'. Máximo 8 linhas.]\n\n"
-        f"DIA_2:\n"
-        f"[Simule um depoimento de alguém da 'turma passada' que superou a dor '{dor}' e alcançou resultados relacionados à promessa '{promessa}'. "
-        f"Apresente como conquista real, de forma humana. Máximo 8 linhas.]\n\n"
-        f"VESPERA:\n"
-        f"[Mensagem da véspera da venda. Diga que durante esses dias recebeu centenas de mensagens no WhatsApp e entendeu que mais de 80% "
-        f"enfrentam os mesmos obstáculos. Por isso criou o '{nome_eb}'. Será lançado amanhã, em primeira mão, com valor promocional e 3 bônus especiais. "
-        f"Não revele o preço ainda. Grande abraço. Máximo 10 linhas.]\n\n"
-        f"VENDA_MANHA:\n"
-        f"[Mensagem do dia da venda — manhã. Anuncie o lançamento do '{nome_eb}'. "
-        f"De R${preco*2} por apenas R${preco} hoje. "
-        f"Mencione que amanhã estará disponível em plataformas como Amazon por valor maior. "
-        f"Liste os bônus:\n{bonus_lista}\n"
-        f"👉 [LINK MONETIZZE]\n"
-        f"⏰ Promoção válida até 23:59 de hoje. ✅ Garantia de 7 dias pela Monetizze. "
-        f"Máximo 15 linhas.]\n\n"
-        f"VENDA_TARDE:\n"
-        f"[Lembrete noturno. Curto e direto. Lembra que a promoção encerra hoje à meia-noite. "
-        f"Reforça a garantia de 7 dias. Máximo 5 linhas.]\n"
-    )
-
-def system_prog15():
-    return (
-        "Você é um especialista em lançamentos digitais e copywriting para grupos de WhatsApp e Telegram. "
-        "Crie o Programa 15 Dias de forma que a venda pareça a conclusão natural de uma jornada de valor — "
-        "não um lançamento forçado. Tom humano, direto, sem parecer robô. "
-        "Responda APENAS no formato solicitado com os rótulos exatos pedidos."
-    )
-
 def prompt_fb():
     d = st.session_state.dados
-    fio_ctx = (
-        f"\n\nFIO CONDUTOR — USE OBRIGATORIAMENTE:\n{fio()}\n\n"
-        f"INSTRUÇÕES: Use FRASE_DO_ANUNCIO como ponto de partida. Use TOM_E_VOZ definido. "
-        f"A promessa deve ser a PROMESSA_CALIBRADA. CTA leva para grupo gratuito."
-    ) if fio() else ""
     return (
-        f"Crie 5 variações de copy curta para Facebook Ads. "
+        f"Crie UM anúncio completo para Facebook Ads. "
         f"Nicho: {d['nicho']}. Público: {d['publico']}. Dor: {d['dor']}. "
+        f"Promessa: {d['promessa']}. Diferencial: {d['diferencial']}. "
         f"Lançamento: {d['data_lancto'].strftime('%d/%m/%Y')}. "
-        f"OBRIGATÓRIO: 1. Título em negrito HTML <strong>. 2. Sugestão de criativo visual. "
-        f"3. Finalize com: ⬇️ Clique abaixo e descubra como. 4. Parágrafos separados.{fio_ctx}"
+        f"ESTRUTURA OBRIGATÓRIA:\n"
+        f"1. Título chamativo em <strong>negrito HTML</strong>\n"
+        f"2. Texto principal (máx 5 linhas, direto ao ponto)\n"
+        f"3. Sugestão de criativo visual (1 linha)\n"
+        f"4. CTA: ⬇️ Clique abaixo e entre no grupo gratuito\n\n"
+        f"REGRAS: Promessa crível e coerente com o que um ebook entrega. Sem exageros. Tom humano."
     )
 
 def system_fb():
     return ("Você é um copywriter especialista em Facebook Ads. "
-            "Escreva copies críveis, coerentes com o que um ebook pode entregar. "
+            "Escreva um anúncio crível, coerente com o que um ebook pode entregar. "
             "Use tags HTML <strong> para negrito, nunca asteriscos.")
 
 def prompt_lp():
@@ -609,60 +355,122 @@ def prompt_lp():
     if d.get('autor_nome') or d.get('autor_experiencia'):
         secao_autor = (f"Autor: {d.get('autor_nome','')}, Experiência: {d.get('autor_experiencia','')}, "
                        f"Credenciais: {d.get('autor_credenciais','')}.  ")
-    fio_ctx = (
-        f"\n\nFIO CONDUTOR — USE OBRIGATORIAMENTE:\n{fio()}\n\n"
-        f"INSTRUÇÕES: Use HEADLINE_LP como headline principal. PONTO_A para seção de dor. "
-        f"PONTO_B para seção de solução. Promessa = PROMESSA_CALIBRADA. "
-        f"CTA: [ ENTRAR NO GRUPO GRATUITO ]. TOM_E_VOZ consistente do início ao fim."
-    ) if fio() else ""
     return (
-        f"Crie 5 variações de copy completa para Landing Page. "
+        f"Crie UMA landing page completa e de alta conversão. "
+        f"Nicho: {d.get('nicho')}. Público: {d.get('publico')}. "
         f"Situação atual: {d['atual']}. Desejada: {d['desejada']}. "
         f"Promessa: {d['promessa']}. Diferencial: {d['diferencial']}. {secao_autor}"
-        f"Cada variação: headline, subtítulo, seção de dor, solução, 'Quem sou eu', benefícios, "
-        f"sugestões visuais. Finalizar com: [ ENTRAR NO GRUPO GRATUITO ].{fio_ctx}"
+        f"ESTRUTURA OBRIGATÓRIA:\n"
+        f"1. Headline principal (baseada na promessa)\n"
+        f"2. Subtítulo explicando o grupo gratuito\n"
+        f"3. Seção de dor (3 bullets: o que a pessoa sente/vive hoje)\n"
+        f"4. Solução (o que vai receber no grupo)\n"
+        f"5. Quem sou eu (autor, 2-3 linhas)\n"
+        f"6. 4 benefícios com ✔\n"
+        f"7. Sugestão de elemento visual para a página\n"
+        f"8. CTA: [ ENTRAR NO GRUPO GRATUITO ]\n\n"
+        f"REGRAS: Coerente com o anúncio. Sem promessas exageradas. Tom direto e humano."
     )
 
 def system_lp():
     return ("Você é um especialista em Landing Pages de alta conversão. "
-            "Crie LPs coerentes com a promessa real do produto. "
+            "Crie uma LP coerente com a promessa real do produto. "
             "Use tag HTML <strong> para negrito. Nunca asteriscos.")
 
 def prompt_msg():
     d = st.session_state.dados
-    data   = d['data_lancto'].strftime('%d/%m/%Y')
-    data_d1 = (d['data_lancto'] - timedelta(days=1)).strftime('%d/%m/%Y')
-    preco  = d.get('preco', 47)
+    data_lancto = d.get('data_lancto')
+    data_fmt = data_lancto.strftime('%d/%m/%Y') if data_lancto else 'em breve'
+    data_d1 = (data_lancto - timedelta(days=1)).strftime('%d/%m/%Y') if data_lancto else ''
+    preco = d.get('preco', 47)
     nome_eb = d.get('nome_eb', '')
+    nicho = d.get('nicho', '')
+    dor = d.get('dor', '')
+    publico = d.get('publico', '')
+    promessa = d.get('promessa', '')
+    whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
     bonus_resumo = d.get('bonus_resumo', '')
-    bonus_list = '\n'.join([f'  🎁 {b.strip()}' for b in bonus_resumo.split(',') if b.strip()]) if bonus_resumo else '  🎁 Bônus complementares inclusos'
-    fio_ctx = (
-        f"\n\nFIO CONDUTOR — USE OBRIGATORIAMENTE:\n{fio()}\n\n"
-        f"INSTRUÇÕES: Mensagem 1 usa TOM_E_VOZ. Mensagem 2 referencia jornada das mini-aulas e PONTO_A. "
-        f"Mensagem 3 usa ANCORA_DA_OFERTA — ebook é próximo passo natural. Promessa = PROMESSA_CALIBRADA."
-    ) if fio() else ""
+    bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
+
     return (
-        f"Crie 3 mensagens para grupo de WhatsApp/Telegram de lançamento.\n\n"
-        f"DADOS: Nicho: {d['nicho']}. Público: {d['publico']}. Ebook: {nome_eb}. "
-        f"Dor: {d['dor']}. Promessa: {d['promessa']}. Preço: R${preco}. "
-        f"Bônus: {bonus_resumo}. Lançamento: {data}. Véspera: {data_d1}.\n"
-        f"{fio_ctx}\n\n"
-        f"REGRAS: Mensagens 1 e 2 curtas (máx 5 linhas). Mensagem 3 compacta (máx 15 linhas). Tom humano.\n\n"
-        f"**Descrição do grupo:**\nEste grupo é silencioso. Aqui você receberá apenas conteúdos e avisos sobre {d['nicho']}.\n\n---\n\n"
-        f"**📩 Mensagem 1 – Boas-vindas**\n[Boas-vindas curta. Grupo de conteúdo gratuito sobre {d['nicho']}. Em {data} libera algo especial. Máx 5 linhas.]\n\n---\n\n"
-        f"**⏳ Mensagem 2 – Aquecimento ({data_d1})**\n[Antecipação. Conecte com jornada das mini-aulas. 'Você aprendeu X, agora vem o próximo passo'. Máx 5 linhas.]\n\n---\n\n"
-        f"**🚀 Mensagem 3 – Lançamento ({data})**\n"
-        f"[🔥 frase conectando com o que o grupo aprendeu\n\n"
-        f"📘 *{nome_eb}*\n[linha com PROMESSA_CALIBRADA]\n\n"
-        f"🎁 *Bônus inclusos:*\n{bonus_list}\n\n"
-        f"💰 Preço de lançamento: R${preco}\n✅ Garantia: 7 dias\n\n"
-        f"👉 [LINK DA MONETIZZE]\n\n⚠️ Válido só hoje, {data}.]"
+        f"Crie as mensagens completas do funil de WhatsApp/Telegram para um lançamento digital.\n\n"
+        f"CONTEXTO:\n"
+        f"- Nicho: {nicho}\n- Público: {publico}\n- Dor: {dor}\n"
+        f"- Ebook: {nome_eb}\n- Promessa: {promessa}\n"
+        f"- Preço: R${preco}\n- Data de lançamento: {data_fmt}\n"
+        f"- WhatsApp direto: {whatsapp_num}\n"
+        f"- Bônus: {bonus_resumo}\n\n"
+        f"CONCEITO: O grupo é chamado de 'Programa gratuito de X dias para [objetivo]'. "
+        f"A venda é a conclusão natural — o cliente não sente que foi vendido, sente que encontrou a resposta.\n\n"
+        f"Gere EXATAMENTE neste formato (rótulos exatos seguidos de dois pontos):\n\n"
+
+        f"BOAS_VINDAS:\n"
+        f"[Mensagem automática ao entrar. Calorosa, curta, sem mencionar venda. "
+        f"Diga que durante os próximos dias o grupo recebe conteúdo gratuito sobre {nicho}. "
+        f"Máximo 5 linhas.]\n\n"
+
+        f"DIA_7:\n"
+        f"[Bom dia + abertura do programa. Apresente o tema dos próximos dias. "
+        f"Diga que quem tiver dúvidas pode mandar mensagem no WhatsApp {whatsapp_num}. "
+        f"Máximo 8 linhas. Zero menção a produto.]\n\n"
+
+        f"DIA_6:\n"
+        f"[Enquete interativa sobre a maior dificuldade do público com {nicho}. "
+        f"Apresente 4 opções numeradas. "
+        f"IMPORTANTE: NÃO prometa responder pessoalmente. Escreva apenas: "
+        f"'Manda aqui no WhatsApp ({whatsapp_num}) qual é a sua — quero entender sua maior dificuldade.' "
+        f"Tom curioso, sem compromisso de retorno individual. Máximo 8 linhas.]\n\n"
+
+        f"DIA_5:\n"
+        f"[Dica prática acionável sobre {nicho}. 1 ensinamento real que a pessoa pode aplicar hoje. "
+        f"Máximo 8 linhas. Zero CTA de venda.]\n\n"
+
+        f"DIA_4:\n"
+        f"[Atividade rápida ou pergunta reflexiva ligada à dor '{dor}'. "
+        f"Gera engajamento sem revelar que existe produto. Máximo 8 linhas.]\n\n"
+
+        f"DIA_3:\n"
+        f"[Conteúdo de valor aprofundando um ponto ligado à dor '{dor}'. "
+        f"Ensina algo concreto. Máximo 8 linhas.]\n\n"
+
+        f"DIA_2:\n"
+        f"[Simule um relato curto de alguém que superou a dor '{dor}' e alcançou a promessa '{promessa}'. "
+        f"Apresente como conquista real de alguém da 'turma passada'. Tom humano. Máximo 8 linhas.]\n\n"
+
+        f"VESPERA:\n"
+        f"[Mensagem da véspera da venda. "
+        f"CONSTRUA ASSIM: Comece dizendo que ficou impressionado com o que recebeu no WhatsApp nesses dias — "
+        f"sem citar número exato, diga que a maioria enfrenta exatamente o mesmo problema com {nicho}. "
+        f"Diga que leu as mensagens, percebeu um padrão claro e que isso te fez pensar em como poderia ajudar de forma mais completa. "
+        f"Anuncie que amanhã vai compartilhar algo que preparou como resposta a tudo isso — "
+        f"sem revelar que é um produto pago, sem revelar preço. "
+        f"Tom de alguém que ouviu e está respondendo, não de quem vai vender. Máximo 10 linhas.]\n\n"
+
+        f"VENDA_MANHA:\n"
+        f"[Mensagem do dia da venda — manhã. "
+        f"COMECE assim: faça referência direta à dúvida/dificuldade que as pessoas mandaram no WhatsApp — "
+        f"'Lembra daquela mensagem que você me mandou sobre [dor]?' ou similar. "
+        f"Diga que criou o '{nome_eb}' como resposta coletiva a tudo que recebeu. "
+        f"Apresente como a resposta que eles estavam esperando, não como produto pronto de prateleira. "
+        f"De R${preco*2} por apenas R${preco} hoje. "
+        f"Liste os bônus:\n{bonus_lista}\n"
+        f"👉 [LINK MONETIZZE]\n"
+        f"⏰ Promoção válida até 23:59 de hoje. ✅ Garantia de 7 dias pela Monetizze. "
+        f"Máximo 15 linhas.]\n\n"
+
+        f"VENDA_NOITE:\n"
+        f"[Lembrete noturno. Curto e direto. Lembra que encerra hoje à meia-noite. "
+        f"Reforça a garantia de 7 dias. Máximo 5 linhas.]\n"
     )
 
 def system_msg():
-    return ("Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
-            "A oferta deve parecer o próximo passo lógico da jornada, não uma surpresa. "
-            "Use linguagem simples e direta.")
+    return (
+        "Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
+        "A oferta deve parecer o próximo passo lógico da jornada que a pessoa viveu no grupo — não uma surpresa. "
+        "A véspera deve soar como alguém que realmente leu as mensagens e está respondendo a elas. "
+        "A mensagem de venda deve começar conectando com o que as pessoas compartilharam — não com energia de vendedor. "
+        "Use linguagem simples, humana e direta. Respeite o formato solicitado com os rótulos exatos."
+    )
 
 # =============================================================
 # TELAS
@@ -734,17 +542,16 @@ elif st.session_state.etapa == "Formulario":
 
     st.divider()
     st.markdown("#### Suas credenciais como autor")
-    st.caption("Aparecem na Landing Page, no Fio Condutor e no Programa 15 Dias.")
+    st.caption("Aparecem na Landing Page e nas Mensagens do grupo.")
     d['autor_nome']        = st.text_input("Seu nome:", value=d.get('autor_nome',''), placeholder="ex: João Silva")
     d['autor_experiencia'] = st.text_area("Sua experiência com o tema:", value=d.get('autor_experiencia',''), placeholder="ex: Invisto em criptomoedas há 4 anos.")
     d['autor_credenciais'] = st.text_area("Resultados ou conquistas:", value=d.get('autor_credenciais',''), placeholder="ex: Já ajudei mais de 200 pessoas.")
 
     st.divider()
     st.markdown("#### WhatsApp para contato direto")
-    st.caption("Usado no Programa 15 Dias para receber respostas da enquete e dúvidas pessoais.")
+    st.caption("Usado nas Mensagens do grupo para receber respostas da enquete e dúvidas.")
     d['whatsapp_contato'] = st.text_input("Seu número de WhatsApp:", value=d.get('whatsapp_contato',''), placeholder="ex: (11) 99999-9999")
 
-    from datetime import date
     data_sugerida = d.get('data_lancto', date.today() + timedelta(days=15))
     d['data_lancto'] = st.date_input("Data de lançamento", value=data_sugerida, min_value=date.today(),
         help="💡 Sugerimos 15 dias: 1 semana para encher o grupo e 1 semana para aquecer.")
@@ -771,66 +578,18 @@ elif st.session_state.etapa == "Formulario":
         st.divider()
         st.markdown("#### Resumo do que será gerado")
         st.markdown(f"""<div class="preview-box">
-        🧵 <strong>Fio Condutor</strong> — narrativa central coerente em todas as peças<br>
         📚 <strong>E-book:</strong> {d.get('nome_eb')} — 60 cartões educativos<br>
         🎁 <strong>3 E-books Bônus</strong> complementares<br>
-        🔥 <strong>5 Mini-aulas de Aquecimento</strong> alinhadas ao produto<br>
-        🟢 <strong>Programa 15 Dias</strong> — funil completo sem parecer lançamento<br>
-        💬 <strong>5 Anúncios</strong> com promessa calibrada<br>
-        🌐 <strong>5 variações de Landing Page</strong> coerentes com o anúncio<br>
-        📩 <strong>3 Mensagens de grupo</strong> conectando jornada à oferta<br>
+        📣 <strong>1 Anúncio</strong> alinhado com a landing page<br>
+        🌐 <strong>1 Landing Page</strong> alinhada com o anúncio<br>
+        💬 <strong>Funil completo de Mensagens</strong> — boas-vindas + aquecimento + véspera + venda<br>
         🚀 <strong>Lançamento:</strong> {d['data_lancto'].strftime('%d/%m/%Y')}
         </div>""", unsafe_allow_html=True)
 
     if st.button("AVANÇAR →"):
         faltando = [c for c in campos_obrigatorios if not d.get(c,'').strip()]
         if faltando: st.warning("Preencha todos os campos antes de avançar.")
-        else: st.session_state.etapa = "Fio_Condutor"; st.rerun()
-
-# ── FIO CONDUTOR ─────────────────────────────────────────────
-elif st.session_state.etapa == "Fio_Condutor":
-    barra_navegacao()
-    st.title("🧵 FIO CONDUTOR DO LANÇAMENTO")
-    st.markdown("""<div class="fio-card">
-    <strong style="color:#92400E;font-size:1.05em;">O que é o Fio Condutor?</strong><br><br>
-    É a <strong>espinha dorsal</strong> de todo o seu lançamento. Gerado uma única vez, ele define a promessa calibrada,
-    o tom do autor, o arco de transformação e a âncora da oferta.<br><br>
-    <strong>Todos os outros conteúdos usam o Fio como referência obrigatória</strong> — garantindo que o cliente viva
-    uma jornada coerente do anúncio até a compra.
-    </div>""", unsafe_allow_html=True)
-
-    st.markdown('<div class="btn-fio">', unsafe_allow_html=True)
-    gerar_fio = st.button("🧵 GERAR FIO CONDUTOR")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    if gerar_fio:
-        with st.spinner("Criando a narrativa central do seu lançamento..."):
-            st.session_state.dados['fio_condutor'] = chamar_ia(prompt_fio_condutor(), system_fio_condutor())
-            st.rerun()
-
-    if 'fio_condutor' in st.session_state.dados:
-        st.divider()
-        st.markdown("#### Sua narrativa central")
-        st.markdown("""<div class="fio-alerta">
-        ⚠️ <strong>Revise antes de avançar.</strong> Se algo parecer exagerado ou não representar bem o produto,
-        clique em Regenerar. O Fio Condutor define o tom de tudo que vem depois.
-        </div>""", unsafe_allow_html=True)
-        for s in parsear_fio(st.session_state.dados['fio_condutor']):
-            st.markdown(f"<div class='fio-label'>{s['label']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='fio-secao'>{normalizar_markdown(s['conteudo'])}</div>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(label="📋 Copiar como .txt", data=limpar_html(st.session_state.dados['fio_condutor']),
-                file_name="fio_condutor.txt", mime="text/plain", key="copy_fio", use_container_width=True)
-        with col2:
-            st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
-            if st.button("🔄 Regenerar Fio Condutor", key="regen_fio", use_container_width=True):
-                with st.spinner("Regenerando..."):
-                    st.session_state.dados['fio_condutor'] = chamar_ia(prompt_fio_condutor(), system_fio_condutor())
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        st.divider()
-        if st.button("AVANÇAR →"): st.session_state.etapa = "Gerar_Ebook"; st.rerun()
+        else: st.session_state.etapa = "Gerar_Ebook"; st.rerun()
 
 # ── E-BOOK ───────────────────────────────────────────────────
 elif st.session_state.etapa == "Gerar_Ebook":
@@ -847,7 +606,7 @@ elif st.session_state.etapa == "Gerar_Ebook":
 elif st.session_state.etapa == "Gerar_Bonus":
     barra_navegacao()
     st.title("🎁 GERAR 3 E-BOOKS BÔNUS")
-    st.caption("Os bônus serão complementares ao ebook principal e incluídos automaticamente na Mensagem de Lançamento e no Programa 15 Dias.")
+    st.caption("Os bônus serão complementares ao ebook principal e incluídos automaticamente na Mensagem de Lançamento.")
     if st.button("GERAR 3 EBOOKS BÔNUS"):
         with st.spinner("Gerando ebooks bônus com IA..."):
             st.session_state.dados['bonus_cont'] = chamar_ia(prompt_bonus(), system_bonus())
@@ -859,120 +618,27 @@ elif st.session_state.etapa == "Gerar_Bonus":
             st.rerun()
     if 'bonus_cont' in st.session_state.dados:
         bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
-        if st.button("AVANÇAR →"): st.session_state.etapa = "Gerar_Aquecimento"; st.rerun()
-
-# ── AQUECIMENTO ──────────────────────────────────────────────
-elif st.session_state.etapa == "Gerar_Aquecimento":
-    barra_navegacao()
-    st.title("🔥 MINI-AULAS DE AQUECIMENTO")
-    st.markdown("""<div class="preview-box">
-    <strong>Por que isso importa?</strong><br><br>
-    As mini-aulas cobrem exatamente os temas que o ebook aprofunda — assim, quando a oferta chegar,
-    o produto parecerá o <em>próximo passo natural</em>, não uma surpresa.
-    O Fio Condutor garante coerência de tom com o anúncio e a LP.
-    </div>""", unsafe_allow_html=True)
-    st.markdown("""<div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
-    <strong style="color:#5B21B6;">📅 Como usar:</strong><br>
-    <span style="color:#4C1D95;font-size:0.9em;">Envie 1 por dia nos 5 dias antes do lançamento.<br>
-    Dia 1 → Dia 2 → Dia 3 → Dia 4 → Dia 5 → 🚀 Lançamento</span></div>""", unsafe_allow_html=True)
-    st.markdown('<div class="btn-roxo">', unsafe_allow_html=True)
-    gerar_btn = st.button("🔥 GERAR 5 MINI-AULAS DE AQUECIMENTO")
-    st.markdown('</div>', unsafe_allow_html=True)
-    if gerar_btn:
-        with st.spinner("Criando conteúdo alinhado ao Fio Condutor..."):
-            st.session_state.dados['aquecimento_cont'] = chamar_ia(prompt_aquecimento(), system_aquecimento())
-            st.rerun()
-    if 'aquecimento_cont' in st.session_state.dados:
-        st.divider()
-        st.markdown("#### Suas 5 mini-aulas prontas para enviar")
-        bloco_conteudo('aquecimento_cont', 'Aquecimento', prompt_aquecimento, system_aquecimento)
-        st.divider()
-        if st.button("AVANÇAR →"): st.session_state.etapa = "Prog15Dias"; st.rerun()
-
-# ── PROGRAMA 15 DIAS ─────────────────────────────────────────
-elif st.session_state.etapa == "Prog15Dias":
-    barra_navegacao()
-    st.title("🟢 PROGRAMA 15 DIAS")
-
-    st.markdown("""<div class="p15-bloco">
-    <strong style="color:#065F46;font-size:1.05em;">O que é o Programa 15 Dias?</strong><br><br>
-    É uma estratégia onde você <strong>não chama de lançamento</strong> — você chama de
-    <em>"Programa gratuito de 15 dias para [objetivo]"</em>.<br><br>
-    O anúncio, a página de captura e o grupo ficam todos alinhados a esse conceito.
-    A venda acontece no último dia de forma <strong>natural e coerente</strong> com tudo que a pessoa recebeu antes.
-    O cliente não sente que foi "vendido" — sente que encontrou a solução que estava esperando.
-    </div>""", unsafe_allow_html=True)
-
-    st.markdown("""<div class="p15-alerta">
-    📅 <strong>Estrutura dos 15 dias:</strong><br>
-    Dias 1–8: Encher o grupo com anúncios → Dia 8: Boas-vindas →
-    Dia 9 (D-7): Abertura do programa → Dia 10 (D-6): Enquete →
-    Dia 11 (D-5): Dica prática → Dia 12 (D-4): Atividade →
-    Dia 13 (D-3): Conteúdo de valor → Dia 14 (D-2): Depoimento →
-    Dia 14 (D-1): Véspera da venda → Dia 15: 🚀 Venda
-    </div>""", unsafe_allow_html=True)
-
-    if not st.session_state.dados.get('whatsapp_contato'):
-        st.warning("⚠️ Você não preencheu o WhatsApp de contato no formulário. O Programa 15 Dias usa esse número para receber respostas da enquete. Você pode voltar ao formulário para preencher.")
-
-    st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
-    gerar_p15 = st.button("🟢 GERAR PROGRAMA 15 DIAS COMPLETO")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    if gerar_p15:
-        with st.spinner("Gerando o funil completo do Programa 15 Dias..."):
-            st.session_state.dados['prog15_cont'] = chamar_ia(prompt_prog15(), system_prog15())
-            st.rerun()
-
-    if 'prog15_cont' in st.session_state.dados:
-        st.divider()
-        st.markdown("#### Seu funil completo — pronto para copiar e enviar")
-        st.caption("Cada bloco abaixo corresponde a uma peça do funil. Copie e use no dia certo.")
-
-        secoes = parsear_prog15(st.session_state.dados['prog15_cont'])
-        for s in secoes:
-            st.markdown(f"<div class='p15-dia-header'>{s['label']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='p15-conteudo'>{normalizar_markdown(s['conteudo'])}</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.download_button(label="📋 Copiar como .txt", data=limpar_html(st.session_state.dados['prog15_cont']),
-                file_name="programa_15_dias.txt", mime="text/plain", key="copy_p15", use_container_width=True)
-        with col2:
-            st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
-            if st.button("🔄 Regenerar Programa 15 Dias", key="regen_p15", use_container_width=True):
-                with st.spinner("Regenerando..."):
-                    st.session_state.dados['prog15_cont'] = chamar_ia(prompt_prog15(), system_prog15())
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        st.divider()
         if st.button("AVANÇAR →"): st.session_state.etapa = "Copy_Face"; st.rerun()
 
-# ── COPY FACEBOOK ─────────────────────────────────────────────
+# ── ANÚNCIO ───────────────────────────────────────────────────
 elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
-    st.title("📱 COPY PARA O FACEBOOK")
-    if fio():
-        st.markdown("""<div class="fio-alerta">🧵 <strong>Fio Condutor ativo.</strong>
-        Os anúncios usarão a FRASE_DO_ANUNCIO e PROMESSA_CALIBRADA — garantindo coerência com LP e aquecimento.</div>""", unsafe_allow_html=True)
-    if st.button("GERAR 5 VARIAÇÕES"):
-        with st.spinner("Gerando copies com IA..."):
+    st.title("📣 ANÚNCIO")
+    st.caption("Um anúncio completo e alinhado com a landing page — mesma promessa, mesmo tom, mesma linguagem.")
+    if st.button("GERAR ANÚNCIO"):
+        with st.spinner("Gerando anúncio com IA..."):
             st.session_state.dados['fb_copy'] = chamar_ia(prompt_fb(), system_fb())
     if 'fb_copy' in st.session_state.dados:
-        bloco_conteudo('fb_copy', 'Anúncios', prompt_fb, system_fb)
+        bloco_conteudo('fb_copy', 'Anúncio', prompt_fb, system_fb)
         if st.button("AVANÇAR →"): st.session_state.etapa = "Copy_LP"; st.rerun()
 
 # ── LANDING PAGE ──────────────────────────────────────────────
 elif st.session_state.etapa == "Copy_LP":
     barra_navegacao()
-    st.title("🌐 COPY PARA A LANDING PAGE")
-    if fio():
-        st.markdown("""<div class="fio-alerta">🧵 <strong>Fio Condutor ativo.</strong>
-        HEADLINE_LP e PONTO_A/PONTO_B do Fio serão usados como base para todas as variações.</div>""", unsafe_allow_html=True)
-    if st.button("GERAR 5 VARIAÇÕES LP"):
-        with st.spinner("Gerando landing pages com IA..."):
+    st.title("🌐 LANDING PAGE")
+    st.caption("Uma landing page completa — alinhada com o anúncio gerado. Mesma promessa, mesma jornada.")
+    if st.button("GERAR LANDING PAGE"):
+        with st.spinner("Gerando landing page com IA..."):
             st.session_state.dados['lp_copy'] = chamar_ia(prompt_lp(), system_lp())
     if 'lp_copy' in st.session_state.dados:
         bloco_conteudo('lp_copy', 'Landing Page', prompt_lp, system_lp)
@@ -981,18 +647,33 @@ elif st.session_state.etapa == "Copy_LP":
 # ── MENSAGENS DO GRUPO ────────────────────────────────────────
 elif st.session_state.etapa == "Mensagens_Grupo":
     barra_navegacao()
-    st.title("📌 MENSAGENS PARA O GRUPO")
-    if fio():
-        st.markdown("""<div class="fio-alerta">🧵 <strong>Fio Condutor ativo.</strong>
-        A Mensagem 3 usará a ANCORA_DA_OFERTA para posicionar o ebook como próximo passo natural.</div>""", unsafe_allow_html=True)
-    if 'msg_grupo' not in st.session_state.dados:
-        if st.button("✉️ GERAR MENSAGENS DO GRUPO"):
-            with st.spinner("Gerando mensagens com IA..."):
-                st.session_state.dados['msg_grupo'] = chamar_ia(prompt_msg(), system_msg())
-                st.rerun()
-    else:
-        bloco_conteudo('msg_grupo', 'Mensagens', prompt_msg, system_msg)
+    st.title("💬 MENSAGENS DO GRUPO")
+
+    st.markdown("""<div class="preview-box">
+    <strong>Funil completo de mensagens — 10 peças prontas para copiar e enviar:</strong><br><br>
+    💬 Boas-vindas → 📅 D-7 Abertura → 🎯 D-6 Enquete → 🔥 D-5 Dica →
+    📌 D-4 Atividade → 💡 D-3 Conteúdo → 📈 D-2 Prova social →
+    ⏳ D-1 Véspera → 🚀 Manhã da venda → ⏰ Lembrete noturno
+    </div>""", unsafe_allow_html=True)
+
+    if not st.session_state.dados.get('whatsapp_contato'):
+        st.warning("⚠️ Você não preencheu o WhatsApp de contato no formulário. As mensagens usam esse número para receber respostas da enquete.")
+
+    st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
+    gerar_msg = st.button("💬 GERAR FUNIL COMPLETO DE MENSAGENS")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if gerar_msg:
+        with st.spinner("Gerando o funil completo de mensagens..."):
+            st.session_state.dados['msg_grupo'] = chamar_ia(prompt_msg(), system_msg())
+            st.rerun()
+
     if 'msg_grupo' in st.session_state.dados:
+        st.divider()
+        st.markdown("#### Suas mensagens prontas para enviar")
+        st.caption("Cada bloco corresponde a um dia. Copie e envie no momento certo.")
+        bloco_conteudo('msg_grupo', 'Mensagens', prompt_msg, system_msg)
+        st.divider()
         if st.button("💾 SALVAR PROJETO"):
             nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
             st.session_state.projetos[nome_projeto] = st.session_state.dados.copy()
@@ -1014,10 +695,6 @@ DATA DE LANÇAMENTO: {d.get('data_lancto','')}
 PREÇO: R${d.get('preco',47)}
 {'='*50}
 
-🧵 FIO CONDUTOR
-{'-'*40}
-{limpar_html(d.get('fio_condutor','Não gerado.'))}
-
 📚 E-BOOK PRINCIPAL
 {'-'*40}
 {limpar_html(d.get('ebook_cont','Não gerado.'))}
@@ -1026,15 +703,7 @@ PREÇO: R${d.get('preco',47)}
 {'-'*40}
 {limpar_html(d.get('bonus_cont','Não gerado.'))}
 
-🔥 MINI-AULAS DE AQUECIMENTO
-{'-'*40}
-{limpar_html(d.get('aquecimento_cont','Não gerado.'))}
-
-🟢 PROGRAMA 15 DIAS
-{'-'*40}
-{limpar_html(d.get('prog15_cont','Não gerado.'))}
-
-🎬 ANÚNCIOS (FACEBOOK)
+📣 ANÚNCIO
 {'-'*40}
 {limpar_html(d.get('fb_copy','Não gerado.'))}
 
@@ -1042,7 +711,7 @@ PREÇO: R${d.get('preco',47)}
 {'-'*40}
 {limpar_html(d.get('lp_copy','Não gerado.'))}
 
-📌 MENSAGENS DO GRUPO
+💬 MENSAGENS DO GRUPO (FUNIL COMPLETO)
 {'-'*40}
 {limpar_html(d.get('msg_grupo','Não gerado.'))}""".strip()
 
@@ -1052,74 +721,64 @@ PREÇO: R${d.get('preco',47)}
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.divider()
-    with st.expander("🧵 FIO CONDUTOR"):
-        st.caption("A narrativa central que conecta todas as peças.")
-        bloco_conteudo('fio_condutor','Fio Condutor',prompt_fio_condutor,system_fio_condutor)
     with st.expander("📚 E-BOOK"):
         bloco_conteudo('ebook_cont','E-book',prompt_ebook,system_ebook)
     with st.expander("🎁 E-BOOKS BÔNUS"):
         bloco_conteudo('bonus_cont','Bônus',prompt_bonus,system_bonus)
-    with st.expander("🔥 MINI-AULAS DE AQUECIMENTO"):
-        st.caption("Envie uma por dia nos 5 dias antes do lançamento.")
-        bloco_conteudo('aquecimento_cont','Aquecimento',prompt_aquecimento,system_aquecimento)
-    with st.expander("🟢 PROGRAMA 15 DIAS"):
-        st.caption("Funil completo: anúncio → LP → grupo → aquecimento → venda.")
-        bloco_conteudo('prog15_cont','Programa 15 Dias',prompt_prog15,system_prog15)
-    with st.expander("🎬 ANÚNCIO (Facebook)"):
-        bloco_conteudo('fb_copy','Anúncios',prompt_fb,system_fb)
+    with st.expander("📣 ANÚNCIO"):
+        bloco_conteudo('fb_copy','Anúncio',prompt_fb,system_fb)
     with st.expander("🌐 LANDING PAGE"):
         bloco_conteudo('lp_copy','Landing Page',prompt_lp,system_lp)
-    with st.expander("📌 MENSAGENS DO GRUPO"):
+    with st.expander("💬 MENSAGENS DO GRUPO — FUNIL COMPLETO"):
+        st.caption("Boas-vindas → D-7 a D-1 → Venda manhã → Lembrete noturno")
         bloco_conteudo('msg_grupo','Mensagens',prompt_msg,system_msg)
 
     # ── CHECKLIST ─────────────────────────────────────────────
     st.divider()
     with st.expander("✅ CHECKLIST DE LANÇAMENTO — O QUE FAZER AGORA"):
-        from datetime import date, timedelta as td
         data_lancto = d.get('data_lancto', date.today())
         dlf  = data_lancto.strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else str(data_lancto)
-        dm2  = (data_lancto - td(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-        dai  = (data_lancto - td(days=6)).strftime('%d/%m') if hasattr(data_lancto,'strftime') else ''
-        daf  = (data_lancto - td(days=2)).strftime('%d/%m') if hasattr(data_lancto,'strftime') else ''
-        dbv  = (data_lancto - td(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        dm1  = (data_lancto - timedelta(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d7   = (data_lancto - timedelta(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d6   = (data_lancto - timedelta(days=6)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d5   = (data_lancto - timedelta(days=5)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d4   = (data_lancto - timedelta(days=4)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d3   = (data_lancto - timedelta(days=3)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d2   = (data_lancto - timedelta(days=2)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
 
         fases = [
             {"fase":"FASE 1 — HOJE: Preparação","cor":"#0EA5E9","items":[
                 ("Hoje","Salve e baixe todo o conteúdo gerado (.txt)"),
-                ("Hoje","Crie o grupo: 'Programa 15 Dias para [Objetivo]'"),
+                ("Hoje","Crie o grupo: 'Programa [X] Dias para [Objetivo]'"),
                 ("Hoje","Configure a descrição do grupo com o texto de boas-vindas gerado"),
-                ("Hoje","Cadastre o e-book + 3 bônus na Monetizze e configure o checkout"),
-                ("Hoje",f"Defina o preço: R${d.get('preco',47)} e salve o link da Monetizze"),
-                ("Hoje","Suba os anúncios usando a copy do Programa 15 Dias gerada"),
-                ("Hoje","Aponte os anúncios para o link do grupo (WhatsApp/Telegram)"),
+                ("Hoje",f"Cadastre o e-book + 3 bônus na Monetizze — preço: R${d.get('preco',47)}"),
+                ("Hoje","Suba o anúncio apontando para a landing page"),
+                ("Hoje","Configure a landing page com o CTA apontando para o grupo"),
             ]},
             {"fase":"FASE 2 — SEMANA 1: Encher o grupo","cor":"#8B5CF6","items":[
                 ("Dias 1 a 7","Anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
                 ("Diariamente","Monitore custo por lead (meta: até R$2,00 por pessoa)"),
-                (f"{dbv}","Envie a Mensagem de Boas-vindas — primeira comunicação com o grupo"),
-                ("Importante","NÃO mencione produto ou preço ainda"),
+                ("Ao entrar","Mensagem de boas-vindas automática já está configurada"),
             ]},
-            {"fase":f"FASE 3 — AQUECIMENTO ({dai} a {daf}): Programa 15 Dias","cor":"#059669","items":[
-                (f"{dai} — D-7","Envie: Abertura do programa — conteúdo gratuito começa hoje"),
-                ("D-6","Enquete interativa — peça para responder no WhatsApp"),
-                ("D-5","Dica prática + mini conteúdo real"),
-                ("D-4","Atividade rápida + engajamento"),
-                ("D-3","Conteúdo de valor aprofundando a dor"),
-                (f"{dm2} — D-2","Depoimento de alguém da 'turma passada'"),
-                (f"{dm2} — D-1","Véspera: anuncie que amanhã vem algo especial. Não revele o preço."),
-                (f"{dm2}","Confirme se o link da Monetizze está funcionando"),
+            {"fase":"FASE 3 — SEMANA 2: Aquecimento","cor":"#059669","items":[
+                (f"{d7} — D-7","Envie: Abertura do programa"),
+                (f"{d6} — D-6","Envie: Enquete — peça para responder no WhatsApp"),
+                (f"{d5} — D-5","Envie: Dica prática"),
+                (f"{d4} — D-4","Envie: Atividade rápida"),
+                (f"{d3} — D-3","Envie: Conteúdo de valor"),
+                (f"{d2} — D-2","Envie: Prova social / relato"),
+                (f"{dm1} — D-1","Envie: Véspera da venda"),
+                (f"{dm1}","Confirme se o link da Monetizze está funcionando"),
             ]},
-            {"fase":f"FASE 4 — DIA DO LANÇAMENTO ({dlf}): Vender","cor":"#22C55E","items":[
+            {"fase":f"FASE 4 — {dlf}: Vender","cor":"#22C55E","items":[
                 (f"{dlf} — manhã","Envie a mensagem de lançamento com o link da Monetizze"),
-                (f"{dlf}","Pause os anúncios ou redirecione para o link de venda"),
                 (f"{dlf}","Fique online respondendo dúvidas no WhatsApp"),
                 (f"{dlf} — noite","Envie lembrete: 'Encerra hoje à meia-noite'"),
             ]},
-            {"fase":"FASE 5 — PÓS-LANÇAMENTO: Escalar","cor":"#64748B","items":[
+            {"fase":"FASE 5 — PÓS-LANÇAMENTO","cor":"#64748B","items":[
                 ("Após","Anote: pessoas no grupo, compradores, taxa de conversão"),
                 ("Após","ROI: faturamento ÷ custo de tráfego"),
                 ("Próximos dias","Entregue o e-book e os bônus para quem comprou"),
-                ("Próxima semana","Use a base para o próximo lançamento sem custo de tráfego"),
             ]},
         ]
         for fase in fases:
@@ -1153,10 +812,9 @@ PREÇO: R${d.get('preco',47)}
     if st.button("ENVIAR"):
         if pergunta.strip():
             with st.spinner("Launcerbot pensando..."):
-                fio_ctx = f"\nFio Condutor:\n{fio()}" if fio() else ""
                 system = (f"Você é o Launcerbot, assistente especialista em lançamentos digitais. "
                           f"Usuário: {st.session_state.usuario}. "
-                          f"Projeto: nicho={d.get('nicho')}, ebook={d.get('nome_eb')}, público={d.get('publico')}.{fio_ctx}")
+                          f"Projeto: nicho={d.get('nicho')}, ebook={d.get('nome_eb')}, público={d.get('publico')}.")
                 try:
                     client = Groq(api_key=st.session_state.api_key)
                     messages = [{"role": "system", "content": system}]
