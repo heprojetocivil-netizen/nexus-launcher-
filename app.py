@@ -151,6 +151,49 @@ st.markdown("""
         text-align: center;
         margin: 10px 0;
     }
+
+    /* Cards para os bônus individuais */
+    .bonus-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+
+    .bonus-card-header {
+        background: linear-gradient(135deg, #0EA5E9, #0284C7);
+        color: white;
+        border-radius: 8px;
+        padding: 12px 18px;
+        margin-bottom: 16px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.1em;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .bonus-descricao {
+        background: #EFF6FF;
+        border-left: 4px solid #0EA5E9;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 14px;
+        color: #1E3A5F;
+        font-size: 0.92em;
+        line-height: 1.6;
+    }
+
+    .bonus-conteudo {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 16px 20px;
+        color: #334155;
+        font-size: 0.88em;
+        line-height: 1.7;
+        white-space: pre-wrap;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -263,6 +306,65 @@ def normalizar_markdown(texto: str) -> str:
         resultado.append(linha)
     return '\n'.join(resultado)
 
+# --- PARSEAR BÔNUS EM 3 BLOCOS SEPARADOS ---
+def parsear_bonus(texto: str) -> list:
+    """
+    Divide o texto dos bônus em uma lista de dicts:
+    [{'titulo': ..., 'descricao': ..., 'conteudo': ...}, ...]
+    """
+    bonus_list = []
+    # Tentamos separar pelos marcadores BONUS 1, BONUS 2, BONUS 3
+    # com variações de formatação
+    padrao = re.split(
+        r'(?i)(?:🎁\s*)?B[ÔO]NUS\s*([123])\s*:',
+        texto
+    )
+    # padrao[0] = texto antes do primeiro bônus (descartado)
+    # padrao[1,2] = número, conteúdo; padrao[3,4] = número, conteúdo; etc.
+    i = 1
+    while i < len(padrao) - 1:
+        num = padrao[i].strip()
+        bloco = padrao[i + 1].strip()
+        i += 2
+
+        # Separa nome / descrição / conteúdo dentro do bloco
+        titulo = f"BÔNUS {num}"
+        descricao = ""
+        conteudo = bloco
+
+        # Tenta capturar linha de nome do ebook (primeira linha não vazia)
+        linhas = bloco.split('\n')
+        linhas_nao_vazias = [l.strip() for l in linhas if l.strip()]
+        if linhas_nao_vazias:
+            titulo = f"🎁 BÔNUS {num}: {linhas_nao_vazias[0]}"
+            resto = '\n'.join(linhas[1:]).strip()
+        else:
+            resto = bloco
+
+        # Tenta separar Descrição de Conteúdo
+        m_desc = re.search(r'(?i)descri[çc][aã]o\s*:\s*(.*?)(?=(?i)conte[uú]do\s*:|$)', resto, re.DOTALL)
+        m_cont = re.search(r'(?i)conte[uú]do\s*:(.*)', resto, re.DOTALL)
+
+        if m_desc:
+            descricao = m_desc.group(1).strip()
+        if m_cont:
+            conteudo = m_cont.group(1).strip()
+        elif not m_desc:
+            conteudo = resto
+
+        bonus_list.append({
+            'titulo': titulo,
+            'descricao': descricao,
+            'conteudo': conteudo,
+        })
+
+    # Fallback: se o parser não encontrou nada, devolve tudo num bloco só
+    if not bonus_list:
+        bonus_list.append({'titulo': '🎁 Bônus', 'descricao': '', 'conteudo': texto})
+
+    return bonus_list
+
+
 # --- COMPONENTE: BLOCO COM BOTÕES DE COPIAR E REGENERAR ---
 def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
     conteudo = st.session_state.dados.get(chave, '')
@@ -270,8 +372,19 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
         st.info(f"{titulo} ainda não foi gerado.")
         return
 
-    conteudo_html = normalizar_markdown(conteudo)
-    st.markdown(f"<div class='caixa-texto'>{conteudo_html}</div>", unsafe_allow_html=True)
+    # Renderização especial para bônus
+    if chave == 'bonus_cont':
+        bonus_list = parsear_bonus(conteudo)
+        for b in bonus_list:
+            st.markdown(f"<div class='bonus-card-header'>{b['titulo']}</div>", unsafe_allow_html=True)
+            if b['descricao']:
+                st.markdown(f"<div class='bonus-descricao'><strong>Descrição:</strong><br>{b['descricao']}</div>", unsafe_allow_html=True)
+            conteudo_html = normalizar_markdown(b['conteudo'])
+            st.markdown(f"<div class='bonus-conteudo'>{conteudo_html}</div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+    else:
+        conteudo_html = normalizar_markdown(conteudo)
+        st.markdown(f"<div class='caixa-texto'>{conteudo_html}</div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -484,6 +597,16 @@ def system_msg():
 if st.session_state.etapa == "Login":
     st.title("NEXUS LAUNCHER")
     st.subheader("ACESSO RESTRITO A ASSOCIADOS DO QUIZ MAIS PRÊMIOS")
+
+    # --- LINK DO QUIZ MAIS PRÊMIOS ---
+    st.markdown(
+        '<p style="margin-top:-8px; margin-bottom:20px; font-size:0.95em;">'
+        '🔗 <a href="https://www.quizmaispremios.com.br" target="_blank" '
+        'style="color:#00BFFF; text-decoration:none; font-weight:600;">'
+        'www.quizmaispremios.com.br</a></p>',
+        unsafe_allow_html=True
+    )
+
     st.session_state.usuario = st.text_input("Nome")
     st.session_state.api_key = st.text_input("Chave Groq", type="password")
 
@@ -678,9 +801,10 @@ elif st.session_state.etapa == "Gerar_Bonus":
             linhas = bonus_texto.split('\n')
             nomes = []
             for linha in linhas:
-                for prefixo in ['BÔNUS 1:', 'BÔNUS 2:', 'BÔNUS 3:', '🎁 BÔNUS 1:', '🎁 BÔNUS 2:', '🎁 BÔNUS 3:']:
-                    if prefixo in linha:
-                        nome = linha.replace(prefixo, '').strip()
+                for prefixo in ['BÔNUS 1:', 'BÔNUS 2:', 'BÔNUS 3:', '🎁 BÔNUS 1:', '🎁 BÔNUS 2:', '🎁 BÔNUS 3:',
+                                 'BONUS 1:', 'BONUS 2:', 'BONUS 3:']:
+                    if prefixo in linha.upper():
+                        nome = re.sub(r'(?i)b[ÔO]NUS\s*[123]\s*:', '', linha).strip()
                         if nome:
                             nomes.append(nome)
             if nomes:
