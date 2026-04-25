@@ -1,6 +1,6 @@
 import streamlit as st
 from groq import Groq
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 import re
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -135,6 +135,45 @@ def chamar_ia(prompt: str, system_prompt: str) -> str:
 def limpar_html(texto: str) -> str:
     limpo = re.sub(r'<[^>]+>', '', texto)
     return limpo.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').strip()
+
+def gerar_ics(eventos: list) -> str:
+    """
+    Gera um arquivo .ics com múltiplos eventos.
+    eventos = [{'titulo': str, 'data': date, 'hora': str (HH:MM), 'descricao': str}]
+    """
+    linhas = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Nexus Launcher//Agendador//PT',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+    ]
+    for ev in eventos:
+        try:
+            h, m = map(int, ev['hora'].split(':'))
+        except Exception:
+            h, m = 9, 0
+        dt_start = datetime(ev['data'].year, ev['data'].month, ev['data'].day, h, m, 0)
+        dt_end   = datetime(ev['data'].year, ev['data'].month, ev['data'].day, h, m + 30 if m <= 29 else m, 0)
+        uid = f"{ev['data'].strftime('%Y%m%d')}-{ev['chave']}@nexuslauncher"
+        desc = ev['descricao'].replace('\n', '\\n').replace(',', r'\,').replace(';', r'\;')[:500]
+        linhas += [
+            'BEGIN:VEVENT',
+            f"UID:{uid}",
+            f"DTSTAMP:{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}",
+            f"DTSTART:{dt_start.strftime('%Y%m%dT%H%M%S')}",
+            f"DTEND:{dt_end.strftime('%Y%m%dT%H%M%S')}",
+            f"SUMMARY:{ev['titulo']}",
+            f"DESCRIPTION:{desc}",
+            'BEGIN:VALARM',
+            'TRIGGER:-PT30M',
+            'ACTION:DISPLAY',
+            f"DESCRIPTION:Lembrete: {ev['titulo']}",
+            'END:VALARM',
+            'END:VEVENT',
+        ]
+    linhas.append('END:VCALENDAR')
+    return '\r\n'.join(linhas)
 
 def normalizar_markdown(texto: str) -> str:
     linhas = texto.split('\n')
@@ -744,18 +783,6 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     if not st.session_state.dados.get('whatsapp_contato'):
         st.warning("⚠️ Você não preencheu o WhatsApp de contato no formulário. As mensagens usam esse número para receber respostas da enquete.")
 
-    st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:14px 18px;margin-bottom:16px;color:#14532D;font-size:0.88em;line-height:1.6;">
-    ✅ <strong>Agora é a hora de colocar o link da Monetizze.</strong><br>
-    Seu e-book já foi gerado — cadastre-o na Monetizze, copie o link e cole abaixo.<br>
-    Ele entrará automaticamente nas mensagens de venda.
-    </div>""", unsafe_allow_html=True)
-    st.session_state.dados['link_monetizze'] = st.text_input(
-        "Link da Monetizze:",
-        value=st.session_state.dados.get('link_monetizze', ''),
-        placeholder="ex: https://go.monetizze.com.br/...",
-        help="Deixe em branco se ainda não tiver — aparecerá como [LINK MONETIZZE] nas mensagens."
-    )
-
     st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
     gerar_msg = st.button("💬 GERAR FUNIL COMPLETO DE MENSAGENS")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -770,6 +797,32 @@ elif st.session_state.etapa == "Mensagens_Grupo":
         st.markdown("#### Suas mensagens prontas para enviar")
         st.caption("Cada bloco corresponde a um dia. Copie e envie no momento certo.")
         bloco_conteudo('msg_grupo', 'Mensagens', prompt_msg, system_msg)
+
+        # ── LINK MONETIZZE — após as mensagens ───────────────
+        st.divider()
+        st.markdown("#### 🔗 Inserir link da Monetizze")
+        st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#14532D;font-size:0.87em;line-height:1.6;">
+        Cadastre o e-book na Monetizze, copie o link e cole abaixo.<br>
+        Clique em <strong>Aplicar link</strong> — ele substituirá o placeholder nas mensagens de venda sem regerá-las.
+        </div>""", unsafe_allow_html=True)
+
+        col_link, col_btn = st.columns([4, 1])
+        with col_link:
+            link_input = st.text_input(
+                "Link:",
+                value=st.session_state.dados.get('link_monetizze', ''),
+                placeholder="https://go.monetizze.com.br/...",
+                label_visibility="collapsed"
+            )
+        with col_btn:
+            if st.button("✅ Aplicar", use_container_width=True):
+                if link_input.strip():
+                    st.session_state.dados['link_monetizze'] = link_input.strip()
+                    st.session_state.dados['msg_grupo'] = st.session_state.dados['msg_grupo'].replace('[LINK MONETIZZE]', link_input.strip())
+                    st.rerun()
+                else:
+                    st.warning("Cole o link antes de aplicar.")
+
         st.divider()
         if st.button("💾 SALVAR PROJETO"):
             nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
@@ -829,6 +882,105 @@ PREÇO: R${d.get('preco',47)}
     with st.expander("💬 MENSAGENS DO GRUPO — FUNIL COMPLETO"):
         st.caption("Boas-vindas → D-7 a D-1 → Venda manhã → Lembrete noturno")
         bloco_conteudo('msg_grupo','Mensagens',prompt_msg,system_msg)
+
+    # ── AGENDADOR DE MENSAGENS ───────────────────────────────
+    st.divider()
+    with st.expander("📅 AGENDADOR — Calendário de envio das mensagens"):
+        data_lancto = d.get('data_lancto')
+
+        if not data_lancto:
+            st.warning("Defina a data de lançamento no formulário para usar o agendador.")
+        elif not d.get('msg_grupo'):
+            st.info("Gere as mensagens primeiro para usar o agendador.")
+        else:
+            # Define cada mensagem com seu offset em relação ao lançamento
+            AGENDA_DEF = [
+                {"chave": "DESCRICAO_GRUPO", "label": "📋 Descrição do grupo (bio)",        "offset": -15, "hora_pad": "08:00", "fixo": True},
+                {"chave": "BOAS_VINDAS",     "label": "💬 D-8 Boas-vindas (automática)",    "offset": -8,  "hora_pad": "08:00", "fixo": True},
+                {"chave": "DIA_7",           "label": "📅 D-9 Abertura do programa",         "offset": -7,  "hora_pad": "08:00", "fixo": False},
+                {"chave": "DIA_6",           "label": "🎯 D-10 Enquete",                     "offset": -6,  "hora_pad": "08:00", "fixo": False},
+                {"chave": "DIA_5",           "label": "🔥 D-11 Dica prática",               "offset": -5,  "hora_pad": "08:00", "fixo": False},
+                {"chave": "DIA_4",           "label": "📌 D-12 Atividade",                  "offset": -4,  "hora_pad": "08:00", "fixo": False},
+                {"chave": "DIA_3",           "label": "💡 D-13 Prova social",               "offset": -3,  "hora_pad": "08:00", "fixo": False},
+                {"chave": "VESPERA",         "label": "⏳ D-14 Véspera",                    "offset": -1,  "hora_pad": "08:00", "fixo": False},
+                {"chave": "VENDA_MANHA",     "label": "🚀 Lançamento — Manhã",              "offset":  0,  "hora_pad": "08:00", "fixo": False},
+                {"chave": "VENDA_NOITE",     "label": "⏰ Lançamento — Noite",              "offset":  0,  "hora_pad": "19:00", "fixo": False},
+            ]
+
+            # Parse mensagens geradas para pegar o texto de cada bloco
+            secoes_map = {s['chave']: limpar_html(s['conteudo']) for s in parsear_mensagens(d['msg_grupo'])}
+
+            st.markdown("**Configure o horário de cada mensagem e exporte para o seu calendário.**")
+            st.caption("O lembrete chegará 30 minutos antes com o texto da mensagem — é só copiar e colar no grupo.")
+            st.markdown("")
+
+            # Build UI — date + time per message
+            horas_config = st.session_state.dados.get('agenda_horas', {})
+
+            cols_h = st.columns([3, 1])
+            cols_h[0].markdown("**Mensagem**")
+            cols_h[1].markdown("**Horário**")
+
+            for item in AGENDA_DEF:
+                chave = item['chave']
+                data_msg = data_lancto + timedelta(days=item['offset'])
+                data_str = data_msg.strftime('%d/%m')
+                col_label, col_hora = st.columns([3, 1])
+                with col_label:
+                    st.markdown(
+                        f"<div style='padding:6px 0;font-size:0.88em;color:#1E293B;'>"
+                        f"<span style='color:#64748B;font-size:0.8em;font-weight:600;'>{data_str}&nbsp;&nbsp;</span>"
+                        f"{item['label']}</div>",
+                        unsafe_allow_html=True
+                    )
+                with col_hora:
+                    hora_val = horas_config.get(chave, item['hora_pad'])
+                    hora_input = st.text_input(
+                        "h",
+                        value=hora_val,
+                        key=f"hora_{chave}",
+                        label_visibility="collapsed",
+                        placeholder="HH:MM"
+                    )
+                    horas_config[chave] = hora_input
+
+            st.session_state.dados['agenda_horas'] = horas_config
+
+            st.markdown("")
+
+            # Generate ICS
+            if st.button("📅 EXPORTAR CALENDÁRIO (.ics)", use_container_width=True):
+                eventos = []
+                for item in AGENDA_DEF:
+                    chave = item['chave']
+                    data_msg = data_lancto + timedelta(days=item['offset'])
+                    hora = horas_config.get(chave, item['hora_pad'])
+                    texto = secoes_map.get(chave, '')
+                    if not texto:
+                        continue
+                    eventos.append({
+                        'chave':     chave,
+                        'titulo':    f"[Nexus] {item['label']}",
+                        'data':      data_msg,
+                        'hora':      hora,
+                        'descricao': texto,
+                    })
+                ics_content = gerar_ics(eventos)
+                st.download_button(
+                    label="⬇️ Baixar arquivo .ics",
+                    data=ics_content.encode('utf-8'),
+                    file_name=f"lancamento_{d.get('nome_eb','').replace(' ','_')}.ics",
+                    mime="text/calendar",
+                    use_container_width=True,
+                )
+                st.success("Pronto! Importe o arquivo no Google Calendar, Apple Calendar ou Outlook. O lembrete chega 30 min antes com o texto da mensagem.")
+
+            st.markdown("""<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;margin-top:12px;color:#64748B;font-size:0.8em;line-height:1.6;">
+            💡 <strong>Como importar:</strong>
+            Google Calendar → Configurações → Importar → selecione o .ics &nbsp;|&nbsp;
+            Apple Calendar → Arquivo → Importar &nbsp;|&nbsp;
+            Outlook → Arquivo → Abrir e Exportar → Importar
+            </div>""", unsafe_allow_html=True)
 
     # ── DICA MESTRE ──────────────────────────────────────────
     st.divider()
