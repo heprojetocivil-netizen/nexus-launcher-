@@ -610,10 +610,6 @@ elif st.session_state.etapa == "Formulario":
     d['diferencial'] = st.text_input("Diferencial:", value=d.get('diferencial',''))
     d['preco']       = st.number_input("Preço do e-book (R$):", min_value=9, max_value=997, value=int(d.get('preco',47)), step=1)
 
-    st.divider()
-    st.markdown("#### Link de venda (Monetizze)")
-    st.caption("Cole o link aqui e ele entrará automaticamente nas mensagens de lançamento — sem precisar editar depois.")
-    d['link_monetizze'] = st.text_input("Link da Monetizze:", value=d.get('link_monetizze',''), placeholder="ex: https://go.monetizze.com.br/...")
 
     st.divider()
     st.markdown("#### Suas credenciais como autor")
@@ -747,6 +743,18 @@ elif st.session_state.etapa == "Mensagens_Grupo":
 
     if not st.session_state.dados.get('whatsapp_contato'):
         st.warning("⚠️ Você não preencheu o WhatsApp de contato no formulário. As mensagens usam esse número para receber respostas da enquete.")
+
+    st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:14px 18px;margin-bottom:16px;color:#14532D;font-size:0.88em;line-height:1.6;">
+    ✅ <strong>Agora é a hora de colocar o link da Monetizze.</strong><br>
+    Seu e-book já foi gerado — cadastre-o na Monetizze, copie o link e cole abaixo.<br>
+    Ele entrará automaticamente nas mensagens de venda.
+    </div>""", unsafe_allow_html=True)
+    st.session_state.dados['link_monetizze'] = st.text_input(
+        "Link da Monetizze:",
+        value=st.session_state.dados.get('link_monetizze', ''),
+        placeholder="ex: https://go.monetizze.com.br/...",
+        help="Deixe em branco se ainda não tiver — aparecerá como [LINK MONETIZZE] nas mensagens."
+    )
 
     st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
     gerar_msg = st.button("💬 GERAR FUNIL COMPLETO DE MENSAGENS")
