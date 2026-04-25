@@ -307,60 +307,86 @@ def normalizar_markdown(texto: str) -> str:
     return '\n'.join(resultado)
 
 # --- PARSEAR BÔNUS EM 3 BLOCOS SEPARADOS ---
+def _linha_e_marcador_bonus(linha):
+    """Retorna (numero_str, nome_str) se a linha é um marcador de bônus, senão (None, None)."""
+    l = linha.strip().replace("🎁", "").strip()
+    lu = l.upper()
+    for num in ("1", "2", "3"):
+        for pref in (f"BONUS {num}:", f"BONUS{num}:", f"BONUS {num} -", f"BONUS{num} -"):
+            if lu.startswith(pref):
+                nome = l[len(pref):].strip(" :-")
+                return num, nome
+        # variantes com Ô (já está em upper)
+        for pref in (f"BÔNUS {num}:", f"BÔNUS{num}:", f"BÔNUS {num} -"):
+            if lu.startswith(pref.upper()):
+                nome = l[len(pref):].strip(" :-")
+                return num, nome
+    return None, None
+
+
 def parsear_bonus(texto: str) -> list:
     """
-    Divide o texto dos bônus em uma lista de dicts:
-    [{'titulo': ..., 'descricao': ..., 'conteudo': ...}, ...]
+    Divide o texto dos bônus em lista de dicts sem usar regex complexo.
+    [{"titulo": ..., "descricao": ..., "conteudo": ...}, ...]
     """
+    linhas = texto.split("\n")
+
+    # 1. Acha as linhas que são cabeçalho de bônus
+    marcadores = []
+    for idx, linha in enumerate(linhas):
+        num, nome = _linha_e_marcador_bonus(linha)
+        if num is not None:
+            marcadores.append((idx, num, nome))
+
+    # Fallback: sem marcadores detectáveis
+    if not marcadores:
+        return [{"titulo": "🎁 Bônus", "descricao": "", "conteudo": texto.strip()}]
+
     bonus_list = []
-    # Tentamos separar pelos marcadores BONUS 1, BONUS 2, BONUS 3
-    # com variações de formatação
-    padrao = re.split(
-        r'(?i)(?:🎁\s*)?B[ÔO]NUS\s*([123])\s*:',
-        texto
-    )
-    # padrao[0] = texto antes do primeiro bônus (descartado)
-    # padrao[1,2] = número, conteúdo; padrao[3,4] = número, conteúdo; etc.
-    i = 1
-    while i < len(padrao) - 1:
-        num = padrao[i].strip()
-        bloco = padrao[i + 1].strip()
-        i += 2
+    for i, (idx_ini, num, nome_bonus) in enumerate(marcadores):
+        idx_fim = marcadores[i + 1][0] if i + 1 < len(marcadores) else len(linhas)
+        bloco = linhas[idx_ini + 1: idx_fim]
 
-        # Separa nome / descrição / conteúdo dentro do bloco
-        titulo = f"BÔNUS {num}"
-        descricao = ""
-        conteudo = bloco
+        titulo = "🎁 BÔNUS " + num + (": " + nome_bonus if nome_bonus else "")
+        descricao_partes = []
+        conteudo_partes = []
+        estado = "cabecalho"  # cabecalho → descricao → conteudo
 
-        # Tenta capturar linha de nome do ebook (primeira linha não vazia)
-        linhas = bloco.split('\n')
-        linhas_nao_vazias = [l.strip() for l in linhas if l.strip()]
-        if linhas_nao_vazias:
-            titulo = f"🎁 BÔNUS {num}: {linhas_nao_vazias[0]}"
-            resto = '\n'.join(linhas[1:]).strip()
-        else:
-            resto = bloco
+        for linha in bloco:
+            ls = linha.strip()
+            lu = ls.upper()
 
-        # Tenta separar Descrição de Conteúdo
-        m_desc = re.search(r'(?i)descri[çc][aã]o\s*:\s*(.*?)(?=(?i)conte[uú]do\s*:|$)', resto, re.DOTALL)
-        m_cont = re.search(r'(?i)conte[uú]do\s*:(.*)', resto, re.DOTALL)
+            if estado == "cabecalho" and not ls:
+                continue  # pula linhas vazias antes de tudo
 
-        if m_desc:
-            descricao = m_desc.group(1).strip()
-        if m_cont:
-            conteudo = m_cont.group(1).strip()
-        elif not m_desc:
-            conteudo = resto
+            if lu.startswith("DESCRI") and ":" in ls:
+                estado = "descricao"
+                parte = ls[ls.index(":") + 1:].strip()
+                if parte:
+                    descricao_partes.append(parte)
+                continue
 
-        bonus_list.append({
-            'titulo': titulo,
-            'descricao': descricao,
-            'conteudo': conteudo,
-        })
+            if lu.startswith("CONTE") and ":" in ls:
+                estado = "conteudo"
+                parte = ls[ls.index(":") + 1:].strip()
+                if parte:
+                    conteudo_partes.append(parte)
+                continue
 
-    # Fallback: se o parser não encontrou nada, devolve tudo num bloco só
-    if not bonus_list:
-        bonus_list.append({'titulo': '🎁 Bônus', 'descricao': '', 'conteudo': texto})
+            if estado == "descricao":
+                descricao_partes.append(ls)
+            elif estado == "conteudo":
+                conteudo_partes.append(linha)
+            else:
+                # cabecalho sem seções marcadas: joga tudo no conteúdo
+                conteudo_partes.append(linha)
+
+        descricao = "\n".join(descricao_partes).strip()
+        conteudo = "\n".join(conteudo_partes).strip()
+        if not conteudo and not descricao:
+            conteudo = "\n".join(bloco).strip()
+
+        bonus_list.append({"titulo": titulo, "descricao": descricao, "conteudo": conteudo})
 
     return bonus_list
 
@@ -801,12 +827,9 @@ elif st.session_state.etapa == "Gerar_Bonus":
             linhas = bonus_texto.split('\n')
             nomes = []
             for linha in linhas:
-                for prefixo in ['BÔNUS 1:', 'BÔNUS 2:', 'BÔNUS 3:', '🎁 BÔNUS 1:', '🎁 BÔNUS 2:', '🎁 BÔNUS 3:',
-                                 'BONUS 1:', 'BONUS 2:', 'BONUS 3:']:
-                    if prefixo in linha.upper():
-                        nome = re.sub(r'(?i)b[ÔO]NUS\s*[123]\s*:', '', linha).strip()
-                        if nome:
-                            nomes.append(nome)
+                num, nome_b = _linha_e_marcador_bonus(linha)
+                if num is not None and nome_b:
+                    nomes.append(nome_b)
             if nomes:
                 st.session_state.dados['bonus_resumo'] = ', '.join(nomes)
             st.rerun()
