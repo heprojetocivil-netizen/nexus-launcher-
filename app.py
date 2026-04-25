@@ -332,22 +332,26 @@ def system_bonus():
 def prompt_fb():
     d = st.session_state.dados
     return (
-        f"Crie UM anúncio completo para Facebook Ads. "
-        f"Nicho: {d['nicho']}. Público: {d['publico']}. Dor: {d['dor']}. "
-        f"Promessa: {d['promessa']}. Diferencial: {d['diferencial']}. "
-        f"Lançamento: {d['data_lancto'].strftime('%d/%m/%Y')}. "
+        f"Crie UM anúncio completo para Facebook Ads convidando pessoas para um grupo gratuito.\n\n"
+        f"CONTEXTO:\n"
+        f"- Nicho: {d['nicho']}\n- Público: {d['publico']}\n- Dor principal: {d['dor']}\n\n"
+        f"CONCEITO OBRIGATÓRIO: O anúncio convida para um PROGRAMA GRATUITO DE 15 DIAS sobre {d['nicho']}. "
+        f"Use um nome atrativo para o programa baseado no tema — ex: 'Programa 15 Dias para [objetivo]'. "
+        f"NUNCA mencione ebook, produto pago, lançamento, preço ou qualquer venda. "
+        f"O grupo é gratuito, com dicas e atividades práticas durante 15 dias. Só isso.\n\n"
         f"ESTRUTURA OBRIGATÓRIA:\n"
-        f"1. Título chamativo em <strong>negrito HTML</strong>\n"
-        f"2. Texto principal (máx 5 linhas, direto ao ponto)\n"
-        f"3. Sugestão de criativo visual (1 linha)\n"
-        f"4. CTA: ⬇️ Clique abaixo e entre no grupo gratuito\n\n"
-        f"REGRAS: Promessa crível e coerente com o que um ebook entrega. Sem exageros. Tom humano."
+        f"1. Título chamativo em <strong>negrito HTML</strong> — centrado no programa gratuito\n"
+        f"2. Texto principal (máx 5 linhas) — foca na dor do público e no que vão receber grátis\n"
+        f"3. Lista rápida: ✅ Gratuito ✅ Grupo fechado ✅ Dicas diárias ✅ Vagas limitadas\n"
+        f"4. Sugestão de criativo visual (1 linha)\n"
+        f"5. CTA: ⬇️ Clique abaixo e garanta sua vaga\n\n"
+        f"REGRAS: Sem exageros. Tom humano. Parece um convite, não um anúncio de produto."
     )
 
 def system_fb():
     return ("Você é um copywriter especialista em Facebook Ads. "
-            "Escreva um anúncio crível, coerente com o que um ebook pode entregar. "
-            "Use tags HTML <strong> para negrito, nunca asteriscos.")
+            "O anúncio deve convidar para um grupo gratuito — sem mencionar produto pago, ebook ou lançamento. "
+            "A oferta é o programa gratuito em si. Use tags HTML <strong> para negrito, nunca asteriscos.")
 
 def prompt_lp():
     d = st.session_state.dados
@@ -356,25 +360,31 @@ def prompt_lp():
         secao_autor = (f"Autor: {d.get('autor_nome','')}, Experiência: {d.get('autor_experiencia','')}, "
                        f"Credenciais: {d.get('autor_credenciais','')}.  ")
     return (
-        f"Crie UMA landing page completa e de alta conversão. "
-        f"Nicho: {d.get('nicho')}. Público: {d.get('publico')}. "
-        f"Situação atual: {d['atual']}. Desejada: {d['desejada']}. "
-        f"Promessa: {d['promessa']}. Diferencial: {d['diferencial']}. {secao_autor}"
+        f"Crie UMA landing page completa para capturar leads para um grupo gratuito.\n\n"
+        f"CONTEXTO:\n"
+        f"- Nicho: {d.get('nicho')}\n- Público: {d.get('publico')}\n"
+        f"- Dor principal: {d['dor']}\n- Situação atual: {d['atual']}\n"
+        f"- Objetivo que a pessoa quer alcançar: {d['desejada']}\n"
+        f"- {secao_autor}\n\n"
+        f"CONCEITO OBRIGATÓRIO: A landing page convida para um PROGRAMA GRATUITO DE 15 DIAS sobre {d.get('nicho')}. "
+        f"Use o mesmo nome de programa do anúncio — ex: 'Programa 15 Dias para [objetivo]'. "
+        f"NUNCA mencione ebook, produto pago, lançamento, preço ou qualquer venda. "
+        f"O grupo recebe dicas e atividades práticas durante 15 dias. Só isso.\n\n"
         f"ESTRUTURA OBRIGATÓRIA:\n"
-        f"1. Headline principal (baseada na promessa)\n"
-        f"2. Subtítulo explicando o grupo gratuito\n"
-        f"3. Seção de dor (3 bullets: o que a pessoa sente/vive hoje)\n"
-        f"4. Solução (o que vai receber no grupo)\n"
+        f"1. Headline principal — ex: 'Programa Gratuito de 15 Dias para [objetivo relacionado ao nicho]'\n"
+        f"2. Subtítulo — o que a pessoa vai receber durante os 15 dias (conteúdo, dicas, atividades)\n"
+        f"3. Seção de dor — 3 bullets descrevendo o que a pessoa sente/vive hoje\n"
+        f"4. Solução — o que vai receber no grupo (conteúdo gratuito, sem mencionar produto)\n"
         f"5. Quem sou eu (autor, 2-3 linhas)\n"
-        f"6. 4 benefícios com ✔\n"
+        f"6. 4 benefícios com ✔ — todos sobre o conteúdo gratuito\n"
         f"7. Sugestão de elemento visual para a página\n"
-        f"8. CTA: [ ENTRAR NO GRUPO GRATUITO ]\n\n"
-        f"REGRAS: Coerente com o anúncio. Sem promessas exageradas. Tom direto e humano."
+        f"8. CTA: [ QUERO PARTICIPAR GRATUITAMENTE ]\n\n"
+        f"REGRAS: Alinhada ao anúncio. Sem exageros. Tom direto e humano. Parece um convite, não uma venda."
     )
 
 def system_lp():
-    return ("Você é um especialista em Landing Pages de alta conversão. "
-            "Crie uma LP coerente com a promessa real do produto. "
+    return ("Você é um especialista em Landing Pages de alta conversão para captura de leads. "
+            "A LP promove um grupo gratuito — sem mencionar produto pago, ebook ou lançamento. "
             "Use tag HTML <strong> para negrito. Nunca asteriscos.")
 
 def prompt_msg():
@@ -439,12 +449,13 @@ def prompt_msg():
 
         f"VESPERA:\n"
         f"[Mensagem da véspera da venda. "
-        f"CONSTRUA ASSIM: Comece dizendo que ficou impressionado com o que recebeu no WhatsApp nesses dias — "
-        f"sem citar número exato, diga que a maioria enfrenta exatamente o mesmo problema com {nicho}. "
-        f"Diga que leu as mensagens, percebeu um padrão claro e que isso te fez pensar em como poderia ajudar de forma mais completa. "
-        f"Anuncie que amanhã vai compartilhar algo que preparou como resposta a tudo isso — "
-        f"sem revelar que é um produto pago, sem revelar preço. "
-        f"Tom de alguém que ouviu e está respondendo, não de quem vai vender. Máximo 10 linhas.]\n\n"
+        f"CONSTRUA ASSIM: Comece dizendo que nos últimos dias recebeu mensagens no WhatsApp e ficou impressionado. "
+        f"Cite A DOR ESPECÍFICA que as pessoas relataram — use exatamente: '{dor}'. "
+        f"Exemplo de estrutura: 'Fiquei impressionado com o que recebi... a maioria de vocês falou sobre [dor específica]... "
+        f"li essas mensagens e percebi que é exatamente o mesmo obstáculo repetindo.' "
+        f"Diga que isso te fez pensar em como poderia ajudar de forma mais completa e que amanhã vai compartilhar algo "
+        f"preparado como resposta direta a tudo isso. "
+        f"NUNCA revele preço, produto ou que é pago. Tom de quem ouviu e está respondendo. Máximo 10 linhas.]\n\n"
 
         f"VENDA_MANHA:\n"
         f"[Mensagem do dia da venda — manhã. "
