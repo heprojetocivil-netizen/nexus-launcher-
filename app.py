@@ -63,11 +63,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- INICIALIZAÇÃO DE ESTADO ---
-defaults = {
-    'etapa': "Login", 'dados': {}, 'projetos': {},
-    'chat_hist': [], 'usuario': '', 'api_key': '', 'chat_input_key': 0,
-}
-for k, v in defaults.items():
+# Initialize all state — projetos persists, never gets cleared
+_one_time = {'etapa': "Login", 'dados': {}, 'projetos': {},
+    'chat_hist': [], 'usuario': '', 'api_key': '', 'chat_input_key': 0}
+for k, v in _one_time.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
@@ -202,18 +201,18 @@ def parsear_mensagens(texto: str) -> list:
     Divide as mensagens em blocos por seção.
     Detecta: BOAS_VINDAS, DIA_7, DIA_6, DIA_5, DIA_4, DIA_3, DIA_2, VESPERA, VENDA_MANHA, VENDA_NOITE
     """
-    SECOES = ["BOAS_VINDAS","DIA_7","DIA_6","DIA_5","DIA_4","DIA_3","DIA_2","VESPERA","VENDA_MANHA","VENDA_NOITE"]
+    SECOES = ["DESCRICAO_GRUPO","BOAS_VINDAS","DIA_7","DIA_6","DIA_5","DIA_4","DIA_3","VESPERA","VENDA_MANHA","VENDA_NOITE"]
     LABELS = {
-        "BOAS_VINDAS":  "💬 Boas-vindas ao grupo",
-        "DIA_7":        "📅 D-7 — Abertura do programa",
-        "DIA_6":        "🎯 D-6 — Enquete interativa",
-        "DIA_5":        "🔥 D-5 — Dica prática",
-        "DIA_4":        "📌 D-4 — Atividade rápida",
-        "DIA_3":        "💡 D-3 — Conteúdo de valor",
-        "DIA_2":        "📈 D-2 — Prova social",
-        "VESPERA":      "⏳ D-1 — Véspera da venda",
-        "VENDA_MANHA":  "🚀 Dia da venda — Manhã",
-        "VENDA_NOITE":  "⏰ Dia da venda — Lembrete noturno",
+        "DESCRICAO_GRUPO": "📋 Descrição do grupo (bio)",
+        "BOAS_VINDAS":  "💬 D-8 — Boas-vindas (mensagem automática)",
+        "DIA_7":        "📅 D-9 — Abertura do programa",
+        "DIA_6":        "🎯 D-10 — Enquete interativa",
+        "DIA_5":        "🔥 D-11 — Dica prática",
+        "DIA_4":        "📌 D-12 — Atividade interativa",
+        "DIA_3":        "💡 D-13 — Conteúdo de valor / prova social",
+        "VESPERA":      "⏳ D-14 — Véspera da venda",
+        "VENDA_MANHA":  "🚀 Dia do lançamento — Manhã",
+        "VENDA_NOITE":  "⏰ Dia do lançamento — Lembrete noturno (19h)",
     }
     linhas = texto.split('\n')
     secoes, atual_label, atual_linhas = [], None, []
@@ -288,7 +287,7 @@ def barra_navegacao():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("➕ INICIAR NOVO PROJETO"):
-            st.session_state.dados = {}; st.session_state.etapa = "Formulario"; st.rerun()
+            st.session_state.dados = {}; st.session_state.chat_hist = []; st.session_state.etapa = "Formulario"; st.rerun()
     with col2:
         with st.expander("📂 MEUS PROJETOS"):
             if not st.session_state.projetos: st.write("Nenhum projeto salvo.")
@@ -390,7 +389,6 @@ def system_lp():
 def prompt_msg():
     d = st.session_state.dados
     data_lancto = d.get('data_lancto')
-    data_fmt = data_lancto.strftime('%d/%m/%Y') if data_lancto else 'em breve'
     preco = d.get('preco', 47)
     nome_eb = d.get('nome_eb', '')
     nicho = d.get('nicho', '')
@@ -398,85 +396,131 @@ def prompt_msg():
     publico = d.get('publico', '')
     whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
     bonus_resumo = d.get('bonus_resumo', '')
-    bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
+    bonus_lista = '\n'.join([f'🎁 Bônus {i+1} \u2013 {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
 
     return (
-        f"Gere as mensagens do funil de WhatsApp/Telegram para o lançamento do ebook sobre {nicho}.\n\n"
-        f"DADOS: Nicho: {nicho}. Público: {publico}. Dor: {dor}. "
-        f"Ebook: {nome_eb}. Preço: R${preco}. Bônus: {bonus_resumo}. "
-        f"WhatsApp: {whatsapp_num}. Lançamento: {data_fmt}.\n\n"
-        f"Gere EXATAMENTE neste formato com os rótulos exatos abaixo:\n\n"
+        f"Gere as mensagens do funil para o lançamento sobre {nicho}.\n"
+        f"Ebook: {nome_eb}. Preço: R${preco}. WhatsApp: {whatsapp_num}. Nicho: {nicho}. Dor: {dor}.\n"
+        f"Bônus:\n{bonus_lista}\n\n"
+        f"REGRA ABSOLUTA: Textos entre === FIXO === e === FIM === devem ser copiados PALAVRA POR PALAVRA.\n"
+        f"Apenas blocos com [IA] devem ser criados. Respeite os rótulos exatos.\n\n"
 
         f"DESCRICAO_GRUPO:\n"
-        f"Seja muito bem-vindo ao nosso grupo de [nome do programa sobre {nicho}]!\n"
-        f"Nos próximos dias, você vai receber conteúdos gratuitos, simples e práticos sobre {nicho} — tudo de forma leve e aplicável no seu dia a dia.\n"
-        f"Criamos esse espaço com um único objetivo: te entregar valor de verdade.\n"
-        f"Para manter a organização e garantir a melhor experiência, o grupo permanecerá silencioso.\n"
-        f"Assim, você não será incomodado e receberá apenas mensagens importantes e diretamente relacionadas ao conteúdo.\n"
-        f"Fique atento… o que vamos compartilhar aqui pode fazer mais diferença do que você imagina.\n\n"
+        f"=== FIXO ===\n"
+        f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
+        f"Esse não é apenas um grupo com conteúdos soltos.\n"
+        f"Nos próximos dias, você vai passar por um processo simples, mas muito poderoso:\n"
+        f"Primeiro, eu vou entender você.\n"
+        f"Depois, vou te mostrar pequenos ajustes que já podem fazer diferença no seu dia a dia.\n"
+        f"E no momento certo… eu vou te apresentar algo mais completo.\n"
+        f"Tudo isso de forma leve, prática e aplicável.\n"
+        f"Nosso objetivo aqui é um só: te ajudar a sair do mesmo lugar.\n"
+        f"⚠️ Para manter a melhor experiência, o grupo permanecerá silencioso.\n"
+        f"Assim, você recebe apenas o que realmente importa.\n"
+        f"Fica atento…\n"
+        f"Porque, se você acompanhar até o final, pode enxergar {nicho} de uma forma completamente diferente.\n"
+        f"=== FIM ===\n\n"
 
         f"BOAS_VINDAS:\n"
-        f"[Cole aqui exatamente o mesmo texto da DESCRICAO_GRUPO acima — é a mensagem automática enviada ao entrar no grupo.]\n\n"
+        f"=== FIXO ===\n"
+        f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
+        f"Se você está aqui… provavelmente já tentou melhorar em {nicho} — e não conseguiu manter.\n"
+        f"E não é por falta de esforço.\n"
+        f"Nos próximos dias, você vai entender exatamente o porquê.\n"
+        f"Aqui, você não vai receber conteúdo aleatório.\n"
+        f"Você vai receber algo simples… mas que pode destravar algo que você vem tentando há muito tempo.\n"
+        f"⚠️ O grupo permanecerá silencioso\n"
+        f"Pra você receber só o que realmente importa.\n"
+        f"Fica atento… porque o que vem pode te surpreender.\n"
+        f"=== FIM ===\n\n"
 
         f"DIA_7:\n"
-        f"[Bom dia + abertura do programa. Apresente brevemente os próximos dias de conteúdo sobre {nicho}. "
-        f"Diga que dúvidas podem ser enviadas pelo WhatsApp {whatsapp_num}. Máximo 8 linhas. Zero menção a produto.]\n\n"
+        f"[IA] Bom dia + abertura do programa sobre {nicho}. "
+        f"Apresente brevemente o que vem nos próximos dias. "
+        f"Diga que dúvidas podem ser enviadas pelo WhatsApp {whatsapp_num}. "
+        f"Compacto, máximo 5 linhas, parágrafos curtos. Zero menção a produto.\n\n"
 
         f"DIA_6:\n"
-        f"Bom dia! isso é muito importante\n"
-        f"Se você quer realmente sair desse programa com resultado de verdade, por favor, responda essa enquete 👇\n\n"
-        f"[Crie uma enquete com 4 opções relacionadas à dor: {dor} — no nicho {nicho}]\n\n"
-        f"Manda aqui no WhatsApp ({whatsapp_num}) qual é a sua — quero entender sua maior dificuldade.\n\n"
+        f"=== FIXO (adapte só as 4 opções ao nicho {nicho} e dor: {dor}) ===\n"
+        f"Isso aqui é importante.\n"
+        f"Se você quer realmente sair desse programa com resultado, eu preciso entender você:\n"
+        f"[IA: crie a pergunta da enquete e 4 opções A) B) C) D) adaptadas ao nicho {nicho} e dor {dor}]\n"
+        f"Me manda no WhatsApp: ({whatsapp_num})\n"
+        f"Vou ler todas — isso vai direcionar o que vou te mostrar nos próximos dias.\n"
+        f"=== FIM ===\n\n"
 
         f"DIA_5:\n"
-        f"[Dica prática sobre {nicho}. 1 ensinamento acionável hoje. Máximo 6 linhas. Zero CTA de venda.]\n\n"
+        f"[IA] Dica do dia sobre {nicho}. 1 ensinamento acionável agora. "
+        f"Compacto, parágrafos curtos, máximo 5 linhas. Zero CTA de venda.\n\n"
 
         f"DIA_4:\n"
-        f"[Curiosidade ou insight sobre {nicho} ligado à dor: {dor}. Máximo 6 linhas.]\n\n"
+        f"[IA] Atividade rápida ligada à dor: {dor}. "
+        f"Peça para responder no WhatsApp {whatsapp_num}. "
+        f"Compacto, parágrafos curtos, máximo 5 linhas.\n\n"
 
         f"DIA_3:\n"
-        f"[Simule um relato curto de alguém da turma passada que superou: {dor}. "
-        f"Tom humano, como se fosse real. Exemplo: 'Já estamos no nosso terceiro programa graças a resultados "
-        f"dos nossos alunos como [nome inventado], que [situação antes] e hoje [resultado depois].' Máximo 6 linhas.]\n\n"
+        f"[IA] Relato curto de alguém da turma passada que superou: {dor}. "
+        f"Nome fictício, situação antes e resultado depois. "
+        f"Tom humano, compacto, máximo 5 linhas.\n\n"
 
         f"VESPERA:\n"
-        f"Fiquei impressionado com tudo o que recebi nos últimos dias… A maioria de vocês está enfrentando praticamente os mesmos obstáculos.\n\n"
-        f"E isso me fez parar e pensar: como posso ajudar de forma mais completa, direta e transformadora?\n\n"
-        f"Então eu me reuni com a minha equipe e decidimos preparar algo realmente especial pra vocês.\n\n"
-        f"Algo que não só explica… Mas mostra o caminho de forma simples, prática e aplicável.\n\n"
-        f"Amanhã, nós vamos enviar aqui no grupo — e eu recomendo que você esteja atento, porque o que vem pode mudar completamente a forma como você vem tentando até agora.\n\n"
+        f"=== FIXO ===\n"
+        f"Eu preciso ser sincero com você.\n"
+        f"Depois de tudo que vocês me enviaram no meu WhatsApp…\n"
+        f"Eu percebi algo que eu não esperava.\n"
+        f"Existe um padrão.\n"
+        f"E não é pequeno.\n"
+        f"Mais de 80% das pessoas aqui estão presas exatamente nos mesmos pontos…\n"
+        f"Mesmo tentando caminhos diferentes.\n"
+        f"E isso me fez chegar a uma conclusão:\n"
+        f"O problema não está no esforço.\n"
+        f"Está no caminho que foi mostrado até hoje.\n"
+        f"Foi por isso que eu decidi fazer algo diferente.\n"
+        f"Algo único… pensado pra resolver isso de forma direta.\n"
+        f"Mas não é só sobre entender.\n"
+        f"É sobre saber exatamente o que fazer — sem dúvidas, sem excesso, sem confusão.\n"
+        f"Eu organizei tudo de um jeito que praticamente qualquer pessoa aqui consiga aplicar.\n"
+        f"Amanhã, eu vou te mostrar.\n"
+        f"Mas já te adianto:\n"
+        f"Se você ignorar… provavelmente vai continuar no mesmo lugar.\n"
+        f"Fica atento.\n"
+        f"=== FIM ===\n\n"
 
         f"VENDA_MANHA:\n"
-        f"Hoje é o grande dia.\n\n"
-        f"Com a ajuda da minha equipe — e anos de experiência na prática — eu reuni as principais dificuldades que impedem a maioria das pessoas de evoluir em {nicho}… e transformei tudo em um guia direto ao ponto.\n\n"
-        f"📘 {nome_eb} — um e-book completo, feito pra te dar clareza e mostrar exatamente o que fazer.\n\n"
-        f"E pra garantir que você não fique com nenhuma dúvida no caminho, você ainda recebe 3 e-books bônus exclusivos:\n"
-        f"{bonus_lista}\n\n"
-        f"Tudo isso por apenas R$ {preco}.\n\n"
-        f"E deixa eu te falar com transparência:\n"
-        f"esse conteúdo não vai ficar nesse valor por muito tempo.\n"
-        f"A partir de amanhã, ele pode ser disponibilizado em outras plataformas por um preço muito mais alto.\n"
-        f"Ou seja… essa é a sua melhor chance de entrar agora.\n\n"
-        f"Não deixa pra depois — essa oferta termina hoje.\n\n"
+        f"=== FIXO (adapte nome do ebook e bônus) ===\n"
+        f"Hoje é o grande dia.\n"
+        f"Se você continuar fazendo do jeito que sempre fez…\n"
+        f"Nada muda.\n"
+        f"Foi por isso que eu reuni tudo que realmente funciona em um único material:\n"
+        f"📘 {nome_eb}\n"
+        f"Um conteúdo direto ao ponto, simples e aplicável.\n"
+        f"E pra garantir que você tenha resultado:\n"
+        f"{bonus_lista}\n"
+        f"Tudo isso por apenas R$ {preco}.\n"
+        f"Mas atenção:\n"
+        f"Esse valor estará disponível só hoje\n"
         f"👉 [LINK MONETIZZE]\n"
-        f"⏰ Promoção válida até 23:59 de hoje\n"
-        f"✅ Garantia de 7 dias pela Monetizze\n\n"
-        f"Agora a decisão está nas suas mãos.\n\n"
+        f"⏰ Válido até 23:59\n"
+        f"✅ Garantia de 7 dias\n"
+        f"Agora a decisão está nas suas mãos.\n"
+        f"=== FIM ===\n\n"
 
         f"VENDA_NOITE:\n"
-        f"Boa noite! 👋\n\n"
-        f"Quero passar aqui de forma mais tranquila pra te lembrar de algo importante…\n\n"
-        f"Mais cedo eu te apresentei o material que preparei com a minha equipe — reunindo exatamente as dificuldades que a maioria das pessoas enfrenta em {nicho}, junto com um passo a passo simples pra evoluir de verdade.\n\n"
-        f"📘 É um conteúdo direto, sem complicação\n"
-        f"🎁 E ainda com 3 e-books bônus pra complementar seu aprendizado\n\n"
-        f"Se você viu a mensagem anterior e ficou na dúvida, tá tudo bem.\n"
-        f"Essa não é uma decisão pra ser feita na pressa — mas também não é algo que vale ignorar.\n\n"
-        f"A verdade é: quem aplica o método certo, evolui muito mais rápido.\n\n"
-        f"Se fizer sentido pra você, o acesso ainda está disponível hoje:\n\n"
+        f"=== FIXO (adapte nicho) ===\n"
+        f"Boa noite! 👋\n"
+        f"Passando aqui de forma mais tranquila pra te lembrar:\n"
+        f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra evoluir em {nicho}.\n"
+        f"📘 Conteúdo direto, sem complicação\n"
+        f"🎁 Com 3 bônus práticos\n"
+        f"Se você ficou na dúvida, tudo bem.\n"
+        f"Mas a verdade é:\n"
+        f"Quem aplica o método certo, evolui muito mais rápido.\n"
+        f"Se fizer sentido pra você, ainda dá tempo:\n"
         f"👉 [LINK MONETIZZE]\n"
-        f"⏰ Disponível até 23:59\n"
-        f"✅ Garantia de 7 dias\n\n"
-        f"Dá uma olhada com calma… e decide com consciência.\n"
+        f"⏰ Até 23:59\n"
+        f"✅ Garantia de 7 dias\n"
+        f"Dá uma olhada com calma… e decide.\n"
+        f"=== FIM ===\n"
     )
 def system_msg():
     return (
@@ -567,7 +611,9 @@ elif st.session_state.etapa == "Formulario":
     ⚠️ <strong>ATENÇÃO: use um número DIFERENTE do grupo.</strong><br>
     O grupo ficará fechado para mensagens — os membros não conseguem responder lá dentro.<br>
     Por isso, as respostas da enquete e dúvidas devem ir para um número pessoal ou comercial separado.<br>
-    <strong>Pode ser seu celular pessoal, um chip extra ou um número de atendimento.</strong>
+    <strong>Pode ser seu celular pessoal, um chip extra ou um número de atendimento.</strong><br><br>
+    💡 <strong>Configure uma resposta automática nesse número:</strong><br>
+    <em style="background:#FFFDE7;padding:2px 6px;border-radius:4px;">"Recebi sua mensagem. Eu e minha equipe já estamos analisando 🙏"</em>
     </div>""", unsafe_allow_html=True)
     d['whatsapp_contato'] = st.text_input("Número para receber respostas (diferente do grupo):", value=d.get('whatsapp_contato',''), placeholder="ex: (11) 99999-9999")
 
@@ -752,7 +798,21 @@ PREÇO: R${d.get('preco',47)}
         st.caption("Boas-vindas → D-7 a D-1 → Venda manhã → Lembrete noturno")
         bloco_conteudo('msg_grupo','Mensagens',prompt_msg,system_msg)
 
-    # ── CHECKLIST ─────────────────────────────────────────────
+    # ── DICA MESTRE ──────────────────────────────────────────
+    st.divider()
+    with st.expander("🧠 DICA MESTRE — O QUE FAZER DEPOIS DO LANÇAMENTO"):
+        st.markdown("""<div style="background:#F0FDF4;border:2px solid #22C55E;border-radius:12px;padding:22px 26px;color:#14532D;line-height:1.7;font-size:0.92em;">
+        <strong style="font-size:1.05em;">Não apague esse grupo. E evite reabrir para conversas.</strong><br><br>
+        Aqui dentro, você construiu algo extremamente valioso: atenção e interesse de pessoas reais.<br>
+        Esse grupo é um ativo.<br>
+        Se bem utilizado, ele pode gerar novos resultados sem que você precise investir mais nenhum centavo em tráfego.<br><br>
+        <strong>Mas existe um ponto importante: evite excesso.</strong><br>
+        O ideal é realizar novos lançamentos com equilíbrio — aproximadamente 1 vez por mês.<br>
+        Assim, você mantém o interesse das pessoas, sem gerar desgaste ou perda de atenção.<br><br>
+        Use esse grupo com estratégia… e ele pode continuar gerando resultados por muito tempo.
+        </div>""", unsafe_allow_html=True)
+
+        # ── CHECKLIST ─────────────────────────────────────────────
     st.divider()
     with st.expander("✅ CHECKLIST DE LANÇAMENTO — O QUE FAZER AGORA"):
         data_lancto = d.get('data_lancto', date.today())
@@ -767,37 +827,40 @@ PREÇO: R${d.get('preco',47)}
 
         fases = [
             {"fase":"FASE 1 — HOJE: Preparação","cor":"#0EA5E9","items":[
-                ("Hoje","Salve e baixe todo o conteúdo gerado (.txt)"),
+                ("Hoje","Baixe o projeto completo (.txt)"),
+                ("Hoje","Cadastre o e-book + 3 bônus na Monetizze — configure o checkout"),
+                (f"Hoje",f"Preço: R${d.get('preco',47)} — salve o link de venda"),
                 ("Hoje","Crie o grupo: 'Programa [X] Dias para [Objetivo]'"),
-                ("Hoje","Configure a descrição do grupo com o texto de boas-vindas gerado"),
-                ("Hoje",f"Cadastre o e-book + 3 bônus na Monetizze — preço: R${d.get('preco',47)}"),
-                ("Hoje","Suba o anúncio apontando para a landing page"),
-                ("Hoje","Configure a landing page com o CTA apontando para o grupo"),
+                ("Hoje","Cole a DESCRIÇÃO DO GRUPO no campo de informações do WhatsApp/Telegram"),
+                ("Hoje","Configure a mensagem de BOAS-VINDAS automática ao entrar"),
+                ("Hoje","Suba o ANÚNCIO apontando para a LANDING PAGE"),
+                ("Hoje","Configure a LANDING PAGE com CTA apontando para o grupo"),
+                ("Hoje","Configure RESPOSTA AUTOMÁTICA no WhatsApp de contato: 'Recebi sua mensagem. Eu e minha equipe já estamos analisando 🙏'"),
             ]},
             {"fase":"FASE 2 — SEMANA 1: Encher o grupo","cor":"#8B5CF6","items":[
-                ("Dias 1 a 7","Anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
-                ("Diariamente","Monitore custo por lead (meta: até R$2,00 por pessoa)"),
-                ("Ao entrar","Mensagem de boas-vindas automática já está configurada"),
+                ("Dias 1 a 8","Anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
+                ("Diariamente","Monitore custo por lead — meta: até R$2,00 por pessoa"),
+                ("Automático","Mensagem de boas-vindas já configurada — enviada a cada novo membro"),
             ]},
-            {"fase":"FASE 3 — SEMANA 2: Aquecimento","cor":"#059669","items":[
+            {"fase":"FASE 3 — SEMANA 2: Aquecimento (D-7 a D-1)","cor":"#059669","items":[
                 (f"{d7} — D-7","Envie: Abertura do programa"),
-                (f"{d6} — D-6","Envie: Enquete — peça para responder no WhatsApp"),
+                (f"{d6} — D-6","Envie: Enquete — peça para responder no WhatsApp de contato"),
                 (f"{d5} — D-5","Envie: Dica prática"),
                 (f"{d4} — D-4","Envie: Atividade rápida"),
-                (f"{d3} — D-3","Envie: Conteúdo de valor"),
-                (f"{d2} — D-2","Envie: Prova social / relato"),
+                (f"{d3} — D-3","Envie: Relato de resultado (prova social)"),
                 (f"{dm1} — D-1","Envie: Véspera da venda"),
                 (f"{dm1}","Confirme se o link da Monetizze está funcionando"),
             ]},
-            {"fase":f"FASE 4 — {dlf}: Vender","cor":"#22C55E","items":[
+            {"fase":f"FASE 4 — {dlf}: Dia da venda","cor":"#22C55E","items":[
                 (f"{dlf} — manhã","Envie a mensagem de lançamento com o link da Monetizze"),
-                (f"{dlf}","Fique online respondendo dúvidas no WhatsApp"),
-                (f"{dlf} — noite","Envie lembrete: 'Encerra hoje à meia-noite'"),
+                (f"{dlf}","Fique disponível no WhatsApp de contato para responder dúvidas"),
+                (f"{dlf} — 19h","Envie o lembrete noturno"),
             ]},
             {"fase":"FASE 5 — PÓS-LANÇAMENTO","cor":"#64748B","items":[
                 ("Após","Anote: pessoas no grupo, compradores, taxa de conversão"),
                 ("Após","ROI: faturamento ÷ custo de tráfego"),
-                ("Próximos dias","Entregue o e-book e os bônus para quem comprou"),
+                ("Após","Entregue o e-book e os bônus para quem comprou"),
+                ("Próximo mês","Use o mesmo grupo para o próximo lançamento — sem custo de tráfego"),
             ]},
         ]
         for fase in fases:
@@ -826,8 +889,17 @@ PREÇO: R${d.get('preco',47)}
     # ── LAUNCERBOT ────────────────────────────────────────────
     st.divider()
     st.markdown("### 🤖 Launcerbot")
-    st.info(f"**Olá, {st.session_state.usuario}! 👋** Eu sou o **Launcerbot**. Pode me perguntar qualquer coisa sobre seu lançamento 👇")
-    pergunta = st.text_input("Sua pergunta:", key=f"chat_input_{st.session_state.chat_input_key}")
+    st.caption(f"Olá, {st.session_state.usuario}! Pode me perguntar qualquer coisa sobre seu lançamento.")
+
+    # Show history first (oldest to newest)
+    if st.session_state.chat_hist:
+        for q, r in st.session_state.chat_hist:
+            st.markdown(f"**Você:** {q}")
+            st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
+        st.markdown("")
+
+    # Input always at bottom
+    pergunta = st.text_input("Sua pergunta:", key=f"chat_input_{st.session_state.chat_input_key}", label_visibility="collapsed", placeholder="Digite sua pergunta aqui...")
     if st.button("ENVIAR"):
         if pergunta.strip():
             with st.spinner("Launcerbot pensando..."):
@@ -849,11 +921,6 @@ PREÇO: R${d.get('preco',47)}
                 st.session_state.chat_input_key += 1
                 st.rerun()
         else: st.warning("Digite uma pergunta antes de enviar.")
-    if st.session_state.chat_hist:
-        st.markdown("---")
-        for q, r in reversed(st.session_state.chat_hist):
-            st.markdown(f"**Você:** {q}")
-            st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
 
 # --- RODAPÉ ---
 st.markdown("<div class='footer'>© 2026 Nexus Launcher – Lançamento digital inteligente</div>", unsafe_allow_html=True)
