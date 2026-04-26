@@ -127,6 +127,9 @@ st.markdown("""
     .story-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; color: white; }
     .story-titulo { font-family: 'Rajdhani', sans-serif; font-size: 1.05em; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; opacity: 0.85; }
     .story-conteudo { font-size: 0.88em; line-height: 1.7; white-space: pre-wrap; }
+
+    /* STORIES EXPLAINER */
+    .stories-explainer { background: linear-gradient(135deg, #FFF7ED, #FEF3C7); border: 1px solid #FCD34D; border-radius: 10px; padding: 16px 20px; color: #78350F; font-size: 0.88em; line-height: 1.8; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -225,7 +228,6 @@ def normalizar_markdown(texto: str) -> str:
     return '\n'.join(resultado)
 
 def texto_para_md(chave: str, titulo: str, conteudo: str) -> str:
-    """Converte conteúdo para markdown formatado para Notion/Google Docs"""
     limpo = limpar_html(conteudo)
     linhas = limpo.split('\n')
     md = [f"# {titulo}", ""]
@@ -243,7 +245,6 @@ def texto_para_md(chave: str, titulo: str, conteudo: str) -> str:
     return '\n'.join(md)
 
 def projeto_para_json(dados: dict) -> str:
-    """Serializa projeto para JSON, tratando objetos date"""
     def converter(obj):
         if isinstance(obj, (date, datetime)):
             return obj.isoformat()
@@ -251,7 +252,6 @@ def projeto_para_json(dados: dict) -> str:
     return json.dumps(dados, ensure_ascii=False, indent=2, default=converter)
 
 def json_para_projeto(texto_json: str) -> dict:
-    """Desserializa JSON de volta para dicionário de projeto"""
     dados = json.loads(texto_json)
     if 'data_lancto' in dados and isinstance(dados['data_lancto'], str):
         try:
@@ -261,7 +261,6 @@ def json_para_projeto(texto_json: str) -> dict:
     return dados
 
 def validar_link(url: str) -> tuple[bool, str]:
-    """Verifica se o link responde com código HTTP válido"""
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}, method='HEAD')
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -274,7 +273,6 @@ def validar_link(url: str) -> tuple[bool, str]:
         return False, f"❌ Link não respondeu: {e}"
 
 def data_lancto_formatada(d: dict) -> str:
-    """Retorna a data de lançamento formatada: ex. terça-feira, 29/04"""
     dl = d.get('data_lancto')
     if not dl:
         return "23:59"
@@ -360,18 +358,24 @@ def parsear_bonus(texto: str) -> list:
     return bonus_list
 
 def parsear_mensagens(texto: str) -> list:
-    SECOES = ["DESCRICAO_GRUPO","BOAS_VINDAS","DIA_7","DIA_6","DIA_5","DIA_4","DIA_3","VESPERA","VENDA_MANHA","VENDA_NOITE"]
+    SECOES = [
+        "DESCRICAO_GRUPO","BOAS_VINDAS","DIA_9","DIA_10","DIA_11",
+        "DIA_12","DIA_13","DIA_14_MANHA","DIA_14_NOITE","VESPERA",
+        "VENDA_MANHA","VENDA_NOITE"
+    ]
     LABELS = {
-        "DESCRICAO_GRUPO": "📋 Descrição do grupo (bio)",
-        "BOAS_VINDAS":  "💬 D-8 — Boas-vindas (mensagem automática)",
-        "DIA_7":        "📅 D-9 — Abertura do programa",
-        "DIA_6":        "🎯 D-10 — Enquete interativa",
-        "DIA_5":        "🔥 D-11 — Dica prática",
-        "DIA_4":        "📌 D-12 — Atividade interativa",
-        "DIA_3":        "💡 D-13 — Conteúdo de valor / prova social",
-        "VESPERA":      "⏳ D-14 — Véspera da venda",
-        "VENDA_MANHA":  "🚀 Dia do lançamento — Manhã",
-        "VENDA_NOITE":  "⏰ Dia do lançamento — Lembrete noturno (19h)",
+        "DESCRICAO_GRUPO":  "📋 Descrição do grupo (bio)",
+        "BOAS_VINDAS":      "💬 D-8 — Boas-vindas (início real)",
+        "DIA_9":            "🎯 D-9 — Envolvimento",
+        "DIA_10":           "🔎 D-10 — Consciência (dica)",
+        "DIA_11":           "🔥 D-11 — Micro diagnóstico",
+        "DIA_12":           "💬 D-12 — Diagnóstico direto",
+        "DIA_13":           "🔥 D-13 — Ajuste revelador",
+        "DIA_14_MANHA":     "📌 D-14 — Ativação",
+        "DIA_14_NOITE":     "💡 D-14 (Noite) — Prova + Ponte",
+        "VESPERA":          "⏳ D-14 (Final) — Véspera / Mistério",
+        "VENDA_MANHA":      "🚀 Dia do lançamento — Manhã",
+        "VENDA_NOITE":      "⏰ Dia do lançamento — Noite",
     }
     linhas = texto.split('\n')
     secoes, atual_label, atual_linhas = [], None, []
@@ -399,16 +403,18 @@ def parsear_mensagens(texto: str) -> list:
 # AGENDA DEF
 # =============================================================
 AGENDA_DEF = [
-    {"chave": "DESCRICAO_GRUPO", "label": "📋 Descrição do grupo (bio)",      "offset": -15, "hora_pad": "08:00"},
-    {"chave": "BOAS_VINDAS",     "label": "💬 D-8 Boas-vindas (automática)",  "offset": -8,  "hora_pad": "08:00"},
-    {"chave": "DIA_7",           "label": "📅 D-9 Abertura do programa",       "offset": -7,  "hora_pad": "08:00"},
-    {"chave": "DIA_6",           "label": "🎯 D-10 Enquete",                   "offset": -6,  "hora_pad": "08:00"},
-    {"chave": "DIA_5",           "label": "🔥 D-11 Dica prática",             "offset": -5,  "hora_pad": "08:00"},
-    {"chave": "DIA_4",           "label": "📌 D-12 Atividade",                "offset": -4,  "hora_pad": "08:00"},
-    {"chave": "DIA_3",           "label": "💡 D-13 Prova social",             "offset": -3,  "hora_pad": "08:00"},
-    {"chave": "VESPERA",         "label": "⏳ D-14 Véspera",                  "offset": -1,  "hora_pad": "08:00"},
-    {"chave": "VENDA_MANHA",     "label": "🚀 Lançamento — Manhã",            "offset":  0,  "hora_pad": "08:00"},
-    {"chave": "VENDA_NOITE",     "label": "⏰ Lançamento — Noite",            "offset":  0,  "hora_pad": "19:00"},
+    {"chave": "DESCRICAO_GRUPO", "label": "📋 Descrição do grupo (bio)",        "offset": -15, "hora_pad": "08:00"},
+    {"chave": "BOAS_VINDAS",     "label": "💬 D-8 Boas-vindas",                 "offset": -8,  "hora_pad": "08:00"},
+    {"chave": "DIA_9",           "label": "🎯 D-9 Envolvimento",                "offset": -7,  "hora_pad": "08:00"},
+    {"chave": "DIA_10",          "label": "🔎 D-10 Consciência",                "offset": -6,  "hora_pad": "08:00"},
+    {"chave": "DIA_11",          "label": "🔥 D-11 Micro diagnóstico",          "offset": -5,  "hora_pad": "08:00"},
+    {"chave": "DIA_12",          "label": "💬 D-12 Diagnóstico direto",         "offset": -4,  "hora_pad": "08:00"},
+    {"chave": "DIA_13",          "label": "🔥 D-13 Ajuste revelador",           "offset": -3,  "hora_pad": "08:00"},
+    {"chave": "DIA_14_MANHA",    "label": "📌 D-14 Ativação (manhã)",           "offset": -2,  "hora_pad": "08:00"},
+    {"chave": "DIA_14_NOITE",    "label": "💡 D-14 Prova + Ponte (noite)",      "offset": -2,  "hora_pad": "19:00"},
+    {"chave": "VESPERA",         "label": "⏳ D-14 Véspera / Mistério",         "offset": -1,  "hora_pad": "21:00"},
+    {"chave": "VENDA_MANHA",     "label": "🚀 Lançamento — Manhã",              "offset":  0,  "hora_pad": "08:00"},
+    {"chave": "VENDA_NOITE",     "label": "⏰ Lançamento — Noite",              "offset":  0,  "hora_pad": "19:00"},
 ]
 
 # =============================================================
@@ -464,8 +470,11 @@ def bloco_link_monetizze(prefixo_key="mon"):
             st.warning("Cole o link antes de aplicar.")
         else:
             d['link_monetizze'] = link_limpo
+            # Substitui placeholder nas mensagens já geradas
             if d.get('msg_grupo'):
                 d['msg_grupo'] = d['msg_grupo'].replace('[LINK MONETIZZE]', link_limpo)
+                d['msg_grupo'] = d['msg_grupo'].replace('(SEU LINK)', link_limpo)
+                d['msg_grupo'] = d['msg_grupo'].replace('SEU LINK', link_limpo)
             st.rerun()
 
     if link_atual:
@@ -476,13 +485,12 @@ def bloco_link_monetizze(prefixo_key="mon"):
         )
 
 def preview_whatsapp(secoes: list, prefixo: str = "wpp"):
-    """Renderiza preview visual de WhatsApp para cada mensagem"""
     st.markdown("#### 📱 Preview — como aparece no WhatsApp")
     st.caption("Clique em uma mensagem para expandir o preview visual.")
     for i, s in enumerate(secoes):
         texto_limpo = limpar_html(s['conteudo'])
         with st.expander(f"👁️ Ver preview: {s['label']}", expanded=False):
-            hora_sim = "08:32" if "MANHA" in s['chave'] or "DIA" in s['chave'] or "BOAS" in s['chave'] or "DESCR" in s['chave'] else "19:07"
+            hora_sim = "19:07" if "NOITE" in s['chave'] or "VESPERA" in s['chave'] else "08:32"
             st.markdown(f"""
             <div class="wpp-header">
                 <div class="wpp-avatar">📢</div>
@@ -794,15 +802,29 @@ def prompt_msg():
     bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
     prazo_str = data_lancto_formatada(d)
 
+    # Dica DIA 10 gerada pela IA — contraintuitiva e não popular
+    dica_dia10_prompt = (
+        f"Crie UMA dica surpreendente e contraintuitiva sobre {nicho} para o público: {d.get('publico')}.\n"
+        f"REGRAS ABSOLUTAS:\n"
+        f"- NUNCA mencione: beber água, dormir bem, fazer exercício, comer menos, força de vontade, disciplina, dieta, cardápio\n"
+        f"- A dica deve parecer que a maioria das pessoas NÃO sabe\n"
+        f"- Deve ser baseada em comportamento, psicologia ou fisiologia\n"
+        f"- Deve gerar a reação: 'nunca pensei nisso assim antes'\n"
+        f"- Máximo 5 linhas. Tom de conversa direta\n"
+        f"- Termine com uma pergunta curta que convide a responder no WhatsApp: {whatsapp_num}\n"
+        f"Retorne APENAS o texto da dica, sem títulos ou rótulos."
+    )
+
     return (
-        f"Gere as mensagens do funil para o lançamento sobre {nicho}.\n"
+        f"Gere as mensagens do funil abaixo para o lançamento sobre {nicho}.\n"
         f"Ebook: {nome_eb}. Preço: R${preco}. WhatsApp: {whatsapp_num}. Nicho: {nicho}. Dor: {dor}.\n"
         f"Bônus:\n{bonus_lista}\n\n"
-        f"REGRA ABSOLUTA: Textos entre === FIXO === e === FIM === devem ser copiados PALAVRA POR PALAVRA.\n"
-        f"Apenas blocos com [IA] devem ser criados. Respeite os rótulos exatos.\n\n"
+        f"REGRA ABSOLUTA: Reproduza os blocos fixos PALAVRA POR PALAVRA, apenas adaptando os trechos indicados entre colchetes.\n"
+        f"Apenas blocos com [IA] devem ser criados livremente. Respeite os rótulos exatos abaixo.\n\n"
 
-        f"DESCRICAO_GRUPO:\n=== FIXO ===\n"
-        f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
+        # ── DESCRIÇÃO DO GRUPO ──────────────────────────────────────────────
+        f"DESCRICAO_GRUPO:\n"
+        f"Seja bem-vindo ao Programa 15 Dias para [adapte: tema do programa sobre {nicho}]!\n"
         f"Esse não é apenas um grupo com conteúdos soltos.\n"
         f"Nos próximos dias, você vai passar por um processo simples, mas muito poderoso:\n"
         f"Primeiro, eu vou entender você.\n"
@@ -813,102 +835,135 @@ def prompt_msg():
         f"⚠️ Para manter a melhor experiência, o grupo permanecerá silencioso.\n"
         f"Assim, você recebe apenas o que realmente importa.\n"
         f"Fica atento…\n"
-        f"Porque, se você acompanhar até o final, pode enxergar {nicho} de uma forma completamente diferente.\n"
-        f"=== FIM ===\n\n"
+        f"Porque, se você acompanhar até o final, pode enxergar {nicho} de uma forma completamente diferente.\n\n"
 
-        f"BOAS_VINDAS:\n=== FIXO ===\n"
+        # ── BOAS-VINDAS ─────────────────────────────────────────────────────
+        f"BOAS_VINDAS:\n"
         f"Seja bem-vindo ao Programa 15 Dias para [adapte: objetivo relacionado a {nicho}].\n"
-        f"Se você está aqui, provavelmente já tentou [adapte: ação comum do nicho {nicho}] antes… e teve dificuldade para manter os resultados. Fique tranquilo — você não está sozinho.\n"
-        f"Durante os próximos dias, vamos caminhar juntos. E ao final do programa, você receberá um feedback completo, com orientações claras para alcançar seus objetivos de forma natural e contínua.\n"
-        f"⚠️ O grupo permanecerá silencioso, para que você receba apenas o que realmente importa. Fique atento… porque o que vem a seguir pode te surpreender.\n"
-        f"=== FIM ===\n\n"
+        f"Se você está aqui, provavelmente já tentou [adapte: ação comum do nicho {nicho}] antes…\n"
+        f"já começou animado, fez dieta, tentou treinar…\n"
+        f"mas não conseguiu manter.\n"
+        f"E isso não acontece por falta de força de vontade.\n"
+        f"Na maioria dos casos, o problema é outro:\n"
+        f"você nunca entendeu exatamente o que está travando seu resultado.\n"
+        f"E é exatamente isso que vamos descobrir aqui.\n"
+        f"Durante os próximos dias, eu vou analisar seus hábitos e identificar padrões que podem estar te impedindo.\n"
+        f"⚠️ Importante:\n"
+        f"Esse grupo é focado em diagnóstico — não em solução.\n"
+        f"No final, você vai ter clareza total sobre o seu caso.\n"
+        f"Fica atento… porque isso pode mudar completamente sua visão.\n\n"
 
-        f"DIA_7:\n=== FIXO ===\n"
-        f"Bom dia!\n"
-        f"Nos próximos dias, vamos compartilhar conteúdos valiosos sobre {nicho}.\n"
-        f"Teremos dicas práticas, curiosidades e insights para te ajudar a evoluir de verdade.\n"
-        f"Se tiver alguma dúvida, você pode enviar uma mensagem para o nosso WhatsApp: ({whatsapp_num})\n"
-        f"=== FIM ===\n\n"
+        # ── DIA 9 — ENVOLVIMENTO ────────────────────────────────────────────
+        f"DIA_9:\n"
+        f"Me diz uma coisa…\n"
+        f"Você se identifica mais com qual situação?\n"
+        f"[IA: crie 4 opções A, B, C, D relacionadas à dor '{dor}' no nicho {nicho}]\n"
+        f"📲 Me responde no WhatsApp: ({whatsapp_num})\n"
+        f"Isso já começa a mostrar um padrão importante.\n\n"
 
-        f"DIA_6:\n=== FIXO (adapte as 4 opções ao nicho {nicho} e dor: {dor}) ===\n"
-        f"Isso aqui é importante.\n"
-        f"Se você realmente quer sair desse programa com resultado, eu preciso te entender melhor:\n"
-        f"Qual é o seu maior desafio para [adapte: objetivo do nicho {nicho}]?\n"
-        f"A) [adapte ao nicho]\n"
-        f"B) [adapte ao nicho]\n"
-        f"C) [adapte ao nicho]\n"
-        f"D) [adapte ao nicho]\n"
+        # ── DIA 10 — CONSCIÊNCIA / DICA CONTRAINTUITIVA ─────────────────────
+        f"DIA_10:\n"
+        f"Existe algo que quase ninguém percebe:\n"
+        f"[IA: crie UMA dica SURPREENDENTE e CONTRAINTUITIVA sobre {nicho}. "
+        f"Deve gerar a reação 'nunca pensei nisso assim antes'. "
+        f"PROIBIDO mencionar: água, sono, exercício, dieta, força de vontade, disciplina, cardápio. "
+        f"Base: psicologia comportamental, fisiologia ou padrão inconsciente. Máximo 5 linhas.]\n"
+        f"📲 Isso faz sentido pra você? Me conta no WhatsApp: ({whatsapp_num})\n\n"
+
+        # ── DIA 11 — MICRO DIAGNÓSTICO ──────────────────────────────────────
+        f"DIA_11:\n"
+        f"Teste rápido:\n"
+        f"Hoje, observa isso:\n"
+        f"👉 Em qual momento do dia você sente mais vontade de sair do controle com {nicho}?\n"
+        f"Manhã?\n"
+        f"Tarde?\n"
+        f"Noite?\n"
         f"📲 Me manda sua resposta no WhatsApp: ({whatsapp_num})\n"
-        f"Vou ler todas — isso vai direcionar o que vou te mostrar nos próximos dias.\n"
-        f"=== FIM ===\n\n"
+        f"Isso ajuda a entender melhor seu padrão.\n\n"
 
-        f"DIA_5:\n[IA] Crie UMA dica surpreendente e contraintuitiva sobre {nicho} para o público: {d.get('publico')}.\n"
-        f"REGRAS OBRIGATÓRIAS:\n"
-        f"- NUNCA mencione: beber água, dormir bem, fazer exercício, comer menos, força de vontade, disciplina ou dieta\n"
-        f"- A dica deve parecer que a maioria das pessoas NÃO sabe\n"
-        f"- Deve ser baseada em comportamento, psicologia ou fisiologia — não em receita ou cardápio\n"
-        f"- Deve gerar a reação: 'nunca tinha pensado nisso assim'\n"
-        f"- Máximo 5 linhas. Tom de conversa, não de artigo\n"
-        f"- Termine com uma pergunta ou provocação curta que convide a responder no WhatsApp: ({whatsapp_num})\n\n"
+        # ── DIA 12 — DIAGNÓSTICO DIRETO ─────────────────────────────────────
+        f"DIA_12:\n"
+        f"Agora preciso que você seja direto:\n"
+        f"Qual é seu maior desafio hoje com {nicho}?\n"
+        f"[IA: crie 4 opções A, B, C, D específicas para o nicho {nicho} e dor '{dor}']\n"
+        f"📲 Me manda a letra no WhatsApp: ({whatsapp_num})\n"
+        f"Isso faz parte do seu diagnóstico.\n\n"
 
-        f"DIA_4:\n=== FIXO (adapte ao nicho {nicho}) ===\n"
-        f"Quero te propor um desafio rápido — leva menos de 2 minutos.\n"
-        f"[IA: crie uma atividade simples e rápida relacionada a {nicho} que o participante possa fazer agora com o celular. "
-        f"Não precisa mudar nada na rotina. Só registrar ou observar algo.]\n"
-        f"Esse gesto simples ativa algo poderoso: quando a gente observa [adapte ao contexto de {nicho}], automaticamente começa a fazer escolhas melhores — sem esforço, sem restrição.\n"
-        f"📲 Me manda o resultado no WhatsApp: ({whatsapp_num}). Vou te dar um retorno personalizado.\n"
-        f"=== FIM ===\n\n"
+        # ── DIA 13 — AJUSTE REVELADOR ───────────────────────────────────────
+        f"DIA_13:\n"
+        f"Existe um erro simples que pode estar travando seu resultado em {nicho}…\n"
+        f"[IA: revele UM erro comportamental específico do nicho {nicho} que a maioria não percebe. "
+        f"Não pode ser óbvio. Base em psicologia ou comportamento. Máximo 4 linhas.]\n"
+        f"Mas não precisa mudar tudo.\n"
+        f"Só testa isso:\n"
+        f"[IA: sugira UMA micro-ação simples de 1 frase que a pessoa pode fazer agora]\n"
+        f"📲 Depois me conta no WhatsApp: ({whatsapp_num})\n\n"
 
-        f"DIA_3:\n=== FIXO (adapte nome e detalhes ao nicho {nicho}) ===\n"
-        f"[Nome fictício] chegou nesse programa exatamente como você — já tinha tentado [citar 2 ou 3 tentativas comuns do nicho {nicho}]. Nada durava mais de 3 semanas.\n"
-        f"O que mudou para ela não foi força de vontade. Foi entender por que [adapte: o bloqueio central relacionado a {dor}] — e parar de lutar contra isso.\n"
-        f"Em 15 dias de ajustes simples ela [adapte: resultado concreto e realista do nicho {nicho}]. Em 3 meses, [adapte: resultado maior].\n"
-        f"O que ela fez diferente? Amanhã eu te mostro.\n"
-        f"=== FIM ===\n\n"
+        # ── DIA 14 MANHÃ — ATIVAÇÃO ─────────────────────────────────────────
+        f"DIA_14_MANHA:\n"
+        f"Quero te propor algo rápido — leva menos de 2 minutos.\n"
+        f"[IA: crie uma atividade simples de observação relacionada a {nicho} que a pessoa possa fazer agora com o celular. "
+        f"Não muda rotina. Só registrar ou observar algo.]\n"
+        f"Esse gesto simples ativa algo poderoso: quando a gente observa, automaticamente começa a fazer escolhas melhores.\n"
+        f"📲 Me manda o resultado no WhatsApp: ({whatsapp_num}). Vou te dar um retorno personalizado.\n\n"
 
-        f"VESPERA:\n=== FIXO ===\n"
-        f"Eu preciso ser sincero com você.\n"
-        f"Depois de tudo que vocês me enviaram no WhatsApp… eu percebi algo que não esperava.\n"
-        f"Existe um padrão. E não é pequeno.\n"
-        f"Mais de 80% das pessoas aqui estão presas exatamente nos mesmos pontos — mesmo tentando caminhos diferentes.\n"
-        f"E isso me levou a uma conclusão:\n"
-        f"O problema não está no esforço. Está no caminho que foi mostrado até hoje.\n"
-        f"Foi por isso que eu decidi fazer algo diferente. Algo único… pensado para resolver isso de forma direta.\n"
-        f"Mas não é só sobre entender. É sobre saber exatamente o que fazer — sem dúvidas, sem excesso, sem confusão.\n"
-        f"Eu organizei tudo de um jeito simples, prático e possível de aplicar.\n"
-        f"Amanhã, eu vou te mostrar.\n"
-        f"Mas já te adianto: se você ignorar… provavelmente vai continuar no mesmo lugar.\n"
-        f"Fique atento.\n"
-        f"=== FIM ===\n\n"
+        # ── DIA 14 NOITE — PROVA + PONTE ────────────────────────────────────
+        f"DIA_14_NOITE:\n"
+        f"[IA: crie uma história curta de prova social com nome fictício, "
+        f"mostrando alguém que passou pelo mesmo processo no nicho {nicho}. "
+        f"Inclua: tentativas anteriores, o que mudou, resultado concreto e realista. Máximo 6 linhas.]\n"
+        f"Mas só entender não resolveu.\n"
+        f"O que mudou foi quando ela aplicou o caminho certo.\n\n"
 
-        f"VENDA_MANHA:\n=== FIXO ===\n"
-        f"Hoje é o grande dia.\n"
-        f"Se você continuar fazendo do jeito que sempre fez… nada muda.\n"
-        f"Foi por isso que eu reuni tudo que realmente funciona em um único material:\n\n"
+        # ── VÉSPERA — MISTÉRIO ───────────────────────────────────────────────
+        f"VESPERA:\n"
+        f"Depois de analisar tudo que vocês me enviaram…\n"
+        f"eu encontrei um padrão que me chamou muita atenção.\n"
+        f"Mais de 80% das pessoas aqui estão travadas exatamente pelos mesmos motivos.\n"
+        f"Mesmo tentando…\n"
+        f"mesmo se esforçando…\n"
+        f"o resultado não vem.\n"
+        f"E o mais curioso:\n"
+        f"👉 esses motivos quase ninguém percebe\n"
+        f"👉 e não são tão óbvios quanto parecem\n"
+        f"Foi por isso que eu tomei uma decisão.\n"
+        f"Eu organizei tudo de forma clara e simples.\n"
+        f"Um passo a passo direto…\n"
+        f"Amanhã eu vou te mostrar.\n"
+        f"Mas já te adianto:\n"
+        f"Se ignorar isso…\n"
+        f"provavelmente continua no mesmo ciclo.\n\n"
+
+        # ── VENDA MANHÃ ──────────────────────────────────────────────────────
+        f"VENDA_MANHA:\n"
+        f"Hoje é o dia.\n"
+        f"Durante esses dias, eu analisei tudo que você me enviou…\n"
+        f"e encontrei padrões que explicam exatamente por que a maioria não consegue evoluir em {nicho}.\n"
+        f"E como eu disse ontem — isso não é óbvio.\n"
+        f"Por isso organizei tudo em um método simples:\n\n"
         f"📘 {nome_eb}\n\n"
-        f"Um conteúdo direto ao ponto, simples e aplicável. E pra garantir que você tenha resultado:\n\n"
+        f"Aqui você vai entender:\n"
+        f"👉 o que está travando seu resultado\n"
+        f"👉 e o que fazer exatamente\n"
+        f"Sem tentativa e erro.\n\n"
         f"{bonus_lista}\n\n"
         f"Tudo isso por apenas R$ {preco}.\n\n"
-        f"👉 Acesse agora e garante a sua vaga: {link_venda}\n\n"
-        f"⏰ Esse valor é válido só hoje, até {prazo_str}.\n"
+        f"👉 Acesse agora e garanta a sua vaga: {link_venda}\n\n"
+        f"⏰ Só hoje, até {prazo_str}\n"
         f"✅ Garantia de 7 dias — se não gostar, devolvemos tudo.\n\n"
-        f"Agora a decisão está nas suas mãos.\n"
-        f"=== FIM ===\n\n"
 
-        f"VENDA_NOITE:\n=== FIXO ===\n"
-        f"Boa noite! 👋\n"
-        f"Passando aqui de forma mais tranquila pra te lembrar.\n\n"
-        f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra [adapte: transformação do nicho {nicho}].\n\n"
-        f"📘 Conteúdo direto, sem complicação\n"
-        f"🎁 Com 3 bônus práticos\n\n"
-        f"Se você ficou na dúvida, tudo bem.\n"
-        f"Mas a verdade é: quem aplica o método certo, evolui muito mais rápido.\n\n"
-        f"Se fizer sentido pra você, ainda dá tempo:\n"
+        # ── VENDA NOITE ──────────────────────────────────────────────────────
+        f"VENDA_NOITE:\n"
+        f"Boa noite 👋\n"
+        f"Só passando pra te lembrar:\n"
+        f"Você já entendeu que existe um problema.\n"
+        f"Agora precisa decidir se vai resolver…\n"
+        f"ou continuar como está.\n\n"
+        f"📘 {nome_eb}\n"
+        f"{bonus_lista}\n\n"
         f"👉 {link_venda}\n\n"
-        f"⏰ Disponível até {prazo_str}\n"
-        f"✅ Garantia de 7 dias\n\n"
-        f"Dá uma olhada com calma… e decide.\n"
-        f"=== FIM ===\n"
+        f"⏰ Encerra hoje {prazo_str}\n"
+        f"✅ Garantia de 7 dias\n"
     )
 
 def system_msg():
@@ -916,9 +971,11 @@ def system_msg():
     tom_inst = _tom_instrucao(d)
     return (
         f"Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
-        f"Os textos fixos devem ser reproduzidos EXATAMENTE como fornecidos, adaptando apenas os trechos indicados entre colchetes. "
-        f"Apenas os blocos com instruções [IA] devem ser criados livremente. "
-        f"Respeite os rótulos exatos. {tom_inst}"
+        f"Reproduza os blocos fixos EXATAMENTE como fornecidos, adaptando apenas os trechos entre colchetes. "
+        f"Apenas blocos com instrução [IA] devem ser criados livremente. "
+        f"Respeite os rótulos exatos (DESCRICAO_GRUPO:, BOAS_VINDAS:, DIA_9:, DIA_10:, DIA_11:, "
+        f"DIA_12:, DIA_13:, DIA_14_MANHA:, DIA_14_NOITE:, VESPERA:, VENDA_MANHA:, VENDA_NOITE:). "
+        f"NUNCA omita nenhum rótulo. {tom_inst}"
     )
 
 def prompt_stories():
@@ -1162,6 +1219,26 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     d = st.session_state.dados
 
     st.markdown("### 📸 Roteiros de Stories — Semana 1 (encher o grupo)")
+
+    # ── EXPLICAÇÃO DOS STORIES EM ABA EXPANSÍVEL ──────────────────────────
+    with st.expander("💡 O que são os Stories e para que servem? (clique para entender)", expanded=False):
+        st.markdown("""
+        <div class="stories-explainer">
+            <strong>📲 Para que servem os Stories?</strong><br><br>
+            Os Stories servem para <strong>encher o grupo gratuito antes do lançamento</strong>.<br><br>
+            Você precisa de pessoas no grupo para ter para quem vender.<br>
+            Os <strong>5 roteiros gerados</strong> são vídeos curtos (30–60 segundos) para você
+            <strong>gravar e postar no Instagram ou TikTok</strong> durante a semana de captação,
+            com o objetivo de fazer as pessoas <strong>clicarem no link da bio e entrarem no grupo</strong>.<br><br>
+            🎯 <strong>Como usar:</strong><br>
+            1. Grave cada story no celular, olhando para a câmera, com tom de conversa<br>
+            2. Poste 1 story por dia nos primeiros 5 a 7 dias<br>
+            3. Coloque o link do grupo na <strong>bio do Instagram/TikTok</strong><br>
+            4. Combine com tráfego pago para encher mais rápido<br><br>
+            ⚠️ <strong>Nunca mencione produto pago ou preço nos stories</strong> — o objetivo é só fazer a pessoa entrar no grupo.
+        </div>
+        """, unsafe_allow_html=True)
+
     st.caption("5 roteiros prontos para gravar e postar durante a semana de captação. Nunca mencionam produto ou venda.")
     col_s1, col_s2 = st.columns([3,1])
     with col_s2:
@@ -1208,14 +1285,15 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     st.divider()
     st.markdown("### 💬 Funil de Mensagens do Grupo")
     st.markdown("""<div class="preview-box">
-    <strong>10 peças prontas para copiar e enviar:</strong><br>
-    📋 Bio → 💬 D-8 Boas-vindas → 📅 D-9 Abertura →
-    🎯 D-10 Enquete → 🔥 D-11 Dica → 📌 D-12 Atividade →
-    💡 D-13 Prova social → ⏳ D-14 Véspera → 🚀 Manhã da venda → ⏰ Noite (19h)
+    <strong>12 peças prontas para copiar e enviar:</strong><br>
+    📋 Bio → 💬 D-8 Boas-vindas → 🎯 D-9 Envolvimento →
+    🔎 D-10 Consciência → 🔥 D-11 Micro diagnóstico → 💬 D-12 Diagnóstico →
+    🔥 D-13 Ajuste → 📌 D-14 Ativação → 💡 D-14 Prova →
+    ⏳ Véspera/Mistério → 🚀 Manhã da venda → ⏰ Noite (19h)
     </div>""", unsafe_allow_html=True)
 
     st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-bottom:8px;color:#78350F;font-size:0.87em;line-height:1.6;">
-    ⚠️ Apenas <strong>D-11 (dica)</strong> é gerado livremente pela IA. Os demais blocos seguem o roteiro fixo, com adaptações ao seu nicho.
+    ⚠️ Os blocos <strong>D-9, D-10, D-12, D-13, D-14 e a prova social</strong> têm partes criadas pela IA adaptadas ao seu nicho. Os demais seguem roteiro fixo.
     </div>""", unsafe_allow_html=True)
 
     tom_atual = d.get('tom_mensagens', 'Direto')
@@ -1237,6 +1315,11 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     if gerar_msg:
         with st.spinner("Gerando o funil completo de mensagens..."):
             d['msg_grupo'] = chamar_ia(prompt_msg(), system_msg())
+            # Garante substituição do placeholder de link nas mensagens geradas
+            if link_ja_cadastrado:
+                d['msg_grupo'] = d['msg_grupo'].replace('[LINK MONETIZZE]', link_ja_cadastrado)
+                d['msg_grupo'] = d['msg_grupo'].replace('(SEU LINK)', link_ja_cadastrado)
+                d['msg_grupo'] = d['msg_grupo'].replace('SEU LINK', link_ja_cadastrado)
             st.rerun()
 
     if d.get('msg_grupo'):
@@ -1307,6 +1390,12 @@ elif st.session_state.etapa == "Relancar":
             d['agenda_horas'] = {}
             with st.spinner("Regenerando mensagens para o relançamento..."):
                 d['msg_grupo'] = chamar_ia(prompt_msg(), system_msg())
+                # Garante link nos relançamentos
+                link_mon = d.get('link_monetizze', '').strip()
+                if link_mon:
+                    d['msg_grupo'] = d['msg_grupo'].replace('[LINK MONETIZZE]', link_mon)
+                    d['msg_grupo'] = d['msg_grupo'].replace('(SEU LINK)', link_mon)
+                    d['msg_grupo'] = d['msg_grupo'].replace('SEU LINK', link_mon)
                 d['stories_cont'] = chamar_ia(prompt_stories(), system_stories())
             nome_proj = d.get('nome_eb', 'Sem nome')
             st.session_state.projetos[nome_proj] = d.copy()
@@ -1435,12 +1524,12 @@ elif st.session_state.etapa == "Visualizacao":
                 ("Diariamente","Poste stories orgânicos para reforçar o tráfego pago"),
             ]},
             {"fase":"FASE 3 — SEMANA 2: Aquecimento","cor":"#059669","items":[
-                (f"{d7} — D-7","Abertura do programa"),
-                (f"{d6} — D-6","Enquete"),
-                (f"{d5} — D-5","Dica prática"),
-                (f"{d4} — D-4","Atividade"),
-                (f"{d3} — D-3","Prova social"),
-                (f"{dm1} — D-1","Véspera da venda"),
+                (f"{d7} — D-7","Envolvimento"),
+                (f"{d6} — D-6","Consciência / dica"),
+                (f"{d5} — D-5","Micro diagnóstico"),
+                (f"{d4} — D-4","Diagnóstico direto"),
+                (f"{d3} — D-3","Ajuste revelador"),
+                (f"{dm1} — D-1","Ativação + Prova social + Véspera/Mistério"),
                 (f"{dm1}","Confirme se o link da Monetizze está funcionando"),
             ]},
             {"fase":f"FASE 4 — {dlf}: Dia da venda","cor":"#22C55E","items":[
