@@ -2,6 +2,8 @@ import streamlit as st
 from groq import Groq
 from datetime import timedelta, date, datetime
 import re
+import json
+import urllib.request
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="NEXUS LAUNCHER", layout="wide")
@@ -39,6 +41,8 @@ st.markdown("""
     .btn-roxo>button:hover { background-color: #5B21B6 !important; }
     .btn-verde15>button { background-color: #059669 !important; height: 3.5em !important; }
     .btn-verde15>button:hover { background-color: #047857 !important; }
+    .btn-laranja>button { background-color: #f97316 !important; height: 3.5em !important; }
+    .btn-laranja>button:hover { background-color: #ea580c !important; }
 
     .footer { text-align: center; padding: 60px; color: #94A3B8; font-size: 0.8em; opacity: 0.4; margin-top: 100px; font-style: italic; }
 
@@ -60,6 +64,41 @@ st.markdown("""
     .msg-conteudo { background: #FFFFFF; border: 1px solid #D1FAE5; border-radius: 8px; padding: 14px 18px; color: #1E293B; font-size: 0.88em; line-height: 1.75; white-space: pre-wrap; }
     .msg-alerta { background: #ECFDF5; border: 1px solid #6EE7B7; border-radius: 8px; padding: 12px 16px; color: #064E3B; font-size: 0.85em; margin-bottom: 16px; }
 
+    /* PREVIEW WHATSAPP */
+    .wpp-screen {
+        background: #E5DDD5;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8bdb1' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        border-radius: 12px; padding: 16px; margin: 10px 0 20px 0;
+    }
+    .wpp-header {
+        background: #075E54; color: white; border-radius: 8px 8px 0 0;
+        padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+        font-family: 'Inter', sans-serif; font-size: 0.9em; font-weight: 600;
+        margin-bottom: 0;
+    }
+    .wpp-avatar {
+        width: 36px; height: 36px; background: #25D366; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1em; flex-shrink: 0;
+    }
+    .wpp-bubble {
+        background: #FFFFFF; border-radius: 0 8px 8px 8px;
+        padding: 10px 14px 22px 14px; margin: 6px 40px 0 0;
+        position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        font-size: 0.88em; line-height: 1.6; color: #1E293B;
+        white-space: pre-wrap; font-family: 'Inter', sans-serif;
+        max-width: 85%;
+    }
+    .wpp-bubble::before {
+        content: ''; position: absolute; top: 0; left: -8px;
+        border-width: 0 8px 8px 0; border-style: solid;
+        border-color: transparent #FFFFFF transparent transparent;
+    }
+    .wpp-time {
+        position: absolute; bottom: 4px; right: 8px;
+        font-size: 0.7em; color: #8696A0;
+    }
+
     /* AGENDADOR */
     .agenda-aviso { background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 10px; padding: 16px 20px; color: #7C2D12; font-size: 0.88em; line-height: 1.7; margin-bottom: 16px; }
     .agenda-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #F1F5F9; }
@@ -72,12 +111,31 @@ st.markdown("""
     .monetizze-box-sub { font-size: 0.85em; color: #166534; margin-bottom: 14px; line-height: 1.6; }
     .monetizze-tag { display: inline-block; background: #22C55E; color: white; border-radius: 6px; padding: 2px 10px; font-size: 0.78em; font-weight: 700; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; margin-bottom: 10px; }
     .monetizze-aplicado { background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 8px; padding: 10px 14px; color: #14532D; font-size: 0.85em; display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+
+    /* DIAGNÓSTICO */
+    .diag-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+    .diag-titulo { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05em; color: #1E293B; margin-bottom: 10px; letter-spacing: 0.3px; }
+    .diag-vs { display: flex; gap: 10px; align-items: center; font-size: 0.88em; }
+    .diag-est { color: #64748B; }
+    .diag-real { color: #059669; font-weight: 700; }
+    .diag-arrow { color: #CBD5E1; }
+
+    /* RELANÇAMENTO */
+    .relanc-box { background: linear-gradient(135deg, #FDF4FF, #FAE8FF); border: 2px solid #A855F7; border-radius: 12px; padding: 20px 24px; margin: 16px 0; }
+
+    /* STORIES */
+    .story-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; color: white; }
+    .story-titulo { font-family: 'Rajdhani', sans-serif; font-size: 1.05em; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; opacity: 0.85; }
+    .story-conteudo { font-size: 0.88em; line-height: 1.7; white-space: pre-wrap; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- INICIALIZAÇÃO DE ESTADO ---
-_one_time = {'etapa': "Login", 'dados': {}, 'projetos': {},
-    'chat_hist': [], 'usuario': '', 'api_key': '', 'chat_input_key': 0}
+_one_time = {
+    'etapa': "Login", 'dados': {}, 'projetos': {},
+    'chat_hist': [], 'usuario': '', 'api_key': '', 'chat_input_key': 0,
+    'wpp_preview_idx': None,
+}
 for k, v in _one_time.items():
     if k not in st.session_state:
         st.session_state[k] = v
@@ -92,6 +150,7 @@ ETAPAS_LABELS = {
     "Mensagens_Grupo": "6. Mensagens",
     "Agendador":       "7. Agendador",
     "Visualizacao":    "8. Projeto Final",
+    "Diagnostico":     "9. Diagnóstico",
 }
 
 # --- EXEMPLOS ---
@@ -133,7 +192,10 @@ EXEMPLOS = {
     },
 }
 
-# --- FUNÇÃO DE IA ---
+# =============================================================
+# UTILITÁRIOS
+# =============================================================
+
 def chamar_ia(prompt: str, system_prompt: str) -> str:
     try:
         client = Groq(api_key=st.session_state.api_key)
@@ -149,41 +211,6 @@ def limpar_html(texto: str) -> str:
     limpo = re.sub(r'<[^>]+>', '', texto)
     return limpo.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').strip()
 
-def gerar_ics(eventos: list) -> str:
-    linhas = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//Nexus Launcher//Agendador//PT',
-        'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH',
-    ]
-    for ev in eventos:
-        try:
-            h, m = map(int, ev['hora'].split(':'))
-        except Exception:
-            h, m = 9, 0
-        dt_start = datetime(ev['data'].year, ev['data'].month, ev['data'].day, h, m, 0)
-        dt_end   = datetime(ev['data'].year, ev['data'].month, ev['data'].day, h, m + 30 if m <= 29 else m, 0)
-        uid = f"{ev['data'].strftime('%Y%m%d')}-{ev['chave']}@nexuslauncher"
-        desc = ev['descricao'].replace('\n', '\\n').replace(',', r'\,').replace(';', r'\;')[:500]
-        linhas += [
-            'BEGIN:VEVENT',
-            f"UID:{uid}",
-            f"DTSTAMP:{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}",
-            f"DTSTART:{dt_start.strftime('%Y%m%dT%H%M%S')}",
-            f"DTEND:{dt_end.strftime('%Y%m%dT%H%M%S')}",
-            f"SUMMARY:{ev['titulo']}",
-            f"DESCRIPTION:{desc}",
-            'BEGIN:VALARM',
-            'TRIGGER:-PT30M',
-            'ACTION:DISPLAY',
-            f"DESCRIPTION:Lembrete: {ev['titulo']}",
-            'END:VALARM',
-            'END:VEVENT',
-        ]
-    linhas.append('END:VCALENDAR')
-    return '\r\n'.join(linhas)
-
 def normalizar_markdown(texto: str) -> str:
     linhas = texto.split('\n')
     resultado = []
@@ -197,7 +224,97 @@ def normalizar_markdown(texto: str) -> str:
         resultado.append(linha)
     return '\n'.join(resultado)
 
-# --- PARSERS ---
+def texto_para_md(chave: str, titulo: str, conteudo: str) -> str:
+    """Converte conteúdo para markdown formatado para Notion/Google Docs"""
+    limpo = limpar_html(conteudo)
+    linhas = limpo.split('\n')
+    md = [f"# {titulo}", ""]
+    for l in linhas:
+        ls = l.strip()
+        if not ls:
+            md.append("")
+            continue
+        # detecta itens numerados
+        if re.match(r'^\d+[\.\)]', ls):
+            md.append(f"- {ls}")
+        elif ls.startswith(('✅','🎁','📘','👉','⏰','🔥','📌','💡','⏳','🚀','💬','📋','🎯')):
+            md.append(ls)
+        else:
+            md.append(ls)
+    return '\n'.join(md)
+
+def projeto_para_json(dados: dict) -> str:
+    """Serializa projeto para JSON, tratando objetos date"""
+    def converter(obj):
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        raise TypeError(f"Não serializável: {type(obj)}")
+    return json.dumps(dados, ensure_ascii=False, indent=2, default=converter)
+
+def json_para_projeto(texto_json: str) -> dict:
+    """Desserializa JSON de volta para dicionário de projeto"""
+    dados = json.loads(texto_json)
+    # reconstrói data_lancto como objeto date
+    if 'data_lancto' in dados and isinstance(dados['data_lancto'], str):
+        try:
+            dados['data_lancto'] = date.fromisoformat(dados['data_lancto'])
+        except Exception:
+            pass
+    return dados
+
+def validar_link(url: str) -> tuple[bool, str]:
+    """Verifica se o link responde com código HTTP válido"""
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}, method='HEAD')
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            code = resp.getcode()
+            if code < 400:
+                return True, f"✅ Link válido (HTTP {code})"
+            else:
+                return False, f"⚠️ Link retornou HTTP {code}"
+    except Exception as e:
+        return False, f"❌ Link não respondeu: {e}"
+
+def data_lancto_formatada(d: dict) -> str:
+    """Retorna a data de lançamento formatada: ex. terça-feira, 29/04"""
+    dl = d.get('data_lancto')
+    if not dl:
+        return "23:59"
+    dias_semana = ['segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado','domingo']
+    nome_dia = dias_semana[dl.weekday()]
+    return f"{nome_dia}, {dl.strftime('%d/%m')} às 23:59"
+
+def gerar_ics(eventos: list) -> str:
+    linhas = [
+        'BEGIN:VCALENDAR','VERSION:2.0',
+        'PRODID:-//Nexus Launcher//Agendador//PT',
+        'CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    ]
+    for ev in eventos:
+        try:
+            h, m = map(int, ev['hora'].split(':'))
+        except Exception:
+            h, m = 9, 0
+        dt_start = datetime(ev['data'].year, ev['data'].month, ev['data'].day, h, m, 0)
+        dt_end   = datetime(ev['data'].year, ev['data'].month, ev['data'].day, h, m + 30 if m <= 29 else m, 0)
+        uid = f"{ev['data'].strftime('%Y%m%d')}-{ev['chave']}@nexuslauncher"
+        desc = ev['descricao'].replace('\n', '\\n').replace(',', r'\,').replace(';', r'\;')[:500]
+        linhas += [
+            'BEGIN:VEVENT', f"UID:{uid}",
+            f"DTSTAMP:{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}",
+            f"DTSTART:{dt_start.strftime('%Y%m%dT%H%M%S')}",
+            f"DTEND:{dt_end.strftime('%Y%m%dT%H%M%S')}",
+            f"SUMMARY:{ev['titulo']}", f"DESCRIPTION:{desc}",
+            'BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY',
+            f"DESCRIPTION:Lembrete: {ev['titulo']}",'END:VALARM','END:VEVENT',
+        ]
+    linhas.append('END:VCALENDAR')
+    return '\r\n'.join(linhas)
+
+# =============================================================
+# PARSERS
+# =============================================================
+
 def _linha_e_marcador_bonus(linha):
     l = linha.strip().replace("🎁", "").strip()
     lu = l.upper()
@@ -280,7 +397,9 @@ def parsear_mensagens(texto: str) -> list:
         secoes = [{"label": "Mensagens", "chave": "RAW", "conteudo": texto.strip()}]
     return secoes
 
-# --- AGENDA DEF (reutilizado em 2 telas) ---
+# =============================================================
+# AGENDA DEF
+# =============================================================
 AGENDA_DEF = [
     {"chave": "DESCRICAO_GRUPO", "label": "📋 Descrição do grupo (bio)",      "offset": -15, "hora_pad": "08:00"},
     {"chave": "BOAS_VINDAS",     "label": "💬 D-8 Boas-vindas (automática)",  "offset": -8,  "hora_pad": "08:00"},
@@ -294,13 +413,11 @@ AGENDA_DEF = [
     {"chave": "VENDA_NOITE",     "label": "⏰ Lançamento — Noite",            "offset":  0,  "hora_pad": "19:00"},
 ]
 
-# ── BLOCO LINK MONETIZZE (reutilizável) ──────────────────────────────────────
+# =============================================================
+# BLOCOS REUTILIZÁVEIS
+# =============================================================
+
 def bloco_link_monetizze(prefixo_key="mon"):
-    """
-    Campo para cadastrar o link da Monetizze.
-    Quando aplicado, substitui o placeholder nas mensagens já geradas
-    e salva em session_state para ser usado nos prompts futuros.
-    """
     d = st.session_state.dados
     link_atual = d.get('link_monetizze', '').strip()
 
@@ -310,24 +427,40 @@ def bloco_link_monetizze(prefixo_key="mon"):
         <div class="monetizze-box-title">Insira o link da Monetizze</div>
         <div class="monetizze-box-sub">
             Cadastre o e-book na Monetizze, copie o link de checkout e cole abaixo.<br>
-            O link será inserido <strong>exatamente no lugar certo</strong> dentro das mensagens de venda —
-            integrado ao texto, antes do prazo e da garantia, para não interromper a leitura.
+            O link será inserido <strong>exatamente no lugar certo</strong> dentro das mensagens de venda.
         </div>
     """, unsafe_allow_html=True)
 
-    col_link, col_btn = st.columns([5, 1])
+    col_link, col_val, col_btn = st.columns([4, 1, 1])
     with col_link:
         link_input = st.text_input(
-            "Link Monetizze",
-            value=link_atual,
+            "Link Monetizze", value=link_atual,
             placeholder="https://go.monetizze.com.br/...",
             label_visibility="collapsed",
             key=f"link_mon_input_{prefixo_key}",
         )
+    with col_val:
+        # ── MELHORIA 7: Validação do link ──
+        if st.button("🔍 Validar", use_container_width=True, key=f"btn_val_{prefixo_key}"):
+            if link_input.strip():
+                with st.spinner("Verificando..."):
+                    ok, msg = validar_link(link_input.strip())
+                st.session_state[f"val_result_{prefixo_key}"] = (ok, msg)
+            else:
+                st.warning("Cole o link primeiro.")
     with col_btn:
         aplicar = st.button("✅ Aplicar", use_container_width=True, key=f"btn_mon_{prefixo_key}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+    # Mostrar resultado da validação
+    val = st.session_state.get(f"val_result_{prefixo_key}")
+    if val:
+        ok, msg = val
+        if ok:
+            st.success(msg)
+        else:
+            st.warning(msg)
 
     if aplicar:
         link_limpo = link_input.strip()
@@ -335,19 +468,41 @@ def bloco_link_monetizze(prefixo_key="mon"):
             st.warning("Cole o link antes de aplicar.")
         else:
             d['link_monetizze'] = link_limpo
-            # Substitui o placeholder nas mensagens já geradas (se existirem)
             if d.get('msg_grupo'):
                 d['msg_grupo'] = d['msg_grupo'].replace('[LINK MONETIZZE]', link_limpo)
             st.rerun()
 
     if link_atual:
         st.markdown(
-            f"<div class='monetizze-aplicado'>✅ <strong>Link aplicado:</strong>&nbsp; "
+            f"<div class='monetizze-aplicado'>✅ <strong>Link aplicado:</strong>&nbsp;"
             f"<span style='color:#166534;word-break:break-all;'>{link_atual}</span></div>",
             unsafe_allow_html=True
         )
 
-# --- BLOCO DE CONTEÚDO ---
+def preview_whatsapp(secoes: list, prefixo: str = "wpp"):
+    """Renderiza preview visual de WhatsApp para cada mensagem"""
+    st.markdown("#### 📱 Preview — como aparece no WhatsApp")
+    st.caption("Clique em uma mensagem para expandir o preview visual.")
+    for i, s in enumerate(secoes):
+        texto_limpo = limpar_html(s['conteudo'])
+        with st.expander(f"👁️ Ver preview: {s['label']}", expanded=False):
+            hora_sim = "08:32" if "MANHA" in s['chave'] or "DIA" in s['chave'] or "BOAS" in s['chave'] or "DESCR" in s['chave'] else "19:07"
+            st.markdown(f"""
+            <div class="wpp-header">
+                <div class="wpp-avatar">📢</div>
+                <div>
+                    <div style="font-weight:700;font-size:0.95em;">Programa Gratuito</div>
+                    <div style="font-size:0.75em;opacity:0.8;">Grupo · você e mais membros</div>
+                </div>
+            </div>
+            <div class="wpp-screen">
+                <div class="wpp-bubble">
+                    {texto_limpo.replace(chr(10), '<br>')}
+                    <span class="wpp-time">{hora_sim} ✓✓</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
 def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
     conteudo = st.session_state.dados.get(chave, '')
     if not conteudo:
@@ -368,23 +523,50 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
             st.markdown(f"<div class='msg-dia-header'>{s['label']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='msg-conteudo'>{normalizar_markdown(s['conteudo'])}</div>", unsafe_allow_html=True)
             texto_limpo = limpar_html(s['conteudo'])
-            st.download_button(
-                label="📋 Copiar esta mensagem",
-                data=texto_limpo,
-                file_name=f"{s['chave'].lower()}.txt",
-                mime="text/plain",
-                key=f"copy_msg_{i}_{chave}",
-                use_container_width=False,
-            )
+            col_cp, col_md = st.columns(2)
+            with col_cp:
+                st.download_button(
+                    label="📋 Copiar esta mensagem",
+                    data=texto_limpo,
+                    file_name=f"{s['chave'].lower()}.txt",
+                    mime="text/plain",
+                    key=f"copy_msg_{i}_{chave}",
+                    use_container_width=True,
+                )
+            with col_md:
+                # ── MELHORIA 9: export .md por mensagem ──
+                st.download_button(
+                    label="📝 Exportar .md",
+                    data=texto_para_md(s['chave'], s['label'], s['conteudo']),
+                    file_name=f"{s['chave'].lower()}.md",
+                    mime="text/markdown",
+                    key=f"md_msg_{i}_{chave}",
+                    use_container_width=True,
+                )
             st.markdown("<br>", unsafe_allow_html=True)
+        # ── MELHORIA 2: preview WhatsApp ──
+        st.divider()
+        preview_whatsapp(secoes, prefixo=chave)
 
     else:
         st.markdown(f"<div class='caixa-texto'>{normalizar_markdown(conteudo)}</div>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.download_button(label="📋 Copiar como .txt", data=limpar_html(conteudo), file_name=f"{chave}.txt", mime="text/plain", key=f"copy_{chave}", use_container_width=True)
+        st.download_button(
+            label="📋 Copiar como .txt",
+            data=limpar_html(conteudo), file_name=f"{chave}.txt",
+            mime="text/plain", key=f"copy_{chave}", use_container_width=True
+        )
     with col2:
+        # ── MELHORIA 9: export .md global ──
+        st.download_button(
+            label="📝 Exportar .md",
+            data=texto_para_md(chave, titulo, conteudo),
+            file_name=f"{chave}.md", mime="text/markdown",
+            key=f"md_{chave}", use_container_width=True
+        )
+    with col3:
         if prompt_fn and system_fn:
             st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
             if st.button(f"🔄 Regenerar {titulo}", key=f"regen_{chave}", use_container_width=True):
@@ -404,27 +586,57 @@ def mostrar_progresso():
 
 def barra_navegacao():
     mostrar_progresso()
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("➕ INICIAR NOVO PROJETO"):
-            st.session_state.dados = {}; st.session_state.chat_hist = []; st.session_state.etapa = "Formulario"; st.rerun()
+            st.session_state.dados = {}
+            st.session_state.chat_hist = []
+            st.session_state.etapa = "Formulario"
+            st.rerun()
     with col2:
         with st.expander("📂 MEUS PROJETOS"):
-            if not st.session_state.projetos: st.write("Nenhum projeto salvo.")
+            # ── MELHORIA 1: Import de projeto ──
+            arq = st.file_uploader("📥 Importar projeto (.json)", type="json", key="import_proj")
+            if arq is not None:
+                try:
+                    dados_imp = json_para_projeto(arq.read().decode('utf-8'))
+                    nome_imp = dados_imp.get('nome_eb', 'Projeto importado')
+                    st.session_state.projetos[nome_imp] = dados_imp
+                    st.success(f"Projeto '{nome_imp}' importado!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao importar: {e}")
+
+            if not st.session_state.projetos:
+                st.write("Nenhum projeto salvo.")
             for nome in list(st.session_state.projetos.keys()):
-                c_abrir, c_deletar = st.columns([4,1])
+                c_abrir, c_exp, c_del = st.columns([3, 1, 1])
                 if c_abrir.button(f"📄 {nome}", key=f"abrir_{nome}"):
-                    st.session_state.dados = st.session_state.projetos[nome].copy(); st.session_state.etapa = "Visualizacao"; st.rerun()
+                    st.session_state.dados = st.session_state.projetos[nome].copy()
+                    st.session_state.etapa = "Visualizacao"
+                    st.rerun()
+                # ── MELHORIA 1: Export de projeto ──
+                c_exp.download_button(
+                    "💾", data=projeto_para_json(st.session_state.projetos[nome]),
+                    file_name=f"{nome.replace(' ','_')}.json", mime="application/json",
+                    key=f"exp_{nome}", help="Exportar projeto como JSON"
+                )
                 st.markdown('<div class="btn-perigo">', unsafe_allow_html=True)
-                if c_deletar.button("🗑️", key=f"del_{nome}", help="Excluir projeto"):
+                if c_del.button("🗑️", key=f"del_{nome}", help="Excluir"):
                     del st.session_state.projetos[nome]; st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
+    with col3:
+        # ── MELHORIA 4: Botão Relançamento ──
+        if st.session_state.dados.get('nome_eb'):
+            st.markdown('<div class="btn-laranja">', unsafe_allow_html=True)
+            if st.button("🔄 RELANÇAR PROJETO"):
+                st.session_state.etapa = "Relancar"
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
-# --- BLOCO DO AGENDADOR (reutilizado em 2 telas) ---
 def bloco_agendador(prefixo_key="agd"):
     d = st.session_state.dados
     data_lancto = d.get('data_lancto')
-
     if not data_lancto:
         st.warning("Defina a data de lançamento no formulário para usar o agendador.")
         return
@@ -436,12 +648,10 @@ def bloco_agendador(prefixo_key="agd"):
     <div class="agenda-aviso">
         <strong>⚠️ Como funciona o agendador — leia antes de usar</strong><br><br>
         O agendador <strong>NÃO envia as mensagens automaticamente.</strong><br>
-        O que ele faz é criar um arquivo de calendário (<strong>.ics</strong>) que você importa no
-        Google Calendar, Apple Calendar ou Outlook.<br><br>
-        Na hora certa, o seu celular vai <strong>te notificar com um lembrete</strong> — aí você abre o app,
-        copia o texto da mensagem e cola no grupo do WhatsApp ou Telegram.<br><br>
+        Cria um arquivo <strong>.ics</strong> que você importa no Google Calendar, Apple Calendar ou Outlook.<br>
+        Na hora certa, o celular te notifica — você copia o texto e cola no grupo.<br><br>
         🟢 <strong>Vantagem:</strong> simples, gratuito e funciona em qualquer celular.<br>
-        🔴 <strong>Limitação:</strong> o envio ainda depende de você apertar "enviar" na hora.
+        🔴 <strong>Limitação:</strong> o envio ainda depende de você.
     </div>
     """, unsafe_allow_html=True)
 
@@ -450,7 +660,6 @@ def bloco_agendador(prefixo_key="agd"):
 
     st.markdown("**Configure o horário de cada mensagem:**")
     st.caption("O lembrete chegará 30 minutos antes com o texto pronto para copiar e colar.")
-    st.markdown("")
 
     cols_h = st.columns([3, 1])
     cols_h[0].markdown("**Mensagem**")
@@ -465,21 +674,15 @@ def bloco_agendador(prefixo_key="agd"):
             st.markdown(
                 f"<div style='padding:6px 0;font-size:0.88em;color:#1E293B;'>"
                 f"<span style='color:#64748B;font-size:0.8em;font-weight:600;'>{data_str}&nbsp;&nbsp;</span>"
-                f"{item['label']}</div>",
-                unsafe_allow_html=True
+                f"{item['label']}</div>", unsafe_allow_html=True
             )
         with col_hora:
             hora_val = horas_config.get(chave, item['hora_pad'])
-            hora_input = st.text_input(
-                "h", value=hora_val,
-                key=f"{prefixo_key}_{chave}",
-                label_visibility="collapsed",
-                placeholder="HH:MM"
-            )
+            hora_input = st.text_input("h", value=hora_val, key=f"{prefixo_key}_{chave}",
+                label_visibility="collapsed", placeholder="HH:MM")
             horas_config[chave] = hora_input
 
     d['agenda_horas'] = horas_config
-    st.markdown("")
 
     if st.button("📅 GERAR ARQUIVO DE CALENDÁRIO (.ics)", use_container_width=True, key=f"btn_ics_{prefixo_key}"):
         eventos = []
@@ -488,33 +691,22 @@ def bloco_agendador(prefixo_key="agd"):
             data_msg = data_lancto + timedelta(days=item['offset'])
             hora = horas_config.get(chave, item['hora_pad'])
             texto = secoes_map.get(chave, '')
-            if not texto:
-                continue
-            eventos.append({
-                'chave':     chave,
-                'titulo':    f"[Nexus] {item['label']}",
-                'data':      data_msg,
-                'hora':      hora,
-                'descricao': texto,
-            })
+            if not texto: continue
+            eventos.append({'chave': chave, 'titulo': f"[Nexus] {item['label']}",
+                'data': data_msg, 'hora': hora, 'descricao': texto})
         ics_content = gerar_ics(eventos)
         nome_eb = d.get('nome_eb', 'lancamento').replace(' ', '_')
-        st.download_button(
-            label="⬇️ Baixar arquivo .ics",
-            data=ics_content.encode('utf-8'),
-            file_name=f"{nome_eb}.ics",
-            mime="text/calendar",
-            use_container_width=True,
-            key=f"dl_ics_{prefixo_key}",
-        )
+        st.download_button(label="⬇️ Baixar arquivo .ics", data=ics_content.encode('utf-8'),
+            file_name=f"{nome_eb}.ics", mime="text/calendar",
+            use_container_width=True, key=f"dl_ics_{prefixo_key}")
         st.success("✅ Arquivo gerado! Baixe e importe no seu calendário.")
 
     st.markdown("""
     <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;margin-top:12px;color:#64748B;font-size:0.8em;line-height:1.8;">
-    <strong>📲 Como importar o arquivo no seu calendário:</strong><br>
-    <strong>Google Calendar:</strong> Acesse calendar.google.com → Configurações (⚙️) → Importar → selecione o .ics<br>
-    <strong>iPhone / Apple Calendar:</strong> Abra o arquivo no celular → toque em "Adicionar ao Calendário"<br>
-    <strong>Outlook:</strong> Arquivo → Abrir e Exportar → Importar/Exportar → selecione o .ics
+    <strong>📲 Como importar:</strong><br>
+    <strong>Google Calendar:</strong> calendar.google.com → ⚙️ Configurações → Importar<br>
+    <strong>iPhone:</strong> Abra o arquivo → "Adicionar ao Calendário"<br>
+    <strong>Outlook:</strong> Arquivo → Abrir e Exportar → Importar/Exportar
     </div>
     """, unsafe_allow_html=True)
 
@@ -550,25 +742,23 @@ def prompt_fb():
     d = st.session_state.dados
     return (
         f"Crie UM anúncio completo para Facebook Ads convidando pessoas para um grupo gratuito.\n\n"
-        f"CONTEXTO:\n"
-        f"- Nicho: {d['nicho']}\n- Público: {d['publico']}\n- Dor principal: {d['dor']}\n\n"
+        f"CONTEXTO:\n- Nicho: {d['nicho']}\n- Público: {d['publico']}\n- Dor principal: {d['dor']}\n\n"
         f"CONCEITO OBRIGATÓRIO: O anúncio convida para um PROGRAMA GRATUITO DE 15 DIAS sobre {d['nicho']}. "
-        f"Use um nome atrativo para o programa baseado no tema — ex: 'Programa 15 Dias para [objetivo]'. "
-        f"NUNCA mencione ebook, produto pago, lançamento, preço ou qualquer venda. "
-        f"O grupo é gratuito, com dicas e atividades práticas durante 15 dias. Só isso.\n\n"
+        f"Use um nome atrativo — ex: 'Programa 15 Dias para [objetivo]'. "
+        f"NUNCA mencione ebook, produto pago, lançamento, preço ou qualquer venda.\n\n"
         f"ESTRUTURA OBRIGATÓRIA:\n"
-        f"1. Título chamativo em <strong>negrito HTML</strong> — centrado no programa gratuito\n"
-        f"2. Texto principal (máx 5 linhas) — foca na dor do público e no que vão receber grátis\n"
-        f"3. Lista rápida: ✅ Gratuito ✅ Grupo fechado ✅ Dicas diárias ✅ Vagas limitadas\n"
+        f"1. Título chamativo em <strong>negrito HTML</strong>\n"
+        f"2. Texto principal (máx 5 linhas) — foca na dor e no que vão receber grátis\n"
+        f"3. Lista: ✅ Gratuito ✅ Grupo fechado ✅ Dicas diárias ✅ Vagas limitadas\n"
         f"4. Sugestão de criativo visual (1 linha)\n"
         f"5. CTA: ⬇️ Clique abaixo e garanta sua vaga\n\n"
-        f"REGRAS: Deixe BEM EXPLÍCITO que o programa é 100% GRATUITO — use essa palavra em destaque. Sem exageros. Tom humano. Parece um convite, não um anúncio de produto."
+        f"Tom: 100% GRATUITO em destaque. Humano, parece convite, não anúncio."
     )
 
 def system_fb():
     return ("Você é um copywriter especialista em Facebook Ads. "
-            "O anúncio deve convidar para um grupo gratuito — sem mencionar produto pago, ebook ou lançamento. "
-            "A oferta é o programa gratuito em si. Use tags HTML <strong> para negrito, nunca asteriscos.")
+            "O anúncio convida para um grupo gratuito. Nunca mencione produto pago. "
+            "Use tags HTML <strong> para negrito, nunca asteriscos.")
 
 def prompt_lp():
     d = st.session_state.dados
@@ -578,31 +768,30 @@ def prompt_lp():
                        f"Credenciais: {d.get('autor_credenciais','')}.  ")
     return (
         f"Crie UMA landing page completa para capturar leads para um grupo gratuito.\n\n"
-        f"CONTEXTO:\n"
-        f"- Nicho: {d.get('nicho')}\n- Público: {d.get('publico')}\n"
+        f"CONTEXTO:\n- Nicho: {d.get('nicho')}\n- Público: {d.get('publico')}\n"
         f"- Dor principal: {d['dor']}\n- Situação atual: {d['atual']}\n"
-        f"- Objetivo que a pessoa quer alcançar: {d['desejada']}\n"
-        f"- {secao_autor}\n\n"
-        f"CONCEITO OBRIGATÓRIO: A landing page convida para um PROGRAMA GRATUITO DE 15 DIAS sobre {d.get('nicho')}. "
-        f"Use o mesmo nome de programa do anúncio — ex: 'Programa 15 Dias para [objetivo]'. "
-        f"NUNCA mencione ebook, produto pago, lançamento, preço ou qualquer venda. "
-        f"O grupo recebe dicas e atividades práticas durante 15 dias. Só isso.\n\n"
-        f"ESTRUTURA OBRIGATÓRIA:\n"
-        f"1. Headline principal — ex: 'Programa Gratuito de 15 Dias para [objetivo relacionado ao nicho]'\n"
-        f"2. Subtítulo — o que a pessoa vai receber durante os 15 dias (conteúdo, dicas, atividades)\n"
-        f"3. Seção de dor — 3 bullets descrevendo o que a pessoa sente/vive hoje\n"
-        f"4. Solução — o que vai receber no grupo (conteúdo gratuito, sem mencionar produto)\n"
-        f"5. Quem sou eu (autor, 2-3 linhas)\n"
-        f"6. 4 benefícios com ✔ — todos sobre o conteúdo gratuito\n"
-        f"7. Sugestão de elemento visual para a página\n"
-        f"8. CTA: [ QUERO PARTICIPAR GRATUITAMENTE ]\n\n"
-        f"REGRAS: Alinhada ao anúncio. Sem exageros. Tom direto e humano. Parece um convite, não uma venda."
+        f"- Objetivo: {d['desejada']}\n- {secao_autor}\n\n"
+        f"CONCEITO: PROGRAMA GRATUITO DE 15 DIAS sobre {d.get('nicho')}. NUNCA mencione produto pago.\n\n"
+        f"ESTRUTURA:\n1. Headline principal\n2. Subtítulo — o que receberão\n"
+        f"3. 3 bullets de dor\n4. O que vai receber no grupo\n5. Quem sou eu (2-3 linhas)\n"
+        f"6. 4 benefícios com ✔\n7. Sugestão visual\n8. CTA: [ QUERO PARTICIPAR GRATUITAMENTE ]\n\n"
+        f"Tom direto e humano. Parece convite, não venda."
     )
 
 def system_lp():
-    return ("Você é um especialista em Landing Pages de alta conversão para captura de leads. "
-            "A LP promove um grupo gratuito — sem mencionar produto pago, ebook ou lançamento. "
+    return ("Você é um especialista em Landing Pages de alta conversão. "
+            "A LP promove um grupo gratuito. Nunca mencione produto pago. "
             "Use tag HTML <strong> para negrito. Nunca asteriscos.")
+
+def _tom_instrucao(d: dict) -> str:
+    """── MELHORIA 8: instrução de tonalidade para o system prompt ──"""
+    tom = d.get('tom_mensagens', 'Direto')
+    mapa = {
+        'Direto':   "Tom direto e objetivo. Frases curtas. Vai ao ponto. Zero rodeios.",
+        'Empático': "Tom empático e acolhedor. Mostra que entende a dor antes de apresentar a solução. Cria conexão.",
+        'Urgente':  "Tom de urgência e escassez. Palavras que ativam FOMO. Prazos e vagas limitadas em destaque.",
+    }
+    return mapa.get(tom, mapa['Direto'])
 
 def prompt_msg():
     d = st.session_state.dados
@@ -611,10 +800,11 @@ def prompt_msg():
     nicho = d.get('nicho', '')
     dor = d.get('dor', '')
     whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
-    # Se já tiver link cadastrado, usa ele; senão usa placeholder
     link_venda = d.get('link_monetizze', '').strip() or '[LINK MONETIZZE]'
     bonus_resumo = d.get('bonus_resumo', '')
     bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
+    # ── MELHORIA 3: data exata no prazo da oferta ──
+    prazo_str = data_lancto_formatada(d)
 
     return (
         f"Gere as mensagens do funil para o lançamento sobre {nicho}.\n"
@@ -623,8 +813,7 @@ def prompt_msg():
         f"REGRA ABSOLUTA: Textos entre === FIXO === e === FIM === devem ser copiados PALAVRA POR PALAVRA.\n"
         f"Apenas blocos com [IA] devem ser criados. Respeite os rótulos exatos.\n\n"
 
-        f"DESCRICAO_GRUPO:\n"
-        f"=== FIXO ===\n"
+        f"DESCRICAO_GRUPO:\n=== FIXO ===\n"
         f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
         f"Esse não é apenas um grupo com conteúdos soltos.\n"
         f"Nos próximos dias, você vai passar por um processo simples, mas muito poderoso:\n"
@@ -639,8 +828,7 @@ def prompt_msg():
         f"Porque, se você acompanhar até o final, pode enxergar {nicho} de uma forma completamente diferente.\n"
         f"=== FIM ===\n\n"
 
-        f"BOAS_VINDAS:\n"
-        f"=== FIXO ===\n"
+        f"BOAS_VINDAS:\n=== FIXO ===\n"
         f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
         f"Se você está aqui… provavelmente já tentou melhorar em {nicho} — e não conseguiu manter.\n"
         f"E não é por falta de esforço.\n"
@@ -652,16 +840,14 @@ def prompt_msg():
         f"Fica atento… porque o que vem pode te surpreender.\n"
         f"=== FIM ===\n\n"
 
-        f"DIA_7:\n"
-        f"=== FIXO ===\n"
+        f"DIA_7:\n=== FIXO ===\n"
         f"Bom dia!\n"
         f"Nos próximos dias, vamos compartilhar conteúdos valiosos sobre {nicho}.\n"
         f"Teremos dicas práticas, curiosidades e insights para te ajudar a evoluir de verdade.\n"
         f"Se tiver alguma dúvida, você pode enviar uma mensagem para o nosso WhatsApp: ({whatsapp_num})\n"
         f"=== FIM ===\n\n"
 
-        f"DIA_6:\n"
-        f"=== FIXO (adapte só as 4 opções ao nicho {nicho} e dor: {dor}) ===\n"
+        f"DIA_6:\n=== FIXO (adapte só as 4 opções ao nicho {nicho} e dor: {dor}) ===\n"
         f"Isso aqui é importante.\n"
         f"Se você quer realmente sair desse programa com resultado, eu preciso entender você:\n"
         f"[IA: crie a pergunta da enquete e 4 opções A) B) C) D) adaptadas ao nicho {nicho} e dor {dor}]\n"
@@ -669,49 +855,36 @@ def prompt_msg():
         f"Vou ler todas — isso vai direcionar o que vou te mostrar nos próximos dias.\n"
         f"=== FIM ===\n\n"
 
-        f"DIA_5:\n"
-        f"[IA] Dica do dia sobre {nicho}. 1 ensinamento acionável agora. "
+        f"DIA_5:\n[IA] Dica do dia sobre {nicho}. 1 ensinamento acionável agora. "
         f"Compacto, parágrafos curtos, máximo 5 linhas. Zero CTA de venda.\n\n"
 
-        f"DIA_4:\n"
-        f"[IA] Atividade rápida ligada à dor: {dor}. "
-        f"Peça para responder no WhatsApp {whatsapp_num}. "
-        f"Compacto, parágrafos curtos, máximo 5 linhas.\n\n"
+        f"DIA_4:\n[IA] Atividade rápida ligada à dor: {dor}. "
+        f"Peça para responder no WhatsApp {whatsapp_num}. Compacto, máximo 5 linhas.\n\n"
 
-        f"DIA_3:\n"
-        f"[IA] Relato curto de alguém da turma passada que superou: {dor}. "
-        f"Nome fictício, situação antes e resultado depois. "
-        f"Tom humano, compacto, máximo 5 linhas.\n\n"
+        f"DIA_3:\n[IA] Relato curto de alguém da turma passada que superou: {dor}. "
+        f"Nome fictício, antes e depois. Tom humano, máximo 5 linhas.\n\n"
 
-        f"VESPERA:\n"
-        f"=== FIXO ===\n"
+        f"VESPERA:\n=== FIXO ===\n"
         f"Eu preciso ser sincero com você.\n"
         f"Depois de tudo que vocês me enviaram no meu WhatsApp…\n"
         f"Eu percebi algo que eu não esperava.\n"
-        f"Existe um padrão.\n"
-        f"E não é pequeno.\n"
+        f"Existe um padrão.\nE não é pequeno.\n"
         f"Mais de 80% das pessoas aqui estão presas exatamente nos mesmos pontos…\n"
         f"Mesmo tentando caminhos diferentes.\n"
         f"E isso me fez chegar a uma conclusão:\n"
-        f"O problema não está no esforço.\n"
-        f"Está no caminho que foi mostrado até hoje.\n"
+        f"O problema não está no esforço.\nEstá no caminho que foi mostrado até hoje.\n"
         f"Foi por isso que eu decidi fazer algo diferente.\n"
         f"Algo único… pensado pra resolver isso de forma direta.\n"
         f"Mas não é só sobre entender.\n"
         f"É sobre saber exatamente o que fazer — sem dúvidas, sem excesso, sem confusão.\n"
         f"Eu organizei tudo de um jeito que praticamente qualquer pessoa aqui consiga aplicar.\n"
-        f"Amanhã, eu vou te mostrar.\n"
-        f"Mas já te adianto:\n"
-        f"Se você ignorar… provavelmente vai continuar no mesmo lugar.\n"
-        f"Fica atento.\n"
+        f"Amanhã, eu vou te mostrar.\nMas já te adianto:\n"
+        f"Se você ignorar… provavelmente vai continuar no mesmo lugar.\nFica atento.\n"
         f"=== FIM ===\n\n"
 
-        # ── VENDA MANHÃ: link integrado ao fluxo do texto, entre o CTA e os detalhes de prazo/garantia
-        f"VENDA_MANHA:\n"
-        f"=== FIXO (adapte nome do ebook e bônus) ===\n"
+        f"VENDA_MANHA:\n=== FIXO (adapte nome do ebook e bônus) ===\n"
         f"Hoje é o grande dia.\n"
-        f"Se você continuar fazendo do jeito que sempre fez…\n"
-        f"Nada muda.\n"
+        f"Se você continuar fazendo do jeito que sempre fez…\nNada muda.\n"
         f"Foi por isso que eu reuni tudo que realmente funciona em um único material:\n\n"
         f"📘 {nome_eb}\n\n"
         f"Um conteúdo direto ao ponto, simples e aplicável.\n"
@@ -720,36 +893,65 @@ def prompt_msg():
         f"Tudo isso por apenas R$ {preco}.\n\n"
         f"👉 Acesse agora e garante a sua vaga:\n"
         f"{link_venda}\n\n"
-        f"⏰ Esse valor é válido só hoje, até 23:59.\n"
+        f"⏰ Esse valor é válido só hoje, até {prazo_str}.\n"
         f"✅ Garantia de 7 dias — se não gostar, devolvemos tudo.\n\n"
         f"Agora a decisão está nas suas mãos.\n"
         f"=== FIM ===\n\n"
 
-        # ── VENDA NOITE: link integrado após a chamada, antes do prazo
-        f"VENDA_NOITE:\n"
-        f"=== FIXO (adapte nicho) ===\n"
+        f"VENDA_NOITE:\n=== FIXO (adapte nicho) ===\n"
         f"Boa noite! 👋\n"
         f"Passando aqui de forma mais tranquila pra te lembrar:\n\n"
         f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra evoluir em {nicho}.\n\n"
-        f"📘 Conteúdo direto, sem complicação\n"
-        f"🎁 Com 3 bônus práticos\n\n"
+        f"📘 Conteúdo direto, sem complicação\n🎁 Com 3 bônus práticos\n\n"
         f"Se você ficou na dúvida, tudo bem.\n"
         f"Mas a verdade é: quem aplica o método certo, evolui muito mais rápido.\n\n"
         f"Se fizer sentido pra você, ainda dá tempo:\n"
         f"👉 {link_venda}\n\n"
-        f"⏰ Disponível até 23:59\n"
+        f"⏰ Disponível até {prazo_str}\n"
         f"✅ Garantia de 7 dias\n\n"
         f"Dá uma olhada com calma… e decide.\n"
         f"=== FIM ===\n"
     )
 
 def system_msg():
+    d = st.session_state.dados
+    # ── MELHORIA 8: tonalidade no system prompt ──
+    tom_inst = _tom_instrucao(d)
     return (
-        "Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
-        "Os textos fixos devem ser reproduzidos EXATAMENTE como fornecidos — sem alterar uma vírgula. "
-        "Apenas os blocos com instruções entre colchetes devem ser gerados pela IA. "
-        "Respeite o formato com os rótulos exatos. Tom humano e direto em tudo que gerar."
+        f"Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
+        f"Os textos fixos devem ser reproduzidos EXATAMENTE como fornecidos. "
+        f"Apenas os blocos com instruções entre colchetes devem ser criados. "
+        f"Respeite os rótulos exatos. {tom_inst}"
     )
+
+def prompt_stories():
+    """── MELHORIA 6: roteiros de stories ──"""
+    d = st.session_state.dados
+    nicho = d.get('nicho', '')
+    dor = d.get('dor', '')
+    autor = d.get('autor_nome', 'você')
+    return (
+        f"Crie 5 roteiros de stories para Instagram/TikTok para os primeiros 7 dias de divulgação "
+        f"de um programa gratuito sobre {nicho}.\n\n"
+        f"Contexto: {autor} está rodando tráfego para encher um grupo gratuito. "
+        f"A dor do público: {dor}.\n\n"
+        f"REGRAS:\n"
+        f"- Cada story é um vídeo curto de 30 a 60 segundos\n"
+        f"- Nunca mencione produto pago ou lançamento\n"
+        f"- O objetivo é gerar curiosidade e fazer a pessoa clicar no link da bio para entrar no grupo\n"
+        f"- Tom humano, como se {autor} estivesse falando para a câmera\n\n"
+        f"Para cada story, entregue EXATAMENTE neste formato:\n\n"
+        f"STORY 1 — [Nome/tema]\n"
+        f"GANCHO: [primeira frase que prende em 2 segundos]\n"
+        f"ROTEIRO: [o que falar, linha por linha, tom de conversa]\n"
+        f"CTA FINAL: [o que pedir no final]\n\n"
+        f"Repita para STORY 2, 3, 4 e 5."
+    )
+
+def system_stories():
+    return ("Você é um especialista em conteúdo para redes sociais e funis de lançamento. "
+            "Crie roteiros de stories autênticos, sem soar como anúncio. "
+            "Tom de conversa direta com o espectador.")
 
 # =============================================================
 # TELAS
@@ -774,7 +976,6 @@ elif st.session_state.etapa == "Formulario":
     d = st.session_state.dados
 
     st.markdown("#### Começar com um exemplo pronto")
-    st.caption("Escolha um nicho de exemplo e preencha tudo automaticamente.")
     cols = st.columns(len(EXEMPLOS))
     for i, (nome_ex, vals) in enumerate(EXEMPLOS.items()):
         with cols[i]:
@@ -801,47 +1002,65 @@ elif st.session_state.etapa == "Formulario":
                         chave, _, valor = linha.partition(':')
                         mapa[chave.strip()] = valor.strip()
                 if mapa:
-                    st.session_state.dados.update({'nicho': mapa.get('NICHO',''), 'publico': mapa.get('PUBLICO',''),
-                        'nome_eb': mapa.get('NOME_EB',''), 'dor': mapa.get('DOR',''), 'atual': mapa.get('ATUAL',''),
-                        'desejada': mapa.get('DESEJADA',''), 'promessa': mapa.get('PROMESSA',''), 'diferencial': mapa.get('DIFERENCIAL','')})
+                    st.session_state.dados.update({
+                        'nicho': mapa.get('NICHO',''), 'publico': mapa.get('PUBLICO',''),
+                        'nome_eb': mapa.get('NOME_EB',''), 'dor': mapa.get('DOR',''),
+                        'atual': mapa.get('ATUAL',''), 'desejada': mapa.get('DESEJADA',''),
+                        'promessa': mapa.get('PROMESSA',''), 'diferencial': mapa.get('DIFERENCIAL','')
+                    })
                     st.rerun()
         else: st.warning("Digite o assunto do ebook antes de continuar.")
 
     st.divider()
     st.markdown("#### Revise ou preencha manualmente")
-    d['nicho']       = st.text_input("Nicho:", value=d.get('nicho',''), help="ex: emagrecimento, renda extra")
+    d['nicho']       = st.text_input("Nicho:", value=d.get('nicho',''))
     d['publico']     = st.text_input("Público-alvo:", value=d.get('publico',''))
     d['nome_eb']     = st.text_input("Nome do e-book:", value=d.get('nome_eb',''))
     d['dor']         = st.text_input("Principal dor que resolve:", value=d.get('dor',''))
     d['atual']       = st.text_area("Situação atual da pessoa:", value=d.get('atual',''))
     d['desejada']    = st.text_area("Situação desejada:", value=d.get('desejada',''))
-    d['promessa']    = st.text_input("Transformação do programa:", value=d.get('promessa',''), help="Qual mudança real o público vai viver durante os 15 dias?")
+    d['promessa']    = st.text_input("Transformação do programa:", value=d.get('promessa',''))
     d['diferencial'] = st.text_input("Diferencial:", value=d.get('diferencial',''))
     d['preco']       = st.number_input("Preço do e-book (R$):", min_value=9, max_value=997, value=int(d.get('preco',47)), step=1)
 
+    # ── MELHORIA 8: Tonalidade ──
+    st.divider()
+    st.markdown("#### Tom das mensagens do grupo")
+    st.caption("Define como as mensagens de aquecimento e venda serão escritas.")
+    tom_opcoes = ['Direto', 'Empático', 'Urgente']
+    tom_atual = d.get('tom_mensagens', 'Direto')
+    tom_idx = tom_opcoes.index(tom_atual) if tom_atual in tom_opcoes else 0
+    d['tom_mensagens'] = st.radio(
+        "Escolha o tom:",
+        tom_opcoes,
+        index=tom_idx,
+        horizontal=True,
+        captions=[
+            "Frases curtas, vai ao ponto",
+            "Cria conexão antes de vender",
+            "FOMO e escassez em destaque"
+        ]
+    )
+
     st.divider()
     st.markdown("#### Suas credenciais como autor")
-    st.caption("Aparecem na Landing Page e nas Mensagens do grupo.")
-    d['autor_nome']        = st.text_input("Seu nome:", value=d.get('autor_nome',''), placeholder="ex: João Silva")
-    d['autor_experiencia'] = st.text_area("Sua experiência com o tema:", value=d.get('autor_experiencia',''), placeholder="ex: Invisto em criptomoedas há 4 anos.")
-    d['autor_credenciais'] = st.text_area("Resultados ou conquistas:", value=d.get('autor_credenciais',''), placeholder="ex: Já ajudei mais de 200 pessoas.")
+    d['autor_nome']        = st.text_input("Seu nome:", value=d.get('autor_nome',''))
+    d['autor_experiencia'] = st.text_area("Sua experiência com o tema:", value=d.get('autor_experiencia',''))
+    d['autor_credenciais'] = st.text_area("Resultados ou conquistas:", value=d.get('autor_credenciais',''))
 
     st.divider()
     st.markdown("#### WhatsApp para receber respostas da enquete")
     st.markdown("""<div style="background:#FEF9C3;border:1px solid #FDE047;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#713F12;font-size:0.88em;line-height:1.6;">
     ⚠️ <strong>ATENÇÃO: use um número DIFERENTE do grupo.</strong><br>
-    O grupo ficará fechado para mensagens — os membros não conseguem responder lá dentro.<br>
-    Por isso, as respostas da enquete e dúvidas devem ir para um número pessoal ou comercial separado.<br>
-    <strong>Pode ser seu celular pessoal, um chip extra ou um número de atendimento.</strong><br><br>
-    💡 <strong>Configure uma resposta automática nesse número:</strong><br>
-    <em style="background:#FFFDE7;padding:2px 6px;border-radius:4px;">"Recebi sua mensagem. Eu e minha equipe já estamos analisando 🙏"</em>
+    O grupo ficará fechado — membros não conseguem responder lá dentro.<br>
+    <strong>Pode ser seu celular pessoal, chip extra ou número de atendimento.</strong><br><br>
+    💡 Configure resposta automática: <em>"Recebi sua mensagem. Já estamos analisando 🙏"</em>
     </div>""", unsafe_allow_html=True)
-    d['whatsapp_contato'] = st.text_input("Número para receber respostas (diferente do grupo):", value=d.get('whatsapp_contato',''), placeholder="ex: (11) 99999-9999")
+    d['whatsapp_contato'] = st.text_input("Número (diferente do grupo):", value=d.get('whatsapp_contato',''), placeholder="ex: (11) 99999-9999")
 
     data_sugerida = d.get('data_lancto', date.today() + timedelta(days=15))
-    d['data_lancto'] = st.date_input("Data de lançamento", value=data_sugerida, min_value=date.today(),
-        help="💡 Sugerimos 15 dias: 1 semana para encher o grupo e 1 semana para aquecer.")
-    st.caption("💡 Dica: Use os primeiros 7 dias para encher o grupo e os próximos 7 para aquecer. Lance no 15º dia.")
+    d['data_lancto'] = st.date_input("Data de lançamento", value=data_sugerida, min_value=date.today())
+    st.caption("💡 Use os primeiros 7 dias para encher o grupo e os próximos 7 para aquecer. Lance no 15º dia.")
 
     st.divider()
     st.markdown("#### Calculadora de faturamento")
@@ -857,19 +1076,25 @@ elif st.session_state.etapa == "Formulario":
     col2.metric("Faturamento bruto", f"R${faturamento:,.0f}".replace(',','.'))
     col3.metric("Lucro estimado", f"R${lucro:,.0f}".replace(',','.'), delta="após tráfego ~R$1,50/lead")
 
+    # salva estimativas para o diagnóstico pós-lançamento
+    d['est_leads'] = leads
+    d['est_vendas'] = vendas
+    d['est_faturamento'] = faturamento
+
     campos_obrigatorios = ['nicho','publico','nome_eb','dor','atual','desejada','promessa','diferencial']
     tudo_preenchido = all(d.get(c,'').strip() for c in campos_obrigatorios)
 
     if tudo_preenchido:
         st.divider()
-        st.markdown("#### Resumo do que será gerado")
         st.markdown(f"""<div class="preview-box">
         📚 <strong>E-book:</strong> {d.get('nome_eb')} — 60 cartões educativos<br>
         🎁 <strong>3 E-books Bônus</strong> complementares<br>
         📣 <strong>1 Anúncio</strong> alinhado com a landing page<br>
         🌐 <strong>1 Landing Page</strong> alinhada com o anúncio<br>
+        📸 <strong>5 Roteiros de Stories</strong> para encher o grupo<br>
         💬 <strong>Funil completo de Mensagens</strong> — boas-vindas + aquecimento + véspera + venda<br>
-        📅 <strong>Agendador de Mensagens</strong> — calendário com lembrete 30 min antes<br>
+        📅 <strong>Agendador</strong> — calendário com lembrete 30 min antes<br>
+        🗣️ <strong>Tom:</strong> {d.get('tom_mensagens','Direto')} &nbsp;|&nbsp;
         🚀 <strong>Lançamento:</strong> {d['data_lancto'].strftime('%d/%m/%Y')}
         </div>""", unsafe_allow_html=True)
 
@@ -907,11 +1132,8 @@ elif st.session_state.etapa == "Gerar_Bonus":
 
     if 'bonus_cont' in st.session_state.dados:
         bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
-
-        # ── LINK MONETIZZE — logo após os bônus, antes de avançar ──
         st.divider()
         bloco_link_monetizze(prefixo_key="bonus_etapa")
-
         st.divider()
         if st.button("AVANÇAR →"): st.session_state.etapa = "Copy_Face"; st.rerun()
 
@@ -919,7 +1141,7 @@ elif st.session_state.etapa == "Gerar_Bonus":
 elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📣 ANÚNCIO")
-    st.caption("Um anúncio completo e alinhado com a landing page — mesma promessa, mesmo tom, mesma linguagem.")
+    st.caption("Um anúncio completo e alinhado com a landing page.")
     if st.button("GERAR ANÚNCIO"):
         with st.spinner("Gerando anúncio com IA..."):
             st.session_state.dados['fb_copy'] = chamar_ia(prompt_fb(), system_fb())
@@ -931,7 +1153,7 @@ elif st.session_state.etapa == "Copy_Face":
 elif st.session_state.etapa == "Copy_LP":
     barra_navegacao()
     st.title("🌐 LANDING PAGE")
-    st.caption("Uma landing page completa — alinhada com o anúncio gerado. Mesma promessa, mesma jornada.")
+    st.caption("Uma landing page completa alinhada com o anúncio.")
     if st.button("GERAR LANDING PAGE"):
         with st.spinner("Gerando landing page com IA..."):
             st.session_state.dados['lp_copy'] = chamar_ia(prompt_lp(), system_lp())
@@ -943,34 +1165,79 @@ elif st.session_state.etapa == "Copy_LP":
 elif st.session_state.etapa == "Mensagens_Grupo":
     barra_navegacao()
     st.title("💬 MENSAGENS DO GRUPO")
+    d = st.session_state.dados
 
+    # ── MELHORIA 6: Stories antes das mensagens do grupo ──
+    st.markdown("### 📸 Roteiros de Stories — Semana 1 (encher o grupo)")
+    st.caption("5 roteiros prontos para gravar e postar durante a semana de captação. Nunca mencionam produto ou venda.")
+    col_s1, col_s2 = st.columns([3,1])
+    with col_s2:
+        st.markdown('<div class="btn-roxo">', unsafe_allow_html=True)
+        gerar_st = st.button("📸 GERAR STORIES", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if gerar_st:
+        with st.spinner("Criando roteiros de stories..."):
+            d['stories_cont'] = chamar_ia(prompt_stories(), system_stories())
+            st.rerun()
+
+    if d.get('stories_cont'):
+        secoes_st = []
+        bloco_atual, titulo_atual = [], "Stories"
+        for linha in d['stories_cont'].split('\n'):
+            ls = linha.strip()
+            m = re.match(r'^STORY\s*(\d+)\s*[—\-–]?\s*(.*)', ls, re.IGNORECASE)
+            if m:
+                if bloco_atual:
+                    secoes_st.append({"titulo": titulo_atual, "conteudo": '\n'.join(bloco_atual).strip()})
+                titulo_atual = f"📸 Story {m.group(1)}" + (f" — {m.group(2)}" if m.group(2) else "")
+                bloco_atual = []
+            else:
+                bloco_atual.append(linha)
+        if bloco_atual:
+            secoes_st.append({"titulo": titulo_atual, "conteudo": '\n'.join(bloco_atual).strip()})
+
+        for s in secoes_st:
+            st.markdown(f"<div class='story-card'><div class='story-titulo'>{s['titulo']}</div><div class='story-conteudo'>{s['conteudo']}</div></div>", unsafe_allow_html=True)
+
+        col_dl, col_regen = st.columns(2)
+        with col_dl:
+            st.download_button("📋 Baixar todos os stories (.txt)", data=limpar_html(d['stories_cont']),
+                file_name="stories.txt", mime="text/plain", use_container_width=True)
+        with col_regen:
+            st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
+            if st.button("🔄 Regenerar Stories", use_container_width=True):
+                with st.spinner("Regenerando..."):
+                    d['stories_cont'] = chamar_ia(prompt_stories(), system_stories())
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    st.divider()
+    st.markdown("### 💬 Funil de Mensagens do Grupo")
     st.markdown("""<div class="preview-box">
-    <strong>Funil completo — 10 peças prontas para copiar e enviar:</strong><br><br>
-    📋 Descrição (bio) → 💬 D-8 Boas-vindas → 📅 D-9 Abertura →
+    <strong>10 peças prontas para copiar e enviar:</strong><br>
+    📋 Bio → 💬 D-8 Boas-vindas → 📅 D-9 Abertura →
     🎯 D-10 Enquete → 🔥 D-11 Dica → 📌 D-12 Atividade →
     💡 D-13 Prova social → ⏳ D-14 Véspera → 🚀 Manhã da venda → ⏰ Noite (19h)
     </div>""", unsafe_allow_html=True)
 
     st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-bottom:8px;color:#78350F;font-size:0.87em;line-height:1.6;">
-    ⚠️ <strong>Atenção antes de usar:</strong><br>
-    Os textos em destaque são <strong>fixos</strong> — copiados palavra por palavra do modelo aprovado.<br>
-    Apenas <strong>D-10 (enquete), D-11 (dica), D-12 (atividade) e D-13 (prova social)</strong> são gerados pela IA.<br>
-    <strong>Revise esses 4 blocos antes de enviar.</strong>
+    ⚠️ Apenas <strong>D-10 (enquete), D-11, D-12 e D-13</strong> são gerados pela IA. Revise antes de enviar.
     </div>""", unsafe_allow_html=True)
 
-    if not st.session_state.dados.get('whatsapp_contato'):
-        st.warning("⚠️ Você não preencheu o WhatsApp de contato no formulário. As mensagens usam esse número para receber respostas da enquete.")
+    # Tom selecionado
+    tom_atual = d.get('tom_mensagens', 'Direto')
+    st.markdown(f"<div style='margin-bottom:8px;'><span style='background:#EDE9FE;color:#5B21B6;border-radius:6px;padding:3px 10px;font-size:0.8em;font-weight:700;'>🗣️ Tom: {tom_atual}</span> — <a href='#' style='font-size:0.8em;color:#64748B;'>alterar no formulário</a></div>", unsafe_allow_html=True)
 
-    # ── Link Monetizze: mostrar status antes de gerar ──
-    link_ja_cadastrado = st.session_state.dados.get('link_monetizze', '').strip()
+    link_ja_cadastrado = d.get('link_monetizze', '').strip()
     if link_ja_cadastrado:
-        st.markdown(
-            f"<div class='monetizze-aplicado' style='margin-bottom:12px;'>✅ <strong>Link Monetizze já cadastrado</strong> — será inserido automaticamente nas mensagens de venda:&nbsp;"
-            f"<span style='color:#166534;word-break:break-all;'>{link_ja_cadastrado}</span></div>",
-            unsafe_allow_html=True
-        )
+        st.markdown(f"<div class='monetizze-aplicado' style='margin-bottom:12px;'>✅ <strong>Link Monetizze cadastrado</strong> — entrará automaticamente nas mensagens de venda: <span style='color:#166534;word-break:break-all;'>{link_ja_cadastrado}</span></div>", unsafe_allow_html=True)
     else:
-        st.info("💡 Dica: cadastre o link da Monetizze na etapa de Bônus (etapa anterior) para ele entrar automaticamente nas mensagens de venda.")
+        st.info("💡 Cadastre o link da Monetizze na etapa de Bônus para ele entrar automaticamente.")
+
+    # Data de lançamento na mensagem
+    prazo = data_lancto_formatada(d)
+    st.caption(f"📅 Prazo da oferta nas mensagens de venda: **{prazo}** (calculado automaticamente pela data de lançamento)")
 
     st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
     gerar_msg = st.button("💬 GERAR FUNIL COMPLETO DE MENSAGENS")
@@ -978,20 +1245,15 @@ elif st.session_state.etapa == "Mensagens_Grupo":
 
     if gerar_msg:
         with st.spinner("Gerando o funil completo de mensagens..."):
-            st.session_state.dados['msg_grupo'] = chamar_ia(prompt_msg(), system_msg())
+            d['msg_grupo'] = chamar_ia(prompt_msg(), system_msg())
             st.rerun()
 
-    if 'msg_grupo' in st.session_state.dados:
+    if d.get('msg_grupo'):
         st.divider()
-        st.markdown("#### Suas mensagens prontas para enviar")
-        st.caption("Cada bloco corresponde a um dia. Copie e envie no momento certo.")
         bloco_conteudo('msg_grupo', 'Mensagens', prompt_msg, system_msg)
 
-        # ── LINK MONETIZZE — campo secundário caso ainda não tenha sido preenchido ──
         if not link_ja_cadastrado:
             st.divider()
-            st.markdown("#### 🔗 Inserir link da Monetizze")
-            st.caption("Ainda não cadastrado. Cole abaixo para substituir nas mensagens de venda sem regerá-las.")
             bloco_link_monetizze(prefixo_key="msg_etapa")
 
         st.divider()
@@ -1003,10 +1265,7 @@ elif st.session_state.etapa == "Mensagens_Grupo":
 elif st.session_state.etapa == "Agendador":
     barra_navegacao()
     st.title("📅 AGENDADOR DE MENSAGENS")
-    st.caption("Configure quando cada mensagem deve ser enviada e exporte para o seu calendário.")
-
     bloco_agendador(prefixo_key="agd_etapa")
-
     st.divider()
     if st.button("💾 SALVAR E VER PROJETO FINAL"):
         nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
@@ -1014,48 +1273,124 @@ elif st.session_state.etapa == "Agendador":
         st.session_state.etapa = "Visualizacao"
         st.rerun()
 
+# ── RELANÇAMENTO ──────────────────────────────────────────────
+elif st.session_state.etapa == "Relancar":
+    barra_navegacao()
+    d = st.session_state.dados
+    st.title(f"🔄 RELANÇAR: {d.get('nome_eb','')}")
+    st.markdown("""
+    <div class="relanc-box">
+        <strong style="font-size:1.05em;font-family:'Rajdhani',sans-serif;color:#6B21A8;">♻️ Modo Relançamento</strong><br><br>
+        Você vai reaproveitar o mesmo e-book, bônus, anúncio e landing page.<br>
+        Apenas as <strong>mensagens do grupo serão regeneradas com variações</strong> —
+        para o público não receber textos idênticos ao lançamento anterior.<br><br>
+        Defina uma nova data de lançamento e clique em Relançar.
+    </div>
+    """, unsafe_allow_html=True)
+
+    nova_data = st.date_input(
+        "Nova data de lançamento:",
+        value=date.today() + timedelta(days=15),
+        min_value=date.today(),
+        key="nova_data_relanc"
+    )
+
+    # ── MELHORIA 8: Tom no relançamento ──
+    tom_opcoes = ['Direto', 'Empático', 'Urgente']
+    tom_atual = d.get('tom_mensagens', 'Direto')
+    novo_tom = st.radio(
+        "Tom das mensagens desta rodada:",
+        tom_opcoes,
+        index=tom_opcoes.index(tom_atual) if tom_atual in tom_opcoes else 0,
+        horizontal=True,
+        key="tom_relanc"
+    )
+
+    col_r1, col_r2 = st.columns(2)
+    with col_r1:
+        st.markdown('<div class="btn-roxo">', unsafe_allow_html=True)
+        if st.button("🚀 RELANÇAR — Regenerar mensagens", use_container_width=True):
+            d['data_lancto'] = nova_data
+            d['tom_mensagens'] = novo_tom
+            d['msg_grupo'] = ''  # limpa para forçar regeneração
+            d['stories_cont'] = ''
+            d['agenda_horas'] = {}
+            with st.spinner("Regenerando mensagens para o relançamento..."):
+                d['msg_grupo'] = chamar_ia(prompt_msg(), system_msg())
+                d['stories_cont'] = chamar_ia(prompt_stories(), system_stories())
+            nome_proj = d.get('nome_eb', 'Sem nome')
+            st.session_state.projetos[nome_proj] = d.copy()
+            st.success("✅ Mensagens regeneradas! Avance para o Agendador para configurar as novas datas.")
+            st.session_state.etapa = "Agendador"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col_r2:
+        if st.button("← Voltar ao projeto", use_container_width=True):
+            st.session_state.etapa = "Visualizacao"
+            st.rerun()
+
 # ── VISUALIZAÇÃO FINAL ────────────────────────────────────────
 elif st.session_state.etapa == "Visualizacao":
     barra_navegacao()
-    nome_projeto = st.session_state.dados.get('nome_eb', 'Projeto')
-    st.title(f"PROJETO: {nome_projeto}")
     d = st.session_state.dados
+    nome_projeto = d.get('nome_eb', 'Projeto')
+    st.title(f"PROJETO: {nome_projeto}")
 
-    texto_completo = f"""NEXUS LAUNCHER — PROJETO COMPLETO
-{'='*50}
-E-BOOK: {d.get('nome_eb','')}
-NICHO: {d.get('nicho','')}
-P�BLICO: {d.get('publico','')}
-DATA DE LANÇAMENTO: {d.get('data_lancto','')}
-PREÇO: R${d.get('preco',47)}
-{'='*50}
+    # ── MELHORIA 9: Export completo em .md ──
+    def gerar_md_completo(d):
+        partes = [
+            f"# {d.get('nome_eb','')} — Projeto Completo\n",
+            f"**Nicho:** {d.get('nicho','')}  \n**Público:** {d.get('publico','')}  \n"
+            f"**Lançamento:** {d.get('data_lancto','')}  \n**Preço:** R${d.get('preco',47)}\n\n---\n",
+            f"## 📚 E-Book Principal\n\n{limpar_html(d.get('ebook_cont','Não gerado.'))}\n\n---\n",
+            f"## 🎁 E-Books Bônus\n\n{limpar_html(d.get('bonus_cont','Não gerado.'))}\n\n---\n",
+            f"## 📸 Stories\n\n{limpar_html(d.get('stories_cont','Não gerado.'))}\n\n---\n",
+            f"## 📣 Anúncio\n\n{limpar_html(d.get('fb_copy','Não gerado.'))}\n\n---\n",
+            f"## 🌐 Landing Page\n\n{limpar_html(d.get('lp_copy','Não gerado.'))}\n\n---\n",
+            f"## 💬 Mensagens do Grupo\n\n{limpar_html(d.get('msg_grupo','Não gerado.'))}\n",
+        ]
+        return ''.join(partes)
 
-📚 E-BOOK PRINCIPAL
-{'-'*40}
-{limpar_html(d.get('ebook_cont','Não gerado.'))}
+    col_txt, col_md, col_json = st.columns(3)
+    texto_completo = (
+        f"NEXUS LAUNCHER — PROJETO COMPLETO\n{'='*50}\n"
+        f"E-BOOK: {d.get('nome_eb','')}\nNICHO: {d.get('nicho','')}\n"
+        f"PÚBLICO: {d.get('publico','')}\nDATA DE LANÇAMENTO: {d.get('data_lancto','')}\n"
+        f"PREÇO: R${d.get('preco',47)}\n{'='*50}\n\n"
+        f"📚 E-BOOK PRINCIPAL\n{'-'*40}\n{limpar_html(d.get('ebook_cont','Não gerado.'))}\n\n"
+        f"🎁 E-BOOKS BÔNUS\n{'-'*40}\n{limpar_html(d.get('bonus_cont','Não gerado.'))}\n\n"
+        f"📸 STORIES\n{'-'*40}\n{limpar_html(d.get('stories_cont','Não gerado.'))}\n\n"
+        f"📣 ANÚNCIO\n{'-'*40}\n{limpar_html(d.get('fb_copy','Não gerado.'))}\n\n"
+        f"🌐 LANDING PAGE\n{'-'*40}\n{limpar_html(d.get('lp_copy','Não gerado.'))}\n\n"
+        f"💬 MENSAGENS DO GRUPO\n{'-'*40}\n{limpar_html(d.get('msg_grupo','Não gerado.'))}"
+    ).strip()
 
-🎁 E-BOOKS BÔNUS
-{'-'*40}
-{limpar_html(d.get('bonus_cont','Não gerado.'))}
-
-📣 ANÚNCIO
-{'-'*40}
-{limpar_html(d.get('fb_copy','Não gerado.'))}
-
-🌐 LANDING PAGE
-{'-'*40}
-{limpar_html(d.get('lp_copy','Não gerado.'))}
-
-💬 MENSAGENS DO GRUPO (FUNIL COMPLETO)
-{'-'*40}
-{limpar_html(d.get('msg_grupo','Não gerado.'))}""".strip()
-
-    st.markdown('<div class="btn-verde">', unsafe_allow_html=True)
-    st.download_button(label="⬇️ BAIXAR PROJETO COMPLETO (.txt)", data=texto_completo,
-        file_name=f"{nome_projeto.replace(' ','_')}_lancamento.txt", mime="text/plain", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col_txt:
+        st.markdown('<div class="btn-verde">', unsafe_allow_html=True)
+        st.download_button("⬇️ Baixar .txt", data=texto_completo,
+            file_name=f"{nome_projeto.replace(' ','_')}.txt", mime="text/plain", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col_md:
+        # ── MELHORIA 9 ──
+        st.markdown('<div class="btn-verde">', unsafe_allow_html=True)
+        st.download_button("📝 Baixar .md (Notion)", data=gerar_md_completo(d),
+            file_name=f"{nome_projeto.replace(' ','_')}.md", mime="text/markdown", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col_json:
+        # ── MELHORIA 1: Export JSON do projeto atual ──
+        st.markdown('<div class="btn-roxo">', unsafe_allow_html=True)
+        st.download_button("💾 Salvar projeto (.json)", data=projeto_para_json(d),
+            file_name=f"{nome_projeto.replace(' ','_')}.json", mime="application/json", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.divider()
+    with st.expander("📸 STORIES — Semana de captação"):
+        if d.get('stories_cont'):
+            st.text(d['stories_cont'])
+            st.download_button("📋 Copiar stories", data=limpar_html(d['stories_cont']),
+                file_name="stories.txt", mime="text/plain", key="dl_stories_vis")
+        else:
+            st.info("Stories não gerados — vá para Mensagens e clique em 'Gerar Stories'.")
     with st.expander("📚 E-BOOK"):
         bloco_conteudo('ebook_cont','E-book',prompt_ebook,system_ebook)
     with st.expander("🎁 E-BOOKS BÔNUS"):
@@ -1065,113 +1400,89 @@ PREÇO: R${d.get('preco',47)}
     with st.expander("🌐 LANDING PAGE"):
         bloco_conteudo('lp_copy','Landing Page',prompt_lp,system_lp)
     with st.expander("💬 MENSAGENS DO GRUPO — FUNIL COMPLETO"):
-        st.caption("Boas-vindas → D-7 a D-1 → Venda manhã → Lembrete noturno")
         bloco_conteudo('msg_grupo','Mensagens',prompt_msg,system_msg)
-    with st.expander("📅 AGENDADOR — Calendário de envio das mensagens"):
+    with st.expander("📅 AGENDADOR"):
         bloco_agendador(prefixo_key="agd_vis")
 
-    # ── DICA MESTRE ──────────────────────────────────────────
+    # ── MELHORIA 5: Botão diagnóstico ──
+    st.divider()
+    st.markdown('<div class="btn-laranja">', unsafe_allow_html=True)
+    if st.button("📊 REGISTRAR RESULTADO DO LANÇAMENTO", use_container_width=True):
+        st.session_state.etapa = "Diagnostico"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
     st.divider()
     with st.expander("🧠 DICA MESTRE — O QUE FAZER DEPOIS DO LANÇAMENTO"):
         st.markdown("""<div style="background:#F0FDF4;border:2px solid #22C55E;border-radius:12px;padding:22px 26px;color:#14532D;line-height:1.7;font-size:0.92em;">
-        <strong style="font-size:1.05em;">Não apague esse grupo. E evite reabrir para conversas.</strong><br><br>
-        Aqui dentro, você construiu algo extremamente valioso: atenção e interesse de pessoas reais.<br>
-        Esse grupo é um ativo.<br>
-        Se bem utilizado, ele pode gerar novos resultados sem que você precise investir mais nenhum centavo em tráfego.<br><br>
-        <strong>Mas existe um ponto importante: evite excesso.</strong><br>
-        O ideal é realizar novos lançamentos com equilíbrio — aproximadamente 1 vez por mês.<br>
-        Assim, você mantém o interesse das pessoas, sem gerar desgaste ou perda de atenção.<br><br>
-        Use esse grupo com estratégia… e ele pode continuar gerando resultados por muito tempo.
+        <strong>Não apague esse grupo.</strong><br><br>
+        Você construiu atenção e interesse de pessoas reais. Esse grupo é um ativo.<br>
+        Realize novos lançamentos com equilíbrio — aproximadamente 1 vez por mês.<br>
+        Use o botão <strong>🔄 Relançar Projeto</strong> no topo para reaproveitar tudo sem custo de tráfego.
         </div>""", unsafe_allow_html=True)
 
-    # ── CHECKLIST ─────────────────────────────────────────────
-    st.divider()
-    with st.expander("✅ CHECKLIST DE LANÇAMENTO — O QUE FAZER AGORA"):
+    with st.expander("✅ CHECKLIST DE LANÇAMENTO"):
         data_lancto = d.get('data_lancto', date.today())
-        dlf  = data_lancto.strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else str(data_lancto)
-        dm1  = (data_lancto - timedelta(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-        d7   = (data_lancto - timedelta(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-        d6   = (data_lancto - timedelta(days=6)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-        d5   = (data_lancto - timedelta(days=5)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-        d4   = (data_lancto - timedelta(days=4)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-        d3   = (data_lancto - timedelta(days=3)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-        d2   = (data_lancto - timedelta(days=2)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
-
+        dlf = data_lancto.strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else str(data_lancto)
+        dm1 = (data_lancto - timedelta(days=1)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d7  = (data_lancto - timedelta(days=7)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d6  = (data_lancto - timedelta(days=6)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d5  = (data_lancto - timedelta(days=5)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d4  = (data_lancto - timedelta(days=4)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
+        d3  = (data_lancto - timedelta(days=3)).strftime('%d/%m/%Y') if hasattr(data_lancto,'strftime') else ''
         fases = [
             {"fase":"FASE 1 — HOJE: Preparação","cor":"#0EA5E9","items":[
-                ("Hoje","Baixe o projeto completo (.txt)"),
-                ("Hoje","Cadastre o e-book + 3 bônus na Monetizze — configure o checkout"),
-                (f"Hoje",f"Preço: R${d.get('preco',47)} — salve o link de venda"),
-                ("Hoje","Cole o link da Monetizze na etapa de Bônus do Nexus Launcher"),
+                ("Hoje","Baixe o projeto completo (.txt ou .md)"),
+                ("Hoje","Cadastre o e-book + 3 bônus na Monetizze"),
+                ("Hoje","Cole o link da Monetizze na etapa de Bônus"),
                 ("Hoje","Crie o grupo: 'Programa [X] Dias para [Objetivo]'"),
-                ("Hoje","Cole a DESCRIÇÃO DO GRUPO no campo de informações do WhatsApp/Telegram"),
-                ("Hoje","Configure a mensagem de BOAS-VINDAS automática ao entrar"),
-                ("Hoje","Suba o ANÚNCIO apontando para a LANDING PAGE"),
-                ("Hoje","Configure a LANDING PAGE com CTA apontando para o grupo"),
-                ("Hoje","Importe o arquivo .ics no Google Calendar / iPhone / Outlook para receber os lembretes de envio"),
+                ("Hoje","Cole a DESCRIÇÃO DO GRUPO no WhatsApp/Telegram"),
+                ("Hoje","Configure BOAS-VINDAS automática ao entrar"),
+                ("Hoje","Suba o ANÚNCIO → LANDING PAGE → grupo"),
+                ("Hoje","Importe o .ics no seu calendário"),
                 ("Hoje","Configure RESPOSTA AUTOMÁTICA no WhatsApp de contato"),
+                ("Hoje","Grave os 5 STORIES e poste no Instagram/TikTok"),
             ]},
             {"fase":"FASE 2 — SEMANA 1: Encher o grupo","cor":"#8B5CF6","items":[
-                ("Dias 1 a 8","Anúncios rodando — objetivo: 500 a 1.000 pessoas no grupo"),
-                ("Diariamente","Monitore custo por lead — meta: até R$2,00 por pessoa"),
-                ("Automático","Mensagem de boas-vindas já configurada — enviada a cada novo membro"),
+                ("Dias 1 a 8","Anúncios rodando — meta: 500 a 1.000 pessoas"),
+                ("Diariamente","Monitore custo por lead — meta: até R$2,00"),
+                ("Diariamente","Poste stories orgânicos para reforçar o tráfego pago"),
             ]},
-            {"fase":"FASE 3 — SEMANA 2: Aquecimento (D-7 a D-1)","cor":"#059669","items":[
-                (f"{d7} — D-7","Lembrete no celular → copie e envie: Abertura do programa"),
-                (f"{d6} — D-6","Lembrete no celular → copie e envie: Enquete"),
-                (f"{d5} — D-5","Lembrete no celular → copie e envie: Dica prática"),
-                (f"{d4} — D-4","Lembrete no celular → copie e envie: Atividade"),
-                (f"{d3} — D-3","Lembrete no celular → copie e envie: Prova social"),
-                (f"{dm1} — D-1","Lembrete no celular → copie e envie: Véspera da venda"),
+            {"fase":"FASE 3 — SEMANA 2: Aquecimento","cor":"#059669","items":[
+                (f"{d7} — D-7","Abertura do programa"),
+                (f"{d6} — D-6","Enquete"),
+                (f"{d5} — D-5","Dica prática"),
+                (f"{d4} — D-4","Atividade"),
+                (f"{d3} — D-3","Prova social"),
+                (f"{dm1} — D-1","Véspera da venda"),
                 (f"{dm1}","Confirme se o link da Monetizze está funcionando"),
             ]},
             {"fase":f"FASE 4 — {dlf}: Dia da venda","cor":"#22C55E","items":[
-                (f"{dlf} — manhã","Lembrete no celular → copie e envie: Mensagem de lançamento"),
-                (f"{dlf}","Fique disponível no WhatsApp de contato para responder dúvidas"),
-                (f"{dlf} — 19h","Lembrete no celular → copie e envie: Lembrete noturno"),
+                (f"{dlf} — manhã","Mensagem de lançamento"),
+                (f"{dlf}","Fique disponível no WhatsApp"),
+                (f"{dlf} — 19h","Lembrete noturno"),
             ]},
             {"fase":"FASE 5 — PÓS-LANÇAMENTO","cor":"#64748B","items":[
-                ("Após","Anote: pessoas no grupo, compradores, taxa de conversão"),
-                ("Após","ROI: faturamento ÷ custo de tráfego"),
-                ("Após","Entregue o e-book e os bônus para quem comprou"),
-                ("Próximo mês","Use o mesmo grupo para o próximo lançamento — sem custo de tráfego"),
+                ("Após","Registre o resultado no Diagnóstico (botão acima)"),
+                ("Após","Entregue o e-book e bônus para quem comprou"),
+                ("Próximo mês","Use 🔄 Relançar para a próxima rodada"),
             ]},
         ]
         for fase in fases:
-            st.markdown(f'<div style="margin:18px 0 8px 0;padding:8px 14px;background:{fase["cor"]};border-radius:8px;color:white;font-weight:600;font-size:0.85em;letter-spacing:0.5px">{fase["fase"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="margin:18px 0 8px 0;padding:8px 14px;background:{fase["cor"]};border-radius:8px;color:white;font-weight:600;font-size:0.85em;">{fase["fase"]}</div>', unsafe_allow_html=True)
             for quando, acao in fase['items']:
-                st.markdown(f'<div class="checklist-item"><div style="width:10px;height:10px;border-radius:50%;background:{fase["cor"]};margin-top:5px;flex-shrink:0"></div><div><div style="font-size:0.72em;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">{quando}</div><div style="font-size:0.92em;color:#1E293B">{acao}</div></div></div>', unsafe_allow_html=True)
-
-    # ── CALCULADORA ───────────────────────────────────────────
-    st.divider()
-    with st.expander("📊 CALCULADORA DE FATURAMENTO"):
-        col_a, col_b = st.columns(2)
-        with col_a:
-            leads_v = st.number_input("Pessoas no grupo:", min_value=100, max_value=100000, value=1000, step=100, key="leads_vis")
-            conv_v  = st.slider("Taxa de conversão (%):", 1, 30, 10, key="conv_vis")
-        with col_b:
-            preco_v = st.number_input("Preço (R$):", min_value=9, max_value=997, value=int(d.get('preco',47)), key="preco_vis")
-            custo_v = st.number_input("Custo de tráfego (R$):", min_value=0, max_value=50000, value=int(leads_v*1.5), key="custo_vis")
-        vendas_v = int(leads_v * conv_v / 100)
-        fat_v = vendas_v * preco_v
-        lucro_v = fat_v - custo_v
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Vendas", f"{vendas_v}")
-        c2.metric("Faturamento", f"R${fat_v:,.0f}".replace(',','.'))
-        c3.metric("Lucro", f"R${lucro_v:,.0f}".replace(',','.'))
+                st.markdown(f'<div class="checklist-item"><div style="width:10px;height:10px;border-radius:50%;background:{fase["cor"]};margin-top:5px;flex-shrink:0"></div><div><div style="font-size:0.72em;color:#64748B;font-weight:600;text-transform:uppercase;">{quando}</div><div style="font-size:0.92em;color:#1E293B">{acao}</div></div></div>', unsafe_allow_html=True)
 
     # ── LAUNCERBOT ────────────────────────────────────────────
     st.divider()
     st.markdown("### 🤖 Launcerbot")
     st.caption(f"Olá, {st.session_state.usuario}! Pode me perguntar qualquer coisa sobre seu lançamento.")
-
     if st.session_state.chat_hist:
         for q, r in st.session_state.chat_hist:
             st.markdown(f"**Você:** {q}")
             st.markdown(f"<div class='chat-bubble'>{r}</div>", unsafe_allow_html=True)
-        st.markdown("")
-
-    pergunta = st.text_input("Sua pergunta:", key=f"chat_input_{st.session_state.chat_input_key}", label_visibility="collapsed", placeholder="Digite sua pergunta aqui...")
+    pergunta = st.text_input("Sua pergunta:", key=f"chat_input_{st.session_state.chat_input_key}",
+        label_visibility="collapsed", placeholder="Digite sua pergunta aqui...")
     if st.button("ENVIAR"):
         if pergunta.strip():
             with st.spinner("Launcerbot pensando..."):
@@ -1193,6 +1504,106 @@ PREÇO: R${d.get('preco',47)}
                 st.session_state.chat_input_key += 1
                 st.rerun()
         else: st.warning("Digite uma pergunta antes de enviar.")
+
+# ── DIAGNÓSTICO PÓS-LANÇAMENTO ────────────────────────────────
+elif st.session_state.etapa == "Diagnostico":
+    barra_navegacao()
+    d = st.session_state.dados
+    st.title("📊 DIAGNÓSTICO PÓS-LANÇAMENTO")
+    st.caption("Registre os números reais e veja o que funcionou — e o que melhorar na próxima rodada.")
+
+    st.markdown("#### Informe os resultados reais")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        real_leads = st.number_input("Pessoas que entraram no grupo:", min_value=0, max_value=100000,
+            value=int(d.get('real_leads', d.get('est_leads', 1000))), step=10, key="d_leads")
+    with col2:
+        real_vendas = st.number_input("Vendas realizadas:", min_value=0, max_value=10000,
+            value=int(d.get('real_vendas', 0)), step=1, key="d_vendas")
+    with col3:
+        real_custo = st.number_input("Custo total de tráfego (R$):", min_value=0, max_value=50000,
+            value=int(d.get('real_custo', 0)), step=10, key="d_custo")
+
+    preco = d.get('preco', 47)
+    real_fat = real_vendas * preco
+    real_lucro = real_fat - real_custo
+    real_conv = round(real_vendas / real_leads * 100, 2) if real_leads > 0 else 0
+    real_cpl = round(real_custo / real_leads, 2) if real_leads > 0 else 0
+    real_roi = round((real_lucro / real_custo) * 100, 1) if real_custo > 0 else 0
+
+    est_leads = d.get('est_leads', 1000)
+    est_vendas = d.get('est_vendas', 0)
+    est_fat = d.get('est_faturamento', 0)
+
+    st.divider()
+    st.markdown("#### Resultados vs Estimativa")
+
+    metricas = [
+        ("👥 Pessoas no grupo", est_leads, real_leads, "pessoas"),
+        ("🛒 Vendas", est_vendas, real_vendas, "vendas"),
+        ("💰 Faturamento", est_fat, real_fat, "R$"),
+    ]
+    cols_m = st.columns(len(metricas))
+    for i, (label, est, real, unidade) in enumerate(metricas):
+        with cols_m[i]:
+            delta_pct = round((real - est) / est * 100) if est > 0 else 0
+            delta_str = f"+{delta_pct}%" if delta_pct >= 0 else f"{delta_pct}%"
+            fmt = lambda v: f"R${v:,.0f}".replace(',','.') if unidade == "R$" else f"{v:,}".replace(',','.')
+            st.metric(label, fmt(real), delta=f"{delta_str} vs estimativa")
+
+    st.divider()
+    st.markdown("#### Indicadores de desempenho")
+    col_a, col_b, col_c, col_d = st.columns(4)
+    col_a.metric("Taxa de conversão", f"{real_conv}%",
+        delta="bom" if real_conv >= 5 else "abaixo de 5%")
+    col_b.metric("Custo por lead (CPL)", f"R${real_cpl}",
+        delta="✅ dentro do ideal" if real_cpl <= 2.0 else "⚠️ acima de R$2,00",
+        delta_color="normal" if real_cpl <= 2.0 else "inverse")
+    col_c.metric("Lucro real", f"R${real_lucro:,.0f}".replace(',','.'))
+    col_d.metric("ROI", f"{real_roi}%",
+        delta="✅ positivo" if real_roi > 0 else "❌ negativo",
+        delta_color="normal" if real_roi > 0 else "inverse")
+
+    st.divider()
+    st.markdown("#### 🤖 Análise automática com IA")
+    if st.button("GERAR ANÁLISE E RECOMENDAÇÕES"):
+        prompt_diag = (
+            f"Analise os resultados de um lançamento digital:\n"
+            f"Nicho: {d.get('nicho')}. Ebook: {d.get('nome_eb')}. Preço: R${preco}.\n"
+            f"Pessoas no grupo: {real_leads}. Vendas: {real_vendas}. Custo: R${real_custo}.\n"
+            f"Faturamento: R${real_fat}. Lucro: R${real_lucro}. CPL: R${real_cpl}. Conv: {real_conv}%.\n\n"
+            f"Dê uma análise direta em 3 partes:\n"
+            f"1. O QUE FUNCIONOU (máx 3 pontos)\n"
+            f"2. O QUE MELHORAR (máx 3 pontos práticos)\n"
+            f"3. META PARA O PRÓXIMO LANÇAMENTO (1 número específico a bater)"
+        )
+        with st.spinner("Analisando resultados..."):
+            analise = chamar_ia(prompt_diag, "Você é um consultor especialista em lançamentos digitais. Seja direto e prático.")
+        d['diag_analise'] = analise
+        d['real_leads'] = real_leads
+        d['real_vendas'] = real_vendas
+        d['real_custo'] = real_custo
+        nome_proj = d.get('nome_eb', 'Sem nome')
+        st.session_state.projetos[nome_proj] = d.copy()
+        st.rerun()
+
+    if d.get('diag_analise'):
+        st.markdown(f"<div class='caixa-texto'>{normalizar_markdown(d['diag_analise'])}</div>", unsafe_allow_html=True)
+        st.download_button("📋 Baixar análise (.txt)", data=limpar_html(d['diag_analise']),
+            file_name="diagnostico.txt", mime="text/plain")
+
+    st.divider()
+    col_v, col_r = st.columns(2)
+    with col_v:
+        if st.button("← Voltar ao projeto", use_container_width=True):
+            st.session_state.etapa = "Visualizacao"
+            st.rerun()
+    with col_r:
+        st.markdown('<div class="btn-laranja">', unsafe_allow_html=True)
+        if st.button("🔄 PLANEJAR PRÓXIMO LANÇAMENTO", use_container_width=True):
+            st.session_state.etapa = "Relancar"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # --- RODAPÉ ---
 st.markdown("<div class='footer'>© 2026 Nexus Launcher – Lançamento digital inteligente</div>", unsafe_allow_html=True)
