@@ -65,6 +65,13 @@ st.markdown("""
     .agenda-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #F1F5F9; }
     .agenda-data { color: #64748B; font-size: 0.78em; font-weight: 600; min-width: 48px; }
     .agenda-label { color: #1E293B; font-size: 0.88em; flex: 1; }
+
+    /* LINK MONETIZZE */
+    .monetizze-box { background: linear-gradient(135deg, #F0FDF4, #DCFCE7); border: 2px solid #22C55E; border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+    .monetizze-box-title { font-family: 'Rajdhani', sans-serif; font-size: 1.1em; font-weight: 700; color: #14532D; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .monetizze-box-sub { font-size: 0.85em; color: #166534; margin-bottom: 14px; line-height: 1.6; }
+    .monetizze-tag { display: inline-block; background: #22C55E; color: white; border-radius: 6px; padding: 2px 10px; font-size: 0.78em; font-weight: 700; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .monetizze-aplicado { background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 8px; padding: 10px 14px; color: #14532D; font-size: 0.85em; display: flex; align-items: center; gap: 8px; margin-top: 8px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -287,6 +294,59 @@ AGENDA_DEF = [
     {"chave": "VENDA_NOITE",     "label": "⏰ Lançamento — Noite",            "offset":  0,  "hora_pad": "19:00"},
 ]
 
+# ── BLOCO LINK MONETIZZE (reutilizável) ──────────────────────────────────────
+def bloco_link_monetizze(prefixo_key="mon"):
+    """
+    Campo para cadastrar o link da Monetizze.
+    Quando aplicado, substitui o placeholder nas mensagens já geradas
+    e salva em session_state para ser usado nos prompts futuros.
+    """
+    d = st.session_state.dados
+    link_atual = d.get('link_monetizze', '').strip()
+
+    st.markdown("""
+    <div class="monetizze-box">
+        <div class="monetizze-tag">🔗 PASSO IMPORTANTE</div>
+        <div class="monetizze-box-title">Insira o link da Monetizze</div>
+        <div class="monetizze-box-sub">
+            Cadastre o e-book na Monetizze, copie o link de checkout e cole abaixo.<br>
+            O link será inserido <strong>exatamente no lugar certo</strong> dentro das mensagens de venda —
+            integrado ao texto, antes do prazo e da garantia, para não interromper a leitura.
+        </div>
+    """, unsafe_allow_html=True)
+
+    col_link, col_btn = st.columns([5, 1])
+    with col_link:
+        link_input = st.text_input(
+            "Link Monetizze",
+            value=link_atual,
+            placeholder="https://go.monetizze.com.br/...",
+            label_visibility="collapsed",
+            key=f"link_mon_input_{prefixo_key}",
+        )
+    with col_btn:
+        aplicar = st.button("✅ Aplicar", use_container_width=True, key=f"btn_mon_{prefixo_key}")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if aplicar:
+        link_limpo = link_input.strip()
+        if not link_limpo:
+            st.warning("Cole o link antes de aplicar.")
+        else:
+            d['link_monetizze'] = link_limpo
+            # Substitui o placeholder nas mensagens já geradas (se existirem)
+            if d.get('msg_grupo'):
+                d['msg_grupo'] = d['msg_grupo'].replace('[LINK MONETIZZE]', link_limpo)
+            st.rerun()
+
+    if link_atual:
+        st.markdown(
+            f"<div class='monetizze-aplicado'>✅ <strong>Link aplicado:</strong>&nbsp; "
+            f"<span style='color:#166534;word-break:break-all;'>{link_atual}</span></div>",
+            unsafe_allow_html=True
+        )
+
 # --- BLOCO DE CONTEÚDO ---
 def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
     conteudo = st.session_state.dados.get(chave, '')
@@ -372,7 +432,6 @@ def bloco_agendador(prefixo_key="agd"):
         st.info("Gere as mensagens primeiro para usar o agendador.")
         return
 
-    # Aviso claro sobre funcionamento
     st.markdown("""
     <div class="agenda-aviso">
         <strong>⚠️ Como funciona o agendador — leia antes de usar</strong><br><br>
@@ -547,13 +606,12 @@ def system_lp():
 
 def prompt_msg():
     d = st.session_state.dados
-    data_lancto = d.get('data_lancto')
     preco = d.get('preco', 47)
     nome_eb = d.get('nome_eb', '')
     nicho = d.get('nicho', '')
     dor = d.get('dor', '')
-    publico = d.get('publico', '')
     whatsapp_num = d.get('whatsapp_contato', 'SEU NÚMERO AQUI')
+    # Se já tiver link cadastrado, usa ele; senão usa placeholder
     link_venda = d.get('link_monetizze', '').strip() or '[LINK MONETIZZE]'
     bonus_resumo = d.get('bonus_resumo', '')
     bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
@@ -648,39 +706,39 @@ def prompt_msg():
         f"Fica atento.\n"
         f"=== FIM ===\n\n"
 
+        # ── VENDA MANHÃ: link integrado ao fluxo do texto, entre o CTA e os detalhes de prazo/garantia
         f"VENDA_MANHA:\n"
         f"=== FIXO (adapte nome do ebook e bônus) ===\n"
         f"Hoje é o grande dia.\n"
         f"Se você continuar fazendo do jeito que sempre fez…\n"
         f"Nada muda.\n"
-        f"Foi por isso que eu reuni tudo que realmente funciona em um único material:\n"
-        f"📘 {nome_eb}\n"
+        f"Foi por isso que eu reuni tudo que realmente funciona em um único material:\n\n"
+        f"📘 {nome_eb}\n\n"
         f"Um conteúdo direto ao ponto, simples e aplicável.\n"
-        f"E pra garantir que você tenha resultado:\n"
-        f"{bonus_lista}\n"
-        f"Tudo isso por apenas R$ {preco}.\n"
-        f"Mas atenção:\n"
-        f"Esse valor estará disponível só hoje\n"
-        f"👉 {link_venda}\n"
-        f"⏰ Válido até 23:59\n"
-        f"✅ Garantia de 7 dias\n"
+        f"E pra garantir que você tenha resultado:\n\n"
+        f"{bonus_lista}\n\n"
+        f"Tudo isso por apenas R$ {preco}.\n\n"
+        f"👉 Acesse agora e garante a sua vaga:\n"
+        f"{link_venda}\n\n"
+        f"⏰ Esse valor é válido só hoje, até 23:59.\n"
+        f"✅ Garantia de 7 dias — se não gostar, devolvemos tudo.\n\n"
         f"Agora a decisão está nas suas mãos.\n"
         f"=== FIM ===\n\n"
 
+        # ── VENDA NOITE: link integrado após a chamada, antes do prazo
         f"VENDA_NOITE:\n"
         f"=== FIXO (adapte nicho) ===\n"
         f"Boa noite! 👋\n"
-        f"Passando aqui de forma mais tranquila pra te lembrar:\n"
-        f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra evoluir em {nicho}.\n"
+        f"Passando aqui de forma mais tranquila pra te lembrar:\n\n"
+        f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra evoluir em {nicho}.\n\n"
         f"📘 Conteúdo direto, sem complicação\n"
-        f"🎁 Com 3 bônus práticos\n"
+        f"🎁 Com 3 bônus práticos\n\n"
         f"Se você ficou na dúvida, tudo bem.\n"
-        f"Mas a verdade é:\n"
-        f"Quem aplica o método certo, evolui muito mais rápido.\n"
+        f"Mas a verdade é: quem aplica o método certo, evolui muito mais rápido.\n\n"
         f"Se fizer sentido pra você, ainda dá tempo:\n"
-        f"👉 {link_venda}\n"
-        f"⏰ Até 23:59\n"
-        f"✅ Garantia de 7 dias\n"
+        f"👉 {link_venda}\n\n"
+        f"⏰ Disponível até 23:59\n"
+        f"✅ Garantia de 7 dias\n\n"
         f"Dá uma olhada com calma… e decide.\n"
         f"=== FIM ===\n"
     )
@@ -836,6 +894,7 @@ elif st.session_state.etapa == "Gerar_Bonus":
     barra_navegacao()
     st.title("🎁 GERAR 3 E-BOOKS BÔNUS")
     st.caption("Os bônus serão complementares ao ebook principal e incluídos automaticamente na Mensagem de Lançamento.")
+
     if st.button("GERAR 3 EBOOKS BÔNUS"):
         with st.spinner("Gerando ebooks bônus com IA..."):
             st.session_state.dados['bonus_cont'] = chamar_ia(prompt_bonus(), system_bonus())
@@ -845,8 +904,15 @@ elif st.session_state.etapa == "Gerar_Bonus":
                 if num is not None and nome_b: nomes.append(nome_b)
             if nomes: st.session_state.dados['bonus_resumo'] = ', '.join(nomes)
             st.rerun()
+
     if 'bonus_cont' in st.session_state.dados:
         bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
+
+        # ── LINK MONETIZZE — logo após os bônus, antes de avançar ──
+        st.divider()
+        bloco_link_monetizze(prefixo_key="bonus_etapa")
+
+        st.divider()
         if st.button("AVANÇAR →"): st.session_state.etapa = "Copy_Face"; st.rerun()
 
 # ── ANÚNCIO ───────────────────────────────────────────────────
@@ -895,6 +961,17 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     if not st.session_state.dados.get('whatsapp_contato'):
         st.warning("⚠️ Você não preencheu o WhatsApp de contato no formulário. As mensagens usam esse número para receber respostas da enquete.")
 
+    # ── Link Monetizze: mostrar status antes de gerar ──
+    link_ja_cadastrado = st.session_state.dados.get('link_monetizze', '').strip()
+    if link_ja_cadastrado:
+        st.markdown(
+            f"<div class='monetizze-aplicado' style='margin-bottom:12px;'>✅ <strong>Link Monetizze já cadastrado</strong> — será inserido automaticamente nas mensagens de venda:&nbsp;"
+            f"<span style='color:#166534;word-break:break-all;'>{link_ja_cadastrado}</span></div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.info("💡 Dica: cadastre o link da Monetizze na etapa de Bônus (etapa anterior) para ele entrar automaticamente nas mensagens de venda.")
+
     st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
     gerar_msg = st.button("💬 GERAR FUNIL COMPLETO DE MENSAGENS")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -910,30 +987,12 @@ elif st.session_state.etapa == "Mensagens_Grupo":
         st.caption("Cada bloco corresponde a um dia. Copie e envie no momento certo.")
         bloco_conteudo('msg_grupo', 'Mensagens', prompt_msg, system_msg)
 
-        # ── LINK MONETIZZE ────────────────────────────────────
-        st.divider()
-        st.markdown("#### 🔗 Inserir link da Monetizze")
-        st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#14532D;font-size:0.87em;line-height:1.6;">
-        Cadastre o e-book na Monetizze, copie o link e cole abaixo.<br>
-        Clique em <strong>Aplicar link</strong> — ele substituirá o placeholder nas mensagens de venda sem regerá-las.
-        </div>""", unsafe_allow_html=True)
-
-        col_link, col_btn = st.columns([4, 1])
-        with col_link:
-            link_input = st.text_input(
-                "Link:",
-                value=st.session_state.dados.get('link_monetizze', ''),
-                placeholder="https://go.monetizze.com.br/...",
-                label_visibility="collapsed"
-            )
-        with col_btn:
-            if st.button("✅ Aplicar", use_container_width=True):
-                if link_input.strip():
-                    st.session_state.dados['link_monetizze'] = link_input.strip()
-                    st.session_state.dados['msg_grupo'] = st.session_state.dados['msg_grupo'].replace('[LINK MONETIZZE]', link_input.strip())
-                    st.rerun()
-                else:
-                    st.warning("Cole o link antes de aplicar.")
+        # ── LINK MONETIZZE — campo secundário caso ainda não tenha sido preenchido ──
+        if not link_ja_cadastrado:
+            st.divider()
+            st.markdown("#### 🔗 Inserir link da Monetizze")
+            st.caption("Ainda não cadastrado. Cole abaixo para substituir nas mensagens de venda sem regerá-las.")
+            bloco_link_monetizze(prefixo_key="msg_etapa")
 
         st.divider()
         if st.button("AVANÇAR → AGENDADOR"):
@@ -966,7 +1025,7 @@ elif st.session_state.etapa == "Visualizacao":
 {'='*50}
 E-BOOK: {d.get('nome_eb','')}
 NICHO: {d.get('nicho','')}
-PÚBLICO: {d.get('publico','')}
+P�BLICO: {d.get('publico','')}
 DATA DE LANÇAMENTO: {d.get('data_lancto','')}
 PREÇO: R${d.get('preco',47)}
 {'='*50}
@@ -1043,6 +1102,7 @@ PREÇO: R${d.get('preco',47)}
                 ("Hoje","Baixe o projeto completo (.txt)"),
                 ("Hoje","Cadastre o e-book + 3 bônus na Monetizze — configure o checkout"),
                 (f"Hoje",f"Preço: R${d.get('preco',47)} — salve o link de venda"),
+                ("Hoje","Cole o link da Monetizze na etapa de Bônus do Nexus Launcher"),
                 ("Hoje","Crie o grupo: 'Programa [X] Dias para [Objetivo]'"),
                 ("Hoje","Cole a DESCRIÇÃO DO GRUPO no campo de informações do WhatsApp/Telegram"),
                 ("Hoje","Configure a mensagem de BOAS-VINDAS automática ao entrar"),
