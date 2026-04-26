@@ -234,7 +234,6 @@ def texto_para_md(chave: str, titulo: str, conteudo: str) -> str:
         if not ls:
             md.append("")
             continue
-        # detecta itens numerados
         if re.match(r'^\d+[\.\)]', ls):
             md.append(f"- {ls}")
         elif ls.startswith(('✅','🎁','📘','👉','⏰','🔥','📌','💡','⏳','🚀','💬','📋','🎯')):
@@ -254,7 +253,6 @@ def projeto_para_json(dados: dict) -> str:
 def json_para_projeto(texto_json: str) -> dict:
     """Desserializa JSON de volta para dicionário de projeto"""
     dados = json.loads(texto_json)
-    # reconstrói data_lancto como objeto date
     if 'data_lancto' in dados and isinstance(dados['data_lancto'], str):
         try:
             dados['data_lancto'] = date.fromisoformat(dados['data_lancto'])
@@ -440,7 +438,6 @@ def bloco_link_monetizze(prefixo_key="mon"):
             key=f"link_mon_input_{prefixo_key}",
         )
     with col_val:
-        # ── MELHORIA 7: Validação do link ──
         if st.button("🔍 Validar", use_container_width=True, key=f"btn_val_{prefixo_key}"):
             if link_input.strip():
                 with st.spinner("Verificando..."):
@@ -453,7 +450,6 @@ def bloco_link_monetizze(prefixo_key="mon"):
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Mostrar resultado da validação
     val = st.session_state.get(f"val_result_{prefixo_key}")
     if val:
         ok, msg = val
@@ -534,7 +530,6 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
                     use_container_width=True,
                 )
             with col_md:
-                # ── MELHORIA 9: export .md por mensagem ──
                 st.download_button(
                     label="📝 Exportar .md",
                     data=texto_para_md(s['chave'], s['label'], s['conteudo']),
@@ -544,7 +539,6 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
                     use_container_width=True,
                 )
             st.markdown("<br>", unsafe_allow_html=True)
-        # ── MELHORIA 2: preview WhatsApp ──
         st.divider()
         preview_whatsapp(secoes, prefixo=chave)
 
@@ -559,7 +553,6 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
             mime="text/plain", key=f"copy_{chave}", use_container_width=True
         )
     with col2:
-        # ── MELHORIA 9: export .md global ──
         st.download_button(
             label="📝 Exportar .md",
             data=texto_para_md(chave, titulo, conteudo),
@@ -595,7 +588,6 @@ def barra_navegacao():
             st.rerun()
     with col2:
         with st.expander("📂 MEUS PROJETOS"):
-            # ── MELHORIA 1: Import de projeto ──
             arq = st.file_uploader("📥 Importar projeto (.json)", type="json", key="import_proj")
             if arq is not None:
                 try:
@@ -615,7 +607,6 @@ def barra_navegacao():
                     st.session_state.dados = st.session_state.projetos[nome].copy()
                     st.session_state.etapa = "Visualizacao"
                     st.rerun()
-                # ── MELHORIA 1: Export de projeto ──
                 c_exp.download_button(
                     "💾", data=projeto_para_json(st.session_state.projetos[nome]),
                     file_name=f"{nome.replace(' ','_')}.json", mime="application/json",
@@ -626,7 +617,6 @@ def barra_navegacao():
                     del st.session_state.projetos[nome]; st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
     with col3:
-        # ── MELHORIA 4: Botão Relançamento ──
         if st.session_state.dados.get('nome_eb'):
             st.markdown('<div class="btn-laranja">', unsafe_allow_html=True)
             if st.button("🔄 RELANÇAR PROJETO"):
@@ -784,7 +774,6 @@ def system_lp():
             "Use tag HTML <strong> para negrito. Nunca asteriscos.")
 
 def _tom_instrucao(d: dict) -> str:
-    """── MELHORIA 8: instrução de tonalidade para o system prompt ──"""
     tom = d.get('tom_mensagens', 'Direto')
     mapa = {
         'Direto':   "Tom direto e objetivo. Frases curtas. Vai ao ponto. Zero rodeios.",
@@ -803,7 +792,6 @@ def prompt_msg():
     link_venda = d.get('link_monetizze', '').strip() or '[LINK MONETIZZE]'
     bonus_resumo = d.get('bonus_resumo', '')
     bonus_lista = '\n'.join([f'🎁 Bônus {i+1} – {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
-    # ── MELHORIA 3: data exata no prazo da oferta ──
     prazo_str = data_lancto_formatada(d)
 
     return (
@@ -829,15 +817,10 @@ def prompt_msg():
         f"=== FIM ===\n\n"
 
         f"BOAS_VINDAS:\n=== FIXO ===\n"
-        f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
-        f"Se você está aqui… provavelmente já tentou melhorar em {nicho} — e não conseguiu manter.\n"
-        f"E não é por falta de esforço.\n"
-        f"Nos próximos dias, você vai entender exatamente o porquê.\n"
-        f"Aqui, você não vai receber conteúdo aleatório.\n"
-        f"Você vai receber algo simples… mas que pode destravar algo que você vem tentando há muito tempo.\n"
-        f"⚠️ O grupo permanecerá silencioso\n"
-        f"Pra você receber só o que realmente importa.\n"
-        f"Fica atento… porque o que vem pode te surpreender.\n"
+        f"Seja bem-vindo ao Programa 15 Dias para [adapte: objetivo relacionado a {nicho}].\n"
+        f"Se você está aqui, provavelmente já tentou [adapte: ação comum do nicho {nicho}] antes… e teve dificuldade para manter os resultados. Fique tranquilo — você não está sozinho.\n"
+        f"Durante os próximos dias, vamos caminhar juntos. E ao final do programa, você receberá um feedback completo, com orientações claras para alcançar seus objetivos de forma natural e contínua.\n"
+        f"⚠️ O grupo permanecerá silencioso, para que você receba apenas o que realmente importa. Fique atento… porque o que vem a seguir pode te surpreender.\n"
         f"=== FIM ===\n\n"
 
         f"DIA_7:\n=== FIXO ===\n"
@@ -847,62 +830,77 @@ def prompt_msg():
         f"Se tiver alguma dúvida, você pode enviar uma mensagem para o nosso WhatsApp: ({whatsapp_num})\n"
         f"=== FIM ===\n\n"
 
-        f"DIA_6:\n=== FIXO (adapte só as 4 opções ao nicho {nicho} e dor: {dor}) ===\n"
+        f"DIA_6:\n=== FIXO (adapte as 4 opções ao nicho {nicho} e dor: {dor}) ===\n"
         f"Isso aqui é importante.\n"
-        f"Se você quer realmente sair desse programa com resultado, eu preciso entender você:\n"
-        f"[IA: crie a pergunta da enquete e 4 opções A) B) C) D) adaptadas ao nicho {nicho} e dor {dor}]\n"
-        f"Me manda no WhatsApp: ({whatsapp_num})\n"
+        f"Se você realmente quer sair desse programa com resultado, eu preciso te entender melhor:\n"
+        f"Qual é o seu maior desafio para [adapte: objetivo do nicho {nicho}]?\n"
+        f"A) [adapte ao nicho]\n"
+        f"B) [adapte ao nicho]\n"
+        f"C) [adapte ao nicho]\n"
+        f"D) [adapte ao nicho]\n"
+        f"📲 Me manda sua resposta no WhatsApp: ({whatsapp_num})\n"
         f"Vou ler todas — isso vai direcionar o que vou te mostrar nos próximos dias.\n"
         f"=== FIM ===\n\n"
 
-        f"DIA_5:\n[IA] Dica do dia sobre {nicho}. 1 ensinamento acionável agora. "
-        f"Compacto, parágrafos curtos, máximo 5 linhas. Zero CTA de venda.\n\n"
+        f"DIA_5:\n[IA] Crie UMA dica surpreendente e contraintuitiva sobre {nicho} para o público: {d.get('publico')}.\n"
+        f"REGRAS OBRIGATÓRIAS:\n"
+        f"- NUNCA mencione: beber água, dormir bem, fazer exercício, comer menos, força de vontade, disciplina ou dieta\n"
+        f"- A dica deve parecer que a maioria das pessoas NÃO sabe\n"
+        f"- Deve ser baseada em comportamento, psicologia ou fisiologia — não em receita ou cardápio\n"
+        f"- Deve gerar a reação: 'nunca tinha pensado nisso assim'\n"
+        f"- Máximo 5 linhas. Tom de conversa, não de artigo\n"
+        f"- Termine com uma pergunta ou provocação curta que convide a responder no WhatsApp: ({whatsapp_num})\n\n"
 
-        f"DIA_4:\n[IA] Atividade rápida ligada à dor: {dor}. "
-        f"Peça para responder no WhatsApp {whatsapp_num}. Compacto, máximo 5 linhas.\n\n"
+        f"DIA_4:\n=== FIXO (adapte ao nicho {nicho}) ===\n"
+        f"Quero te propor um desafio rápido — leva menos de 2 minutos.\n"
+        f"[IA: crie uma atividade simples e rápida relacionada a {nicho} que o participante possa fazer agora com o celular. "
+        f"Não precisa mudar nada na rotina. Só registrar ou observar algo.]\n"
+        f"Esse gesto simples ativa algo poderoso: quando a gente observa [adapte ao contexto de {nicho}], automaticamente começa a fazer escolhas melhores — sem esforço, sem restrição.\n"
+        f"📲 Me manda o resultado no WhatsApp: ({whatsapp_num}). Vou te dar um retorno personalizado.\n"
+        f"=== FIM ===\n\n"
 
-        f"DIA_3:\n[IA] Relato curto de alguém da turma passada que superou: {dor}. "
-        f"Nome fictício, antes e depois. Tom humano, máximo 5 linhas.\n\n"
+        f"DIA_3:\n=== FIXO (adapte nome e detalhes ao nicho {nicho}) ===\n"
+        f"[Nome fictício] chegou nesse programa exatamente como você — já tinha tentado [citar 2 ou 3 tentativas comuns do nicho {nicho}]. Nada durava mais de 3 semanas.\n"
+        f"O que mudou para ela não foi força de vontade. Foi entender por que [adapte: o bloqueio central relacionado a {dor}] — e parar de lutar contra isso.\n"
+        f"Em 15 dias de ajustes simples ela [adapte: resultado concreto e realista do nicho {nicho}]. Em 3 meses, [adapte: resultado maior].\n"
+        f"O que ela fez diferente? Amanhã eu te mostro.\n"
+        f"=== FIM ===\n\n"
 
         f"VESPERA:\n=== FIXO ===\n"
         f"Eu preciso ser sincero com você.\n"
-        f"Depois de tudo que vocês me enviaram no meu WhatsApp…\n"
-        f"Eu percebi algo que eu não esperava.\n"
-        f"Existe um padrão.\nE não é pequeno.\n"
-        f"Mais de 80% das pessoas aqui estão presas exatamente nos mesmos pontos…\n"
-        f"Mesmo tentando caminhos diferentes.\n"
-        f"E isso me fez chegar a uma conclusão:\n"
-        f"O problema não está no esforço.\nEstá no caminho que foi mostrado até hoje.\n"
-        f"Foi por isso que eu decidi fazer algo diferente.\n"
-        f"Algo único… pensado pra resolver isso de forma direta.\n"
-        f"Mas não é só sobre entender.\n"
-        f"É sobre saber exatamente o que fazer — sem dúvidas, sem excesso, sem confusão.\n"
-        f"Eu organizei tudo de um jeito que praticamente qualquer pessoa aqui consiga aplicar.\n"
-        f"Amanhã, eu vou te mostrar.\nMas já te adianto:\n"
-        f"Se você ignorar… provavelmente vai continuar no mesmo lugar.\nFica atento.\n"
+        f"Depois de tudo que vocês me enviaram no WhatsApp… eu percebi algo que não esperava.\n"
+        f"Existe um padrão. E não é pequeno.\n"
+        f"Mais de 80% das pessoas aqui estão presas exatamente nos mesmos pontos — mesmo tentando caminhos diferentes.\n"
+        f"E isso me levou a uma conclusão:\n"
+        f"O problema não está no esforço. Está no caminho que foi mostrado até hoje.\n"
+        f"Foi por isso que eu decidi fazer algo diferente. Algo único… pensado para resolver isso de forma direta.\n"
+        f"Mas não é só sobre entender. É sobre saber exatamente o que fazer — sem dúvidas, sem excesso, sem confusão.\n"
+        f"Eu organizei tudo de um jeito simples, prático e possível de aplicar.\n"
+        f"Amanhã, eu vou te mostrar.\n"
+        f"Mas já te adianto: se você ignorar… provavelmente vai continuar no mesmo lugar.\n"
+        f"Fique atento.\n"
         f"=== FIM ===\n\n"
 
-        f"VENDA_MANHA:\n=== FIXO (adapte nome do ebook e bônus) ===\n"
+        f"VENDA_MANHA:\n=== FIXO ===\n"
         f"Hoje é o grande dia.\n"
-        f"Se você continuar fazendo do jeito que sempre fez…\nNada muda.\n"
+        f"Se você continuar fazendo do jeito que sempre fez… nada muda.\n"
         f"Foi por isso que eu reuni tudo que realmente funciona em um único material:\n\n"
         f"📘 {nome_eb}\n\n"
-        f"Um conteúdo direto ao ponto, simples e aplicável.\n"
-        f"E pra garantir que você tenha resultado:\n\n"
+        f"Um conteúdo direto ao ponto, simples e aplicável. E pra garantir que você tenha resultado:\n\n"
         f"{bonus_lista}\n\n"
         f"Tudo isso por apenas R$ {preco}.\n\n"
-        f"👉 Acesse agora e garante a sua vaga:\n"
-        f"{link_venda}\n\n"
+        f"👉 Acesse agora e garante a sua vaga: {link_venda}\n\n"
         f"⏰ Esse valor é válido só hoje, até {prazo_str}.\n"
         f"✅ Garantia de 7 dias — se não gostar, devolvemos tudo.\n\n"
         f"Agora a decisão está nas suas mãos.\n"
         f"=== FIM ===\n\n"
 
-        f"VENDA_NOITE:\n=== FIXO (adapte nicho) ===\n"
+        f"VENDA_NOITE:\n=== FIXO ===\n"
         f"Boa noite! 👋\n"
-        f"Passando aqui de forma mais tranquila pra te lembrar:\n\n"
-        f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra evoluir em {nicho}.\n\n"
-        f"📘 Conteúdo direto, sem complicação\n🎁 Com 3 bônus práticos\n\n"
+        f"Passando aqui de forma mais tranquila pra te lembrar.\n\n"
+        f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra [adapte: transformação do nicho {nicho}].\n\n"
+        f"📘 Conteúdo direto, sem complicação\n"
+        f"🎁 Com 3 bônus práticos\n\n"
         f"Se você ficou na dúvida, tudo bem.\n"
         f"Mas a verdade é: quem aplica o método certo, evolui muito mais rápido.\n\n"
         f"Se fizer sentido pra você, ainda dá tempo:\n"
@@ -915,17 +913,15 @@ def prompt_msg():
 
 def system_msg():
     d = st.session_state.dados
-    # ── MELHORIA 8: tonalidade no system prompt ──
     tom_inst = _tom_instrucao(d)
     return (
         f"Você é um especialista em copywriting para lançamentos no WhatsApp e Telegram. "
-        f"Os textos fixos devem ser reproduzidos EXATAMENTE como fornecidos. "
-        f"Apenas os blocos com instruções entre colchetes devem ser criados. "
+        f"Os textos fixos devem ser reproduzidos EXATAMENTE como fornecidos, adaptando apenas os trechos indicados entre colchetes. "
+        f"Apenas os blocos com instruções [IA] devem ser criados livremente. "
         f"Respeite os rótulos exatos. {tom_inst}"
     )
 
 def prompt_stories():
-    """── MELHORIA 6: roteiros de stories ──"""
     d = st.session_state.dados
     nicho = d.get('nicho', '')
     dor = d.get('dor', '')
@@ -1023,7 +1019,6 @@ elif st.session_state.etapa == "Formulario":
     d['diferencial'] = st.text_input("Diferencial:", value=d.get('diferencial',''))
     d['preco']       = st.number_input("Preço do e-book (R$):", min_value=9, max_value=997, value=int(d.get('preco',47)), step=1)
 
-    # ── MELHORIA 8: Tonalidade ──
     st.divider()
     st.markdown("#### Tom das mensagens do grupo")
     st.caption("Define como as mensagens de aquecimento e venda serão escritas.")
@@ -1076,7 +1071,6 @@ elif st.session_state.etapa == "Formulario":
     col2.metric("Faturamento bruto", f"R${faturamento:,.0f}".replace(',','.'))
     col3.metric("Lucro estimado", f"R${lucro:,.0f}".replace(',','.'), delta="após tráfego ~R$1,50/lead")
 
-    # salva estimativas para o diagnóstico pós-lançamento
     d['est_leads'] = leads
     d['est_vendas'] = vendas
     d['est_faturamento'] = faturamento
@@ -1167,7 +1161,6 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     st.title("💬 MENSAGENS DO GRUPO")
     d = st.session_state.dados
 
-    # ── MELHORIA 6: Stories antes das mensagens do grupo ──
     st.markdown("### 📸 Roteiros de Stories — Semana 1 (encher o grupo)")
     st.caption("5 roteiros prontos para gravar e postar durante a semana de captação. Nunca mencionam produto ou venda.")
     col_s1, col_s2 = st.columns([3,1])
@@ -1222,10 +1215,9 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     </div>""", unsafe_allow_html=True)
 
     st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-bottom:8px;color:#78350F;font-size:0.87em;line-height:1.6;">
-    ⚠️ Apenas <strong>D-10 (enquete), D-11, D-12 e D-13</strong> são gerados pela IA. Revise antes de enviar.
+    ⚠️ Apenas <strong>D-11 (dica)</strong> é gerado livremente pela IA. Os demais blocos seguem o roteiro fixo, com adaptações ao seu nicho.
     </div>""", unsafe_allow_html=True)
 
-    # Tom selecionado
     tom_atual = d.get('tom_mensagens', 'Direto')
     st.markdown(f"<div style='margin-bottom:8px;'><span style='background:#EDE9FE;color:#5B21B6;border-radius:6px;padding:3px 10px;font-size:0.8em;font-weight:700;'>🗣️ Tom: {tom_atual}</span> — <a href='#' style='font-size:0.8em;color:#64748B;'>alterar no formulário</a></div>", unsafe_allow_html=True)
 
@@ -1235,7 +1227,6 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     else:
         st.info("💡 Cadastre o link da Monetizze na etapa de Bônus para ele entrar automaticamente.")
 
-    # Data de lançamento na mensagem
     prazo = data_lancto_formatada(d)
     st.caption(f"📅 Prazo da oferta nas mensagens de venda: **{prazo}** (calculado automaticamente pela data de lançamento)")
 
@@ -1295,7 +1286,6 @@ elif st.session_state.etapa == "Relancar":
         key="nova_data_relanc"
     )
 
-    # ── MELHORIA 8: Tom no relançamento ──
     tom_opcoes = ['Direto', 'Empático', 'Urgente']
     tom_atual = d.get('tom_mensagens', 'Direto')
     novo_tom = st.radio(
@@ -1312,7 +1302,7 @@ elif st.session_state.etapa == "Relancar":
         if st.button("🚀 RELANÇAR — Regenerar mensagens", use_container_width=True):
             d['data_lancto'] = nova_data
             d['tom_mensagens'] = novo_tom
-            d['msg_grupo'] = ''  # limpa para forçar regeneração
+            d['msg_grupo'] = ''
             d['stories_cont'] = ''
             d['agenda_horas'] = {}
             with st.spinner("Regenerando mensagens para o relançamento..."):
@@ -1336,7 +1326,6 @@ elif st.session_state.etapa == "Visualizacao":
     nome_projeto = d.get('nome_eb', 'Projeto')
     st.title(f"PROJETO: {nome_projeto}")
 
-    # ── MELHORIA 9: Export completo em .md ──
     def gerar_md_completo(d):
         partes = [
             f"# {d.get('nome_eb','')} — Projeto Completo\n",
@@ -1371,13 +1360,11 @@ elif st.session_state.etapa == "Visualizacao":
             file_name=f"{nome_projeto.replace(' ','_')}.txt", mime="text/plain", use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     with col_md:
-        # ── MELHORIA 9 ──
         st.markdown('<div class="btn-verde">', unsafe_allow_html=True)
         st.download_button("📝 Baixar .md (Notion)", data=gerar_md_completo(d),
             file_name=f"{nome_projeto.replace(' ','_')}.md", mime="text/markdown", use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     with col_json:
-        # ── MELHORIA 1: Export JSON do projeto atual ──
         st.markdown('<div class="btn-roxo">', unsafe_allow_html=True)
         st.download_button("💾 Salvar projeto (.json)", data=projeto_para_json(d),
             file_name=f"{nome_projeto.replace(' ','_')}.json", mime="application/json", use_container_width=True)
@@ -1404,7 +1391,6 @@ elif st.session_state.etapa == "Visualizacao":
     with st.expander("📅 AGENDADOR"):
         bloco_agendador(prefixo_key="agd_vis")
 
-    # ── MELHORIA 5: Botão diagnóstico ──
     st.divider()
     st.markdown('<div class="btn-laranja">', unsafe_allow_html=True)
     if st.button("📊 REGISTRAR RESULTADO DO LANÇAMENTO", use_container_width=True):
@@ -1473,7 +1459,6 @@ elif st.session_state.etapa == "Visualizacao":
             for quando, acao in fase['items']:
                 st.markdown(f'<div class="checklist-item"><div style="width:10px;height:10px;border-radius:50%;background:{fase["cor"]};margin-top:5px;flex-shrink:0"></div><div><div style="font-size:0.72em;color:#64748B;font-weight:600;text-transform:uppercase;">{quando}</div><div style="font-size:0.92em;color:#1E293B">{acao}</div></div></div>', unsafe_allow_html=True)
 
-    # ── LAUNCERBOT ────────────────────────────────────────────
     st.divider()
     st.markdown("### 🤖 Launcerbot")
     st.caption(f"Olá, {st.session_state.usuario}! Pode me perguntar qualquer coisa sobre seu lançamento.")
