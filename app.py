@@ -223,48 +223,6 @@ def limpar_html(texto: str) -> str:
     limpo = re.sub(r'<[^>]+>', '', texto)
     return limpo.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').strip()
 
-def validar_conteudo(chave: str, texto: str) -> dict:
-    """IA avalia qualidade do conteúdo gerado. Retorna nota e sugestão."""
-    nomes = {
-        'ebook_cont': 'e-book (60 cartões)',
-        'bonus_cont': 'e-books bônus',
-        'fb_copy': 'anúncio',
-        'lp_copy': 'landing page',
-        'msg_grupo': 'funil de mensagens',
-    }
-    nome = nomes.get(chave, chave)
-    prompt = (
-        f"Avalie a qualidade do seguinte conteúdo de marketing digital ({nome}).\n\n"
-        f"CONTEÚDO:\n{texto[:3000]}\n\n"
-        f"Responda EXATAMENTE neste formato:\n"
-        f"NOTA: [número de 1 a 10]\n"
-        f"PONTOS_FORTES: [2 pontos fortes em 1 linha cada]\n"
-        f"PONTOS_MELHORIA: [2 pontos de melhoria concretos em 1 linha cada]\n"
-        f"VEREDICTO: [1 frase resumindo]"
-    )
-    system = "Você é um especialista em marketing digital e copywriting. Avalie com critério real, não seja condescendente."
-    try:
-        client = Groq(api_key=st.session_state.api_key)
-        resp = client.chat.completions.create(
-            messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
-            model="llama-3.3-70b-versatile", max_tokens=400
-        )
-        raw = resp.choices[0].message.content
-        def pegar(campo, txt):
-            import re
-            m = re.search(rf"{campo}:\s*(.+?)(?=\n[A-Z_]+:|$)", txt, re.DOTALL)
-            return m.group(1).strip() if m else ""
-        nota_raw = pegar("NOTA", raw)
-        try: nota = float(re.search(r"\d+[.,]?\d*", nota_raw).group().replace(",","."))
-        except: nota = 0
-        return {
-            "nota": nota,
-            "fortes": pegar("PONTOS_FORTES", raw),
-            "melhoria": pegar("PONTOS_MELHORIA", raw),
-            "veredicto": pegar("VEREDICTO", raw),
-        }
-    except Exception as e:
-        return {"nota": 0, "fortes": "", "melhoria": "", "veredicto": f"Erro: {e}"}
 
 def corrigir_texto(texto: str) -> str:
     """Envia texto para IA corrigir gramática, concordância e coerência."""
@@ -476,27 +434,7 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
                 st.session_state.dados[chave] = corrigir_texto(limpar_html(conteudo))
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-    # Validation result (persisted in session)
-    val_key = f"_val_{chave}"
-    col_val1, col_val2 = st.columns([1,3])
-    with col_val1:
-        if st.button(f"🔍 Validar qualidade", key=f"val_{chave}", use_container_width=True):
-            with st.spinner("IA avaliando qualidade..."):
-                st.session_state[val_key] = validar_conteudo(chave, limpar_html(conteudo))
-    if val_key in st.session_state and st.session_state[val_key]:
-        v = st.session_state[val_key]
-        nota = v.get("nota", 0)
-        cor = "#22C55E" if nota >= 7 else "#F59E0B" if nota >= 5 else "#EF4444"
-        with col_val2:
-            st.markdown(
-                f"<div style='display:flex;align-items:center;gap:12px;background:#F8FAFC;"
-                f"border:1px solid {cor};border-radius:8px;padding:10px 14px;font-size:0.83em;'>"
-                f"<div style='font-size:1.6em;font-weight:900;color:{cor};font-family:Rajdhani,sans-serif;min-width:36px;'>{nota:.0f}<span style='font-size:0.5em;color:#94A3B8;'>/10</span></div>"
-                f"<div><div style='color:#1E293B;font-weight:600;'>{v.get('veredicto','')}</div>"
-                f"<div style='color:#059669;margin-top:2px;'>✅ {v.get('fortes','')}</div>"
-                f"<div style='color:#DC2626;margin-top:2px;'>⚠️ {v.get('melhoria','')}</div></div>"
-                f"</div>", unsafe_allow_html=True
-            )
+
 
 # --- NAVEGAÇÃO ---
 def mostrar_progresso():
@@ -851,6 +789,74 @@ if st.session_state.etapa == "Login":
 </div>
         """, unsafe_allow_html=True)
 
+    # ── STATUS DO SISTEMA ────────────────────────────────────
+    st.markdown("#### Status do sistema")
+    col_sb, col_groq = st.columns(2)
+
+    # Supabase status
+    with col_sb:
+        sb_url = os.environ.get("SUPABASE_URL","").strip()
+        sb_key = os.environ.get("SUPABASE_KEY","").strip()
+        if not sb_url or not sb_key:
+            st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;
+            padding:10px 14px;font-size:0.82em;color:#78350F;">
+            🟡 <strong>Banco de dados:</strong> não configurado<br>
+            <span style="font-size:0.9em;">Projetos salvos apenas em memória.<br>
+            Configure SUPABASE_URL e SUPABASE_KEY nas variáveis do Streamlit Cloud para persistência permanente.</span>
+            </div>""", unsafe_allow_html=True)
+        else:
+            try:
+                from supabase import create_client as _cc
+                _tc = _cc(sb_url, sb_key)
+                _tc.table("projetos").select("id").limit(1).execute()
+                st.markdown("""<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;
+                padding:10px 14px;font-size:0.82em;color:#064E3B;">
+                🟢 <strong>Banco de dados:</strong> conectado<br>
+                <span style="font-size:0.9em;">Projetos salvos permanentemente no Supabase.</span>
+                </div>""", unsafe_allow_html=True)
+            except Exception as _e:
+                st.markdown(f"""<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;
+                padding:10px 14px;font-size:0.82em;color:#7F1D1D;">
+                🔴 <strong>Banco de dados:</strong> erro de conexão<br>
+                <span style="font-size:0.9em;">Verifique SUPABASE_URL e SUPABASE_KEY.<br>
+                Erro: {str(_e)[:80]}</span>
+                </div>""", unsafe_allow_html=True)
+
+    # Groq status
+    with col_groq:
+        if st.session_state.api_key.strip():
+            try:
+                _gc = Groq(api_key=st.session_state.api_key)
+                _gc.chat.completions.create(
+                    messages=[{"role":"user","content":"ok"}],
+                    model="llama-3.3-70b-versatile", max_tokens=1
+                )
+                st.markdown("""<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;
+                padding:10px 14px;font-size:0.82em;color:#064E3B;">
+                🟢 <strong>Groq API:</strong> conectada<br>
+                <span style="font-size:0.9em;">Chave válida. Geração de conteúdo ativa.</span>
+                </div>""", unsafe_allow_html=True)
+            except Exception as _e:
+                err_msg = str(_e)
+                if "401" in err_msg or "invalid" in err_msg.lower():
+                    msg = "Chave inválida ou expirada."
+                elif "rate" in err_msg.lower():
+                    msg = "Limite de requisições atingido. Aguarde um momento."
+                else:
+                    msg = err_msg[:80]
+                st.markdown(f"""<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;
+                padding:10px 14px;font-size:0.82em;color:#7F1D1D;">
+                🔴 <strong>Groq API:</strong> erro<br>
+                <span style="font-size:0.9em;">{msg}</span>
+                </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<div style="background:#F1F5F9;border:1px solid #CBD5E1;border-radius:8px;
+            padding:10px 14px;font-size:0.82em;color:#64748B;">
+            ⚪ <strong>Groq API:</strong> aguardando chave<br>
+            <span style="font-size:0.9em;">Digite sua chave acima para verificar.</span>
+            </div>""", unsafe_allow_html=True)
+
+    st.markdown("")
     if st.button("ENTRAR"):
         if not st.session_state.usuario.strip(): st.error("Informe seu nome.")
         elif not st.session_state.api_key.strip(): st.error("Informe sua chave de API.")
