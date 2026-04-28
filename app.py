@@ -468,6 +468,7 @@ def system_lp():
 def prompt_msg():
     d = st.session_state.dados
     data_lancto = d.get('data_lancto')
+    data_fmt = data_lancto.strftime('%d/%m/%Y') if data_lancto else 'em breve'
     preco = d.get('preco', 47)
     nome_eb = d.get('nome_eb', '')
     nicho = d.get('nicho', '')
