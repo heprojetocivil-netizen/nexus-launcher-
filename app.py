@@ -801,9 +801,47 @@ if st.session_state.etapa == "Login":
             st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;
             padding:10px 14px;font-size:0.82em;color:#78350F;">
             🟡 <strong>Banco de dados:</strong> não configurado<br>
-            <span style="font-size:0.9em;">Projetos salvos apenas em memória.<br>
-            Configure SUPABASE_URL e SUPABASE_KEY nas variáveis do Streamlit Cloud para persistência permanente.</span>
+            <span style="font-size:0.9em;">Projetos salvos apenas em memória — somem se o servidor reiniciar.</span>
             </div>""", unsafe_allow_html=True)
+            with st.expander("📋 Como configurar o Supabase — passo a passo"):
+                st.markdown("""
+**1. Crie sua conta gratuita**
+Acesse [supabase.com](https://supabase.com) → clique em **Start your project** → entre com o Google ou crie uma conta.
+
+**2. Crie um projeto**
+Clique em **New project** → dê um nome (ex: nexus-launcher) → escolha uma senha forte → selecione a região **South America (São Paulo)** → clique em **Create new project**.
+Aguarde ~2 minutos enquanto o projeto é criado.
+
+**3. Crie a tabela de projetos**
+No menu lateral, clique em **SQL Editor** → clique em **New query** → cole o código abaixo e clique em **Run**:
+
+```sql
+CREATE TABLE projetos (
+  id SERIAL PRIMARY KEY,
+  nome TEXT UNIQUE NOT NULL,
+  dados TEXT NOT NULL,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+```
+
+**4. Pegue suas chaves**
+No menu lateral, clique em **Settings** → **API**.
+Copie:
+- **Project URL** — começa com `https://`
+- **anon public** — chave longa embaixo de "Project API keys"
+
+**5. Configure no Streamlit Cloud**
+Acesse [share.streamlit.io](https://share.streamlit.io) → encontre seu app → clique nos **3 pontos** → **Settings** → **Secrets**.
+Cole exatamente assim (substituindo pelos seus valores):
+```
+SUPABASE_URL = "https://xxxxxxxxxxx.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+Clique em **Save** → o app reinicia automaticamente.
+
+**6. Pronto!**
+Volte aqui, recarregue a página e o semáforo ficará 🟢. Seus projetos agora são permanentes.
+                """)
         else:
             try:
                 from supabase import create_client as _cc
