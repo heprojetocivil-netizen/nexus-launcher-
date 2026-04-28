@@ -62,13 +62,99 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- SUPABASE PERSISTENCE ---
+import os, json
+
+def _get_supabase():
+    """Returns supabase client if configured, else None."""
+    try:
+        url = os.environ.get("SUPABASE_URL","").strip()
+        key = os.environ.get("SUPABASE_KEY","").strip()
+        if not url or not key:
+            return None
+        from supabase import create_client
+        return create_client(url, key)
+    except Exception:
+        return None
+
+def _ensure_table(sb):
+    """Creates projects table if not exists (runs once)."""
+    try:
+        sb.table("projetos").select("id").limit(1).execute()
+    except Exception:
+        pass  # table already exists or will be created via Supabase dashboard
+
+def db_carregar_projetos(sb):
+    """Load all projects from Supabase."""
+    try:
+        res = sb.table("projetos").select("nome, dados").execute()
+        return {r["nome"]: json.loads(r["dados"]) for r in (res.data or [])}
+    except Exception:
+        return {}
+
+def db_salvar_projeto(sb, nome, dados):
+    """Upsert a project."""
+    try:
+        payload = {"nome": nome, "dados": json.dumps(dados, default=str)}
+        sb.table("projetos").upsert(payload, on_conflict="nome").execute()
+        return True
+    except Exception as e:
+        st.warning(f"⚠️ Supabase: {e}")
+        return False
+
+def db_deletar_projeto(sb, nome):
+    """Delete a project."""
+    try:
+        sb.table("projetos").delete().eq("nome", nome).execute()
+        return True
+    except Exception:
+        return False
+
+# --- CACHE FALLBACK (quando Supabase não está configurado) ---
+@st.cache_resource
+def get_cache_store():
+    return {"projetos": {}}
+
+_cache = get_cache_store()
+_sb = _get_supabase()
+
 # --- INICIALIZAÇÃO DE ESTADO ---
-# Initialize all state — projetos persists, never gets cleared
-_one_time = {'etapa': "Login", 'dados': {}, 'projetos': {},
-    'chat_hist': [], 'usuario': '', 'api_key': '', 'chat_input_key': 0}
-for k, v in _one_time.items():
+_defaults = {'etapa': "Login", 'dados': {}, 'chat_hist': [],
+             'usuario': '', 'api_key': '', 'chat_input_key': 0,
+             'projetos': {}, '_sb_carregado': False}
+for k, v in _defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
+
+# Load from Supabase once per session
+if _sb and not st.session_state._sb_carregado:
+    st.session_state.projetos = db_carregar_projetos(_sb)
+    _cache["projetos"] = st.session_state.projetos
+    st.session_state._sb_carregado = True
+elif not _sb:
+    # fallback: cache in memory
+    st.session_state.projetos = _cache["projetos"]
+
+def salvar_projeto(nome, dados):
+    """Save project to Supabase or cache."""
+    dados_copy = dados.copy()
+    if _sb:
+        ok = db_salvar_projeto(_sb, nome, dados_copy)
+        if ok:
+            st.session_state.projetos[nome] = dados_copy
+            _cache["projetos"][nome] = dados_copy
+    else:
+        st.session_state.projetos[nome] = dados_copy
+        _cache["projetos"][nome] = dados_copy
+
+def deletar_projeto(nome):
+    """Delete project from Supabase or cache."""
+    if _sb:
+        db_deletar_projeto(_sb, nome)
+    if nome in st.session_state.projetos:
+        del st.session_state.projetos[nome]
+    if nome in _cache["projetos"]:
+        del _cache["projetos"][nome]
 
 # --- ETAPAS ---
 ETAPAS_LABELS = {
@@ -136,6 +222,49 @@ def chamar_ia(prompt: str, system_prompt: str) -> str:
 def limpar_html(texto: str) -> str:
     limpo = re.sub(r'<[^>]+>', '', texto)
     return limpo.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').strip()
+
+def validar_conteudo(chave: str, texto: str) -> dict:
+    """IA avalia qualidade do conteúdo gerado. Retorna nota e sugestão."""
+    nomes = {
+        'ebook_cont': 'e-book (60 cartões)',
+        'bonus_cont': 'e-books bônus',
+        'fb_copy': 'anúncio',
+        'lp_copy': 'landing page',
+        'msg_grupo': 'funil de mensagens',
+    }
+    nome = nomes.get(chave, chave)
+    prompt = (
+        f"Avalie a qualidade do seguinte conteúdo de marketing digital ({nome}).\n\n"
+        f"CONTEÚDO:\n{texto[:3000]}\n\n"
+        f"Responda EXATAMENTE neste formato:\n"
+        f"NOTA: [número de 1 a 10]\n"
+        f"PONTOS_FORTES: [2 pontos fortes em 1 linha cada]\n"
+        f"PONTOS_MELHORIA: [2 pontos de melhoria concretos em 1 linha cada]\n"
+        f"VEREDICTO: [1 frase resumindo]"
+    )
+    system = "Você é um especialista em marketing digital e copywriting. Avalie com critério real, não seja condescendente."
+    try:
+        client = Groq(api_key=st.session_state.api_key)
+        resp = client.chat.completions.create(
+            messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
+            model="llama-3.3-70b-versatile", max_tokens=400
+        )
+        raw = resp.choices[0].message.content
+        def pegar(campo, txt):
+            import re
+            m = re.search(rf"{campo}:\s*(.+?)(?=\n[A-Z_]+:|$)", txt, re.DOTALL)
+            return m.group(1).strip() if m else ""
+        nota_raw = pegar("NOTA", raw)
+        try: nota = float(re.search(r"\d+[.,]?\d*", nota_raw).group().replace(",","."))
+        except: nota = 0
+        return {
+            "nota": nota,
+            "fortes": pegar("PONTOS_FORTES", raw),
+            "melhoria": pegar("PONTOS_MELHORIA", raw),
+            "veredicto": pegar("VEREDICTO", raw),
+        }
+    except Exception as e:
+        return {"nota": 0, "fortes": "", "melhoria": "", "veredicto": f"Erro: {e}"}
 
 def corrigir_texto(texto: str) -> str:
     """Envia texto para IA corrigir gramática, concordância e coerência."""
@@ -347,6 +476,27 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
                 st.session_state.dados[chave] = corrigir_texto(limpar_html(conteudo))
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
+    # Validation result (persisted in session)
+    val_key = f"_val_{chave}"
+    col_val1, col_val2 = st.columns([1,3])
+    with col_val1:
+        if st.button(f"🔍 Validar qualidade", key=f"val_{chave}", use_container_width=True):
+            with st.spinner("IA avaliando qualidade..."):
+                st.session_state[val_key] = validar_conteudo(chave, limpar_html(conteudo))
+    if val_key in st.session_state and st.session_state[val_key]:
+        v = st.session_state[val_key]
+        nota = v.get("nota", 0)
+        cor = "#22C55E" if nota >= 7 else "#F59E0B" if nota >= 5 else "#EF4444"
+        with col_val2:
+            st.markdown(
+                f"<div style='display:flex;align-items:center;gap:12px;background:#F8FAFC;"
+                f"border:1px solid {cor};border-radius:8px;padding:10px 14px;font-size:0.83em;'>"
+                f"<div style='font-size:1.6em;font-weight:900;color:{cor};font-family:Rajdhani,sans-serif;min-width:36px;'>{nota:.0f}<span style='font-size:0.5em;color:#94A3B8;'>/10</span></div>"
+                f"<div><div style='color:#1E293B;font-weight:600;'>{v.get('veredicto','')}</div>"
+                f"<div style='color:#059669;margin-top:2px;'>✅ {v.get('fortes','')}</div>"
+                f"<div style='color:#DC2626;margin-top:2px;'>⚠️ {v.get('melhoria','')}</div></div>"
+                f"</div>", unsafe_allow_html=True
+            )
 
 # --- NAVEGAÇÃO ---
 def mostrar_progresso():
@@ -372,7 +522,8 @@ def barra_navegacao():
                     st.session_state.dados = st.session_state.projetos[nome].copy(); st.session_state.etapa = "Visualizacao"; st.rerun()
                 st.markdown('<div class="btn-perigo">', unsafe_allow_html=True)
                 if c_deletar.button("🗑️", key=f"del_{nome}", help="Excluir projeto"):
-                    del st.session_state.projetos[nome]; st.rerun()
+                    deletar_projeto(nome)
+                    st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
 
 # =============================================================
@@ -419,7 +570,8 @@ def prompt_fb():
         f"3. Lista rápida: ✅ Gratuito ✅ Grupo fechado ✅ Dicas diárias ✅ Vagas limitadas\n"
         f"4. Sugestão de criativo visual (1 linha)\n"
         f"5. CTA: ⬇️ Clique abaixo e garanta sua vaga\n\n"
-        f"REGRAS: Deixe BEM EXPLÍCITO que o programa é 100% GRATUITO — use essa palavra em destaque. Sem exageros. Tom humano. Parece um convite, não um anúncio de produto."
+        f"REGRAS: Deixe BEM EXPLÍCITO que o programa é 100% GRATUITO — use essa palavra em destaque. Sem exageros. Tom humano. Parece um convite, não um anúncio de produto.\n"
+        f"No CTA final, use: ⬇️ Clique no link abaixo e garanta sua vaga gratuitamente"
     )
 
 def system_fb():
@@ -480,15 +632,22 @@ def prompt_msg():
     bonus_lista = '\n'.join([f'🎁 Bônus {i+1} \u2013 {b.strip()}' for i, b in enumerate(bonus_resumo.split(',')) if b.strip()]) if bonus_resumo else '🎁 Bônus 1\n🎁 Bônus 2\n🎁 Bônus 3'
 
     return (
-        f"Gere as mensagens do funil para o lançamento sobre {nicho}.\n"
-        f"Ebook: {nome_eb}. Preço: R${preco}. WhatsApp: {whatsapp_num}. Nicho: {nicho}. Dor: {dor}.\n"
-        f"Bônus:\n{bonus_lista}\n\n"
-        f"REGRA ABSOLUTA: Textos entre === FIXO === e === FIM === devem ser copiados PALAVRA POR PALAVRA.\n"
-        f"Apenas blocos com [IA] devem ser criados. Respeite os rótulos exatos.\n\n"
+        f"Gere as mensagens do funil de WhatsApp para o lançamento sobre {nicho}.\n"
+        f"Ebook: {nome_eb}. Preço: R${preco}. WhatsApp: {whatsapp_num}. Dor: {dor}.\n\n"
+        f"REGRA DE OURO — TOM DE WHATSAPP REAL:\n"
+        f"- Escreva como uma pessoa real escreveria pra um grupo de amigos\n"
+        f"- Saudações vivas e naturais: Bom dia, grupo! Como vocês estão? / Boa tarde, pessoal! / E aí, tudo bem?\n"
+        f"- Frases curtas, uma por linha, sem parágrafos longos\n"
+        f"- Reticências naturais... pausas... como na fala\n"
+        f"- Emojis onde cabem de forma natural, sem exagero\n"
+        f"- ZERO texto corporativo, ZERO linguagem de robô, ZERO formalidade\n"
+        f"- Parece que foi digitado agora, não copiado de um template\n\n"
+        f"Textos entre === FIXO === e === FIM === copie PALAVRA POR PALAVRA.\n"
+        f"Blocos [IA] devem ser criados com o mesmo tom humano de WhatsApp.\n\n"
 
         f"DESCRICAO_GRUPO:\n"
         f"=== FIXO ===\n"
-        f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
+        f"Seja muito bem-vindo ao nosso grupo de [adapte: nome do programa sobre {nicho}]!\n"
         f"Esse não é apenas um grupo com conteúdos soltos.\n"
         f"Nos próximos dias, você vai passar por um processo simples, mas muito poderoso:\n"
         f"Primeiro, eu vou entender você.\n"
@@ -504,7 +663,7 @@ def prompt_msg():
 
         f"BOAS_VINDAS:\n"
         f"=== FIXO ===\n"
-        f"Seja muito bem-vindo ao nosso grupo de [adapte: tema do programa sobre {nicho}]!\n"
+        f"Seja muito bem-vindo ao nosso grupo de [adapte: nome do programa sobre {nicho}]!\n"
         f"Se você está aqui… provavelmente já tentou melhorar em {nicho} — e não conseguiu manter.\n"
         f"E não é por falta de esforço.\n"
         f"Nos próximos dias, você vai entender exatamente o porquê.\n"
@@ -516,114 +675,136 @@ def prompt_msg():
         f"=== FIM ===\n\n"
 
         f"DIA_7:\n"
-        f"=== FIXO (adapte tema ao nicho {nicho}) ===\n"
-        f"Bom dia!\n"
+        f"=== FIXO ===\n"
+        f"Bom dia, grupo! ☀️\n"
+        f"Como vocês estão?\n"
+        f"Espero que bem!\n\n"
         f"Antes de começarmos os conteúdos sobre {nicho}...\n"
-        f"Eu quero fazer algo diferente: eu quero te entender de verdade.\n"
-        f"A maioria dos conteúdos por ai sao genericos. Eu nao quero fazer isso com voce.\n"
-        f"Nas proximas horas, vou te enviar um diagnostico rapido.\n"
-        f"Ele vai me ajudar a entender exatamente onde voce esta travado em {nicho}.\n"
-        f"Fique atento.\n"
+        f"Eu quero fazer algo diferente.\n\n"
+        f"Quero te entender de verdade.\n\n"
+        f"A maioria dos conteúdos por aí são genéricos demais.\n"
+        f"E eu não quero fazer isso com vocês.\n\n"
+        f"Então nas próximas horas vou mandar um diagnóstico rápido aqui.\n"
+        f"Ele vai me ajudar a entender exatamente onde você tá travado em {nicho}.\n\n"
+        f"Fica de olho 👇\n"
         f"=== FIM ===\n\n"
 
         f"DIA_6:\n"
-        f"=== FIXO + IA (adapte as 10 perguntas ao nicho e dor) ===\n"
-        f"Diagnostico: o que esta travando voce em {nicho}?\n"
-        f"Responde com sinceridade - e rapido e vai fazer toda a diferenca.\n"
-        f"[IA: crie 10 perguntas de diagnostico SIM/NAO sobre obstaculos em {nicho} relacionados a dor: {dor}. Perguntas reveladoras, nao obvias. Formato: 1. ... 2. ... ate 10.]\n"
-        f"Me manda suas respostas no WhatsApp: ({whatsapp_num})\n"
-        f"Com base nisso, saberei exatamente o que voce precisa.\n"
-        f"Na data {data_fmt}, entregarei a solucao detalhada passo a passo para o seu caso.\n"
-        f"=== FIM ===\n"
+        f"[IA] Saudação viva e natural de grupo de WhatsApp (ex: Bom dia, pessoal! Tudo bem por aí? 🌿)\n"
+        f"Segunda linha em branco.\n"
+        f"Próxima linha: Preciso muito da ajuda de vocês aqui...\n"
+        f"Próxima: Quero entender melhor a situação de cada um pra poder ajudar de verdade.\n"
+        f"Linha em branco.\n"
+        f"Uma pergunta central de diagnóstico sobre a dor {dor} no nicho {nicho}.\n"
+        f"Linha em branco.\n"
+        f"4 opções A) B) C) D) — cada uma em sua própria linha, curtas e diretas.\n"
+        f"Linha em branco.\n"
+        f"Me manda sua resposta no WhatsApp: {whatsapp_num} 📲\n"
+        f"Vou ler todas... prometo!\n"
+        f"Linha em branco.\n"
+        f"E em {data_fmt} eu entrego a solução detalhada, passo a passo, pra cada perfil.\n\n"
+
         f"DIA_5:\n"
-        f"[IA] Crie 3 dicas surpreendentes sobre {nicho} - nao as dicas populares e obvias. "
-        f"Cada dica deve causar reacao: Nossa, nunca tinha pensado nisso! "
-        f"Contra-intuitivas, pouco conhecidas, realmente uteis. "
-        f"Formato: Dica 1: [titulo impactante] + 2 linhas explicando. Repita para 2 e 3. "
-        f"Zero mencao a venda ou produto. Maximo 12 linhas total.\n\n"
+        f"[IA] Saudação animada e diferente das anteriores (ex: Boa tarde, galera! 👋 / E aí, pessoal, tudo certo?)\n"
+        f"Linha em branco.\n"
+        f"Próxima linha: Deixa eu compartilhar algo que pouca gente fala sobre {nicho}...\n"
+        f"Linha em branco.\n"
+        f"Crie 3 dicas surpreendentes e contra-intuitivas sobre {nicho}.\n"
+        f"Cada dica: *Dica X: [título impactante]* (negrito estilo WhatsApp) + 2 linhas explicando.\n"
+        f"Tom: Que massa, nunca pensei nisso antes!\n"
+        f"Linha em branco entre cada dica.\n"
+        f"Finalize com: Aplica uma dessas e me conta o que achou 😊\n\n"
 
         f"DIA_4:\n"
-        f"[IA] Atividade de OBSERVAÇÃO ligada à dor: {dor}. "
-        f"Peça para a pessoa observar algo no dia a dia — sem explicar o motivo ainda. "
-        f"Cria curiosidade sem revelar a causa. Peça resposta no WhatsApp {whatsapp_num}. "
-        f"Compacto, máximo 5 linhas.\n\n"
+        f"[IA] Saudação descontraída (ex: Bom dia! Acordei pensando em vocês 😄 / Boa tarde, grupo!)\n"
+        f"Linha em branco.\n"
+        f"Proponha uma atividade de OBSERVAÇÃO simples sobre {nicho} ligada à dor {dor}.\n"
+        f"NÃO explique o motivo — mantenha o mistério.\n"
+        f"Linha em branco.\n"
+        f"Peça pra responder no WhatsApp {whatsapp_num} o que observaram.\n"
+        f"Tom curioso e leve. Máximo 8 linhas no total.\n\n"
 
         f"DIA_3:\n"
-        f"=== FIXO (adapte nome, nicho e dor) ===\n"
-        f"Existe um erro simples que pode estar travando completamente o seu resultado em {nicho}…\n"
+        f"[IA] Saudação direta (ex: Bom dia! 👊 / Boa tarde, pessoal!)\n"
+        f"Linha em branco.\n"
+        f"Escreva naturalmente assim:\n"
+        f"Existe um erro simples que pode estar travando o resultado em {nicho}...\n"
+        f"Linha em branco.\n"
         f"Mas o problema é:\n"
         f"👉 ele não é óbvio\n"
         f"👉 e quase ninguém percebe\n"
-        f"Por isso, muita gente continua tentando… ajustando coisas… mas sem sair do lugar.\n"
+        f"Linha em branco.\n"
+        f"Por isso muita gente continua tentando... ajustando... mas sem sair do lugar.\n"
+        f"Linha em branco.\n"
         f"Hoje, só faz isso:\n"
-        f"[IA: 1 ação de OBSERVAÇÃO simples sobre {nicho} relacionada à dor {dor} — SEM revelar a causa ou o diagnóstico]\n"
+        f"[crie 1 ação de observação simples sobre {nicho} — SEM revelar a causa]\n"
+        f"Linha em branco.\n"
         f"Sem mudar nada ainda.\n"
-        f"Isso já começa a mostrar sinais importantes.\n"
-        f"📲 Depois me conta.\n"
-        f"=== FIM ===\n\n"
+        f"Depois me conta como foi 📲\n\n"
 
         f"VESPERA:\n"
         f"=== FIXO ===\n"
         f"Eu preciso ser sincero com você.\n"
         f"Depois de tudo que vocês me enviaram no meu WhatsApp…\n"
-        f"Eu percebi algo que eu não esperava.\n"
+        f"Eu percebi algo que eu não esperava.\n\n"
         f"Existe um padrão.\n"
-        f"E não é pequeno.\n"
+        f"E não é pequeno.\n\n"
         f"Mais de 80% das pessoas aqui estão presas exatamente nos mesmos pontos…\n"
-        f"Mesmo tentando caminhos diferentes.\n"
+        f"Mesmo tentando caminhos diferentes.\n\n"
         f"E isso me fez chegar a uma conclusão:\n"
         f"O problema não está no esforço.\n"
-        f"Está no caminho que foi mostrado até hoje.\n"
+        f"Está no caminho que foi mostrado até hoje.\n\n"
         f"Foi por isso que eu decidi fazer algo diferente.\n"
-        f"Algo único… pensado pra resolver isso de forma direta.\n"
+        f"Algo único… pensado pra resolver isso de forma direta.\n\n"
         f"Mas não é só sobre entender.\n"
-        f"É sobre saber exatamente o que fazer — sem dúvidas, sem excesso, sem confusão.\n"
-        f"Eu organizei tudo de um jeito que praticamente qualquer pessoa aqui consiga aplicar.\n"
-        f"Amanhã, eu vou te mostrar.\n"
+        f"É sobre saber exatamente o que fazer — sem dúvidas, sem excesso, sem confusão.\n\n"
+        f"Eu organizei tudo de um jeito que praticamente qualquer pessoa aqui consiga aplicar.\n\n"
+        f"Amanhã, eu vou te mostrar.\n\n"
         f"Mas já te adianto:\n"
-        f"Se você ignorar… provavelmente vai continuar no mesmo lugar.\n"
+        f"Se você ignorar… provavelmente vai continuar no mesmo lugar.\n\n"
         f"Fica atento.\n"
         f"=== FIM ===\n\n"
 
         f"VENDA_MANHA:\n"
-        f"=== FIXO (adapte nome do ebook, bônus e nicho) ===\n"
-        f"Hoje é o dia.\n"
-        f"Durante esses dias, eu analisei tudo que você me enviou…\n"
-        f"e encontrei padrões que explicam exatamente por que a maioria não consegue evoluir em {nicho}.\n"
+        f"=== FIXO ===\n"
+        f"Hoje é o dia. 🚀\n\n"
+        f"Durante esses dias, eu analisei tudo que vocês me enviaram…\n"
+        f"e encontrei padrões que explicam exatamente por que a maioria não consegue evoluir em {nicho}.\n\n"
         f"E como eu te disse ontem:\n"
         f"👉 isso não é óbvio\n"
-        f"👉 e quase ninguém percebe sozinho\n"
-        f"Foi por isso que eu organizei tudo em um método simples:\n"
-        f"📘 {nome_eb}\n"
+        f"👉 e quase ninguém percebe sozinho\n\n"
+        f"Foi por isso que eu organizei tudo em um método simples:\n\n"
+        f"📘 *{nome_eb}*\n\n"
         f"Esse material é a continuação direta do que você começou aqui.\n"
         f"Aqui dentro, você vai entender:\n"
-        f"👉 o que realmente está travando seu resultado em {nicho}\n"
-        f"👉 e exatamente o que fazer pra corrigir\n"
-        f"Sem tentativa e erro. Sem perder tempo.\n"
-        f"{bonus_lista}\n"
-        f"Tudo isso por apenas R$ {preco}.\n"
-        f"👉 {link_venda}\n"
+        f"👉 o que realmente está travando seu resultado\n"
+        f"👉 e exatamente o que fazer pra corrigir\n\n"
+        f"Sem tentativa e erro. Sem perder tempo.\n\n"
+        f"{bonus_lista}\n\n"
+        f"Tudo isso por apenas *R$ {preco}.*\n\n"
+        f"👉 {link_venda}\n\n"
         f"⏰ Só hoje até 23:59\n"
-        f"✅ Garantia de 7 dias\n"
+        f"✅ Garantia de 7 dias\n\n"
         f"Você pode continuar tentando ajustar sozinho…\n"
-        f"ou seguir um caminho que já está organizado.\n"
+        f"ou seguir um caminho que já está organizado.\n\n"
         f"A decisão é sua.\n"
-        f"=== FIM ===\n"
+        f"=== FIM ===\n\n"
+
         f"VENDA_NOITE:\n"
-        f"=== FIXO (adapte nicho) ===\n"
-        f"Boa noite! 👋\n"
-        f"Passando aqui de forma mais tranquila pra te lembrar:\n"
-        f"Hoje eu te apresentei um material que reúne exatamente o que você precisa pra evoluir em {nicho}.\n"
-        f"📘 Conteúdo direto, sem complicação\n"
-        f"🎁 Com 3 bônus práticos\n"
-        f"Se você ficou na dúvida, tudo bem.\n"
+        f"=== FIXO ===\n"
+        f"Boa noite, pessoal! 👋\n\n"
+        f"Passando aqui rapidinho pra não deixar vocês esquecerem...\n\n"
+        f"Hoje de manhã eu compartilhei aqui algo que preparei com muito carinho pra vocês.\n\n"
+        f"📘 Conteúdo direto, sem enrolação\n"
+        f"🎁 Com 3 bônus práticos\n\n"
+        f"Se você viu e ficou na dúvida, tudo bem.\n"
         f"Mas a verdade é:\n"
-        f"Quem aplica o método certo, evolui muito mais rápido.\n"
-        f"Se fizer sentido pra você, ainda dá tempo:\n"
-        f"👉 {link_venda}\n"
-        f"⏰ Até 23:59\n"
-        f"✅ Garantia de 7 dias\n"
-        f"Dá uma olhada com calma… e decide.\n"
+        f"Quem aplica o método certo, evolui muito mais rápido.\n\n"
+        f"Ainda dá tempo hoje:\n\n"
+        f"👉 {link_venda}\n\n"
+        f"⏰ Só até 23:59\n"
+        f"✅ Garantia de 7 dias\n\n"
+        f"Dá uma olhada com calma… e decide com consciência. 🙏\n"
         f"=== FIM ===\n"
     )
 def system_msg():
@@ -645,6 +826,31 @@ if st.session_state.etapa == "Login":
     st.markdown('<p style="margin-top:-8px;margin-bottom:20px;font-size:0.95em;">🔗 <a href="https://www.quizmaispremios.com.br" target="_blank" style="color:#00BFFF;text-decoration:none;font-weight:600;">www.quizmaispremios.com.br</a></p>', unsafe_allow_html=True)
     st.session_state.usuario = st.text_input("Nome")
     st.session_state.api_key = st.text_input("Chave Groq", type="password")
+    # Onboarding
+    with st.expander("🚀 Primeira vez aqui? Veja como funciona em 3 passos"):
+        st.markdown("""
+<div style="display:flex;gap:16px;flex-wrap:wrap;">
+<div style="flex:1;min-width:180px;background:#EFF6FF;border-radius:10px;padding:16px;text-align:center;">
+<div style="font-size:2em;">1️⃣</div>
+<div style="font-weight:700;margin:8px 0 4px;font-family:Rajdhani,sans-serif;">Preencha o formulário</div>
+<div style="font-size:0.82em;color:#64748B;">Nicho, público, dor, promessa. A IA preenche automaticamente se quiser.</div>
+</div>
+<div style="flex:1;min-width:180px;background:#F0FDF4;border-radius:10px;padding:16px;text-align:center;">
+<div style="font-size:2em;">2️⃣</div>
+<div style="font-weight:700;margin:8px 0 4px;font-family:Rajdhani,sans-serif;">Gere tudo com 1 clique</div>
+<div style="font-size:0.82em;color:#64748B;">E-book, bônus, anúncio, landing page e funil completo de mensagens.</div>
+</div>
+<div style="flex:1;min-width:180px;background:#FDF4FF;border-radius:10px;padding:16px;text-align:center;">
+<div style="font-size:2em;">3️⃣</div>
+<div style="font-weight:700;margin:8px 0 4px;font-family:Rajdhani,sans-serif;">Salve e lance</div>
+<div style="font-size:0.82em;color:#64748B;">Projetos salvos ficam disponíveis sempre. Exporte o calendário de envios.</div>
+</div>
+</div>
+<div style="margin-top:14px;background:#FEF9C3;border-radius:8px;padding:10px 14px;font-size:0.82em;color:#713F12;">
+💡 <strong>Você precisará de uma chave Groq gratuita</strong> em <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> — cria conta, gera a chave e cola aqui.
+</div>
+        """, unsafe_allow_html=True)
+
     if st.button("ENTRAR"):
         if not st.session_state.usuario.strip(): st.error("Informe seu nome.")
         elif not st.session_state.api_key.strip(): st.error("Informe sua chave de API.")
@@ -906,6 +1112,29 @@ elif st.session_state.etapa == "Gerar_Bonus":
             st.rerun()
     if 'bonus_cont' in st.session_state.dados:
         bloco_conteudo('bonus_cont', 'Bônus', prompt_bonus, system_bonus)
+
+        st.divider()
+        st.markdown("#### 🔗 Link da Monetizze")
+        st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#14532D;font-size:0.87em;line-height:1.6;">
+        ✅ <strong>Agora é o momento certo.</strong> Seu e-book e bônus estão prontos.<br>
+        Cadastre-os na Monetizze, copie o link de venda e cole abaixo.<br>
+        Ele entrará automaticamente nas mensagens de venda.
+        </div>""", unsafe_allow_html=True)
+        col_lnk, col_lbtn = st.columns([4,1])
+        with col_lnk:
+            lnk = st.text_input("Link da Monetizze:", value=st.session_state.dados.get('link_monetizze',''),
+                placeholder="https://go.monetizze.com.br/...", label_visibility="collapsed")
+        with col_lbtn:
+            if st.button("💾 Salvar link", use_container_width=True):
+                if lnk.strip():
+                    st.session_state.dados['link_monetizze'] = lnk.strip()
+                    st.success("Link salvo!")
+                else:
+                    st.warning("Cole o link antes de salvar.")
+        if st.session_state.dados.get('link_monetizze'):
+            st.caption(f"✅ Link salvo: {st.session_state.dados['link_monetizze']}")
+
+        st.divider()
         if st.button("AVANÇAR →"): st.session_state.etapa = "Copy_Face"; st.rerun()
 
 # ── ANÚNCIO ───────────────────────────────────────────────────
@@ -913,23 +1142,162 @@ elif st.session_state.etapa == "Copy_Face":
     barra_navegacao()
     st.title("📣 ANÚNCIO")
     st.caption("Um anúncio completo e alinhado com a landing page — mesma promessa, mesmo tom, mesma linguagem.")
+
+    # Link da LP
+    st.markdown("#### 🔗 Link da sua Landing Page")
+    st.markdown("""<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 16px;margin-bottom:12px;color:#1E3A5F;font-size:0.86em;line-height:1.6;">
+    Cole o link da sua landing page abaixo. Ele aparecerá no anúncio como destino do CTA.<br>
+    <strong>Não tem LP ainda?</strong> Avance, gere a LP na próxima etapa e volte aqui para inserir o link.
+    </div>""", unsafe_allow_html=True)
+    col_lp, col_lp_btn = st.columns([4,1])
+    with col_lp:
+        lp_link = st.text_input("Link da Landing Page:", value=st.session_state.dados.get('link_lp',''),
+            placeholder="https://sualandingpage.com.br", label_visibility="collapsed")
+    with col_lp_btn:
+        if st.button("💾 Salvar", key="salvar_lp_link", use_container_width=True):
+            if lp_link.strip():
+                st.session_state.dados['link_lp'] = lp_link.strip()
+                st.success("Salvo!")
+    if st.session_state.dados.get('link_lp'):
+        st.caption(f"✅ Link salvo: {st.session_state.dados['link_lp']}")
+
+    st.divider()
     if st.button("GERAR ANÚNCIO"):
         with st.spinner("Gerando anúncio com IA..."):
             st.session_state.dados['fb_copy'] = chamar_ia(prompt_fb(), system_fb())
     if 'fb_copy' in st.session_state.dados:
         bloco_conteudo('fb_copy', 'Anúncio', prompt_fb, system_fb)
+
+        # Reminder about LP link in ad
+        link_lp_atual = st.session_state.dados.get('link_lp','')
+        if link_lp_atual:
+            st.markdown(f"""<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 16px;font-size:0.85em;color:#064E3B;">
+            ✅ <strong>Lembre-se:</strong> ao subir esse anúncio no Facebook Ads, coloque <strong>{link_lp_atual}</strong> como URL de destino do botão.
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:10px 16px;font-size:0.85em;color:#78350F;">
+            ⚠️ <strong>Importante:</strong> ao subir esse anúncio no Facebook Ads, insira o link da sua landing page como URL de destino do botão CTA.
+            </div>""", unsafe_allow_html=True)
+
+        # Facebook tutorial
+        st.divider()
+        with st.expander("📘 TUTORIAL — Como anunciar no Facebook Ads passo a passo"):
+            st.markdown("""
+<div style="font-size:0.88em;line-height:1.8;color:#1E293B;">
+
+<div style="background:#1877F2;color:white;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-family:Rajdhani,sans-serif;font-size:1.05em;font-weight:700;">
+📘 PASSO A PASSO — FACEBOOK ADS
+</div>
+
+**PASSO 1 — Acesse o Gerenciador de Anúncios**
+Acesse: [business.facebook.com/adsmanager](https://business.facebook.com/adsmanager)
+Se for a primeira vez, crie uma conta de anúncios gratuita.
+
+---
+
+**PASSO 2 — Crie uma nova campanha**
+Clique em **+ Criar** → Escolha o objetivo:
+- Para capturar leads para o grupo: escolha **Tráfego** (direciona para sua LP)
+- Para capturar leads direto no Facebook: escolha **Geração de cadastros**
+
+👉 *Recomendado para você: Tráfego → URL da Landing Page*
+
+---
+
+**PASSO 3 — Configure o público**
+- **Localização:** Brasil (ou sua cidade/estado se preferir)
+- **Idade:** ajuste para o seu público-alvo
+- **Interesses:** adicione termos relacionados ao nicho (ex: para saúde → yoga, bem-estar, meditação)
+- **Tamanho:** busque públicos entre 500 mil e 3 milhões de pessoas
+
+---
+
+**PASSO 4 — Defina o orçamento**
+- **Orçamento diário:** comece com R$ 10 a R$ 20/dia
+- **Período:** coloque a data de início e a data de lançamento como data de encerramento
+
+---
+
+**PASSO 5 — Crie o anúncio**
+- **Formato:** imagem única (mais simples e eficaz para começar)
+- **Imagem:** use o Canva (canva.com) para criar — proporção 1080x1080px ou 1080x1920px para Stories
+- **Texto principal:** cole o texto gerado pelo Nexus Launcher
+- **Título:** use o título do anúncio gerado
+- **URL de destino:** cole o link da sua landing page
+- **Botão CTA:** selecione "Saiba mais" ou "Inscreva-se"
+
+---
+
+**PASSO 6 — Revisar e publicar**
+- Confira todos os campos
+- Clique em **Publicar**
+- O Facebook revisa em até 24h antes de liberar
+
+---
+
+**PASSO 7 — Acompanhe os resultados**
+Métricas que importam:
+- **CPL (Custo por Lead):** quanto você paga por cada pessoa que entra no grupo. Meta: até R$ 2,00
+- **CTR (Taxa de clique):** porcentagem que clicou no anúncio. Meta: acima de 1,5%
+- **CPC (Custo por clique):** quanto custa cada clique. Meta: abaixo de R$ 1,50
+
+Se o CPL estiver alto → teste um criativo diferente ou ajuste o público.
+
+---
+
+**💡 Dicas rápidas:**
+- Rode o anúncio por pelo menos 3 dias antes de avaliar
+- Teste 2 imagens diferentes para ver qual performa melhor
+- Nunca pause o anúncio antes de 48h — o algoritmo precisa de tempo para aprender
+- Públicos do Brasil costumam performar melhor entre 18h e 22h
+
+</div>
+            """, unsafe_allow_html=True)
+
         if st.button("AVANÇAR →"): st.session_state.etapa = "Copy_LP"; st.rerun()
 
 # ── LANDING PAGE ──────────────────────────────────────────────
 elif st.session_state.etapa == "Copy_LP":
     barra_navegacao()
     st.title("🌐 LANDING PAGE")
-    st.caption("Uma landing page completa — alinhada com o anúncio gerado. Mesma promessa, mesma jornada.")
+    st.caption("Diagnóstico: mostra que o grupo vai descobrir o que está travando o resultado — a solução vem na venda.")
+
+    # Group invite link
+    st.markdown("#### 🔗 Link de convite do grupo (WhatsApp ou Telegram)")
+    st.markdown("""<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:10px 16px;margin-bottom:12px;color:#14532D;font-size:0.86em;line-height:1.6;">
+    O botão CTA da landing page deve levar direto para o grupo.<br>
+    Cole abaixo o link de convite do seu grupo — ele aparecerá como destino do botão <strong>[ QUERO DESCOBRIR O QUE ESTÁ ERRADO ]</strong>.<br>
+    <strong>Como pegar o link:</strong> WhatsApp → Grupo → Info do grupo → Link de convite → Copiar link
+    </div>""", unsafe_allow_html=True)
+    col_gr, col_gr_btn = st.columns([4,1])
+    with col_gr:
+        grupo_link = st.text_input("Link de convite do grupo:", value=st.session_state.dados.get('link_grupo',''),
+            placeholder="https://chat.whatsapp.com/...", label_visibility="collapsed")
+    with col_gr_btn:
+        if st.button("💾 Salvar", key="salvar_grupo_link", use_container_width=True):
+            if grupo_link.strip():
+                st.session_state.dados['link_grupo'] = grupo_link.strip()
+                st.success("Salvo!")
+    if st.session_state.dados.get('link_grupo'):
+        st.caption(f"✅ Link salvo: {st.session_state.dados['link_grupo']}")
+
+    st.divider()
     if st.button("GERAR LANDING PAGE"):
         with st.spinner("Gerando landing page com IA..."):
             st.session_state.dados['lp_copy'] = chamar_ia(prompt_lp(), system_lp())
     if 'lp_copy' in st.session_state.dados:
         bloco_conteudo('lp_copy', 'Landing Page', prompt_lp, system_lp)
+
+        link_grupo_atual = st.session_state.dados.get('link_grupo','')
+        if link_grupo_atual:
+            st.markdown(f"""<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 16px;font-size:0.85em;color:#064E3B;">
+            ✅ <strong>Lembre-se:</strong> configure o botão CTA da sua landing page apontando para <strong>{link_grupo_atual}</strong>
+            </div>""", unsafe_allow_html=True)
+        else:
+            st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:10px 16px;font-size:0.85em;color:#78350F;">
+            ⚠️ <strong>Importante:</strong> configure o botão CTA da landing page apontando para o link de convite do seu grupo.
+            </div>""", unsafe_allow_html=True)
+
         if st.button("AVANÇAR →"): st.session_state.etapa = "Mensagens_Grupo"; st.rerun()
 
 # ── MENSAGENS DO GRUPO ────────────────────────────────────────
@@ -938,17 +1306,22 @@ elif st.session_state.etapa == "Mensagens_Grupo":
     st.title("💬 MENSAGENS DO GRUPO")
 
     st.markdown("""<div class="preview-box">
-    <strong>Funil completo — 10 peças prontas para copiar e enviar:</strong><br><br>
-    📋 Descrição (bio) → 💬 D-8 Boas-vindas → 📅 D-9 Abertura →
-    🎯 D-10 Enquete → 🔥 D-11 Dica → 📌 D-12 Atividade →
-    💡 D-13 Prova social → ⏳ D-14 Véspera → 🚀 Manhã da venda → ⏰ Noite (19h)
+    <strong>10 mensagens prontas — use uma por dia no grupo:</strong><br><br>
+    📋 <strong>Descrição</strong> — texto da bio do grupo (configurar uma vez só)<br>
+    💬 <strong>D-8</strong> — Boas-vindas automática ao entrar<br>
+    📅 <strong>D-9</strong> — Abertura: cria expectativa para o diagnóstico<br>
+    🎯 <strong>D-10</strong> — Diagnóstico: 10 perguntas + aviso da solução na data<br>
+    🔥 <strong>D-11</strong> — 3 dicas surpreendentes sobre o nicho<br>
+    📌 <strong>D-12</strong> — Atividade de observação (mantém mistério)<br>
+    💡 <strong>D-13</strong> — Padrão oculto (sem revelar a causa)<br>
+    ⏳ <strong>D-14</strong> — Véspera: texto fixo aprovado<br>
+    🚀 <strong>Manhã</strong> — Lançamento: copy de venda com link<br>
+    ⏰ <strong>Noite</strong> — Lembrete 19h: última chance
     </div>""", unsafe_allow_html=True)
 
-    st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;margin-bottom:8px;color:#78350F;font-size:0.87em;line-height:1.6;">
-    ⚠️ <strong>Atenção antes de usar:</strong><br>
-    Os textos em destaque são <strong>fixos</strong> — copiados palavra por palavra do modelo aprovado.<br>
-    Apenas <strong>D-10 (enquete), D-11 (dica), D-12 (atividade) e D-13 (prova social)</strong> são gerados pela IA.<br>
-    <strong>Revise esses 4 blocos antes de enviar.</strong>
+    st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:10px 16px;margin-bottom:8px;color:#78350F;font-size:0.85em;line-height:1.6;">
+    ⚠️ <strong>Antes de enviar, revise:</strong>
+    D-10 (diagnóstico) · D-11 (dicas) · D-12 (atividade) · D-13 (prova social) — gerados pela IA, os demais são texto fixo aprovado.
     </div>""", unsafe_allow_html=True)
 
     if not st.session_state.dados.get('whatsapp_contato'):
@@ -997,7 +1370,11 @@ elif st.session_state.etapa == "Mensagens_Grupo":
         st.divider()
         if st.button("💾 SALVAR PROJETO"):
             nome_projeto = st.session_state.dados.get('nome_eb', 'Sem nome')
-            st.session_state.projetos[nome_projeto] = st.session_state.dados.copy()
+            salvar_projeto(nome_projeto, st.session_state.dados)
+            if _sb:
+                st.success(f"✅ Projeto '{nome_projeto}' salvo no banco de dados — permanente!")
+            else:
+                st.success(f"✅ Projeto '{nome_projeto}' salvo! (Configure Supabase para persistência permanente)")
             st.session_state.etapa = "Visualizacao"; st.rerun()
 
 # ── VISUALIZAÇÃO FINAL ────────────────────────────────────────
@@ -1690,6 +2067,61 @@ FECHAMENTO
         ✅ Carrinho fechado no horário prometido<br>
         ✅ Acesso entregue automaticamente pela plataforma<br>
         </div>""", unsafe_allow_html=True)
+
+        # ── AGENDADOR CPL ─────────────────────────────────
+        st.divider()
+        with st.expander("📅 AGENDADOR CPL — Calendário de envio"):
+            CPL_AGENDA = [
+                {"chave":"v_pre_pre",    "label":"🔥 Pré-pré-lançamento (stories)",  "data_key":"v_data_cpl1",     "offset":-7,  "hora":"09:00", "cor":"#64748B"},
+                {"chave":"v_cpl1",       "label":"🎬 CPL 1 — Oportunidade",          "data_key":"v_data_cpl1",     "offset":0,   "hora":"10:00", "cor":"#3B82F6"},
+                {"chave":"v_cpl2",       "label":"🎬 CPL 2 — Transformação",         "data_key":"v_data_cpl2",     "offset":0,   "hora":"10:00", "cor":"#8B5CF6"},
+                {"chave":"v_cpl3",       "label":"🎬 CPL 3 — Objeções",             "data_key":"v_data_cpl3",     "offset":0,   "hora":"10:00", "cor":"#F59E0B"},
+                {"chave":"v_abertura",   "label":"🛒 Abertura do carrinho",           "data_key":"v_data_abertura", "offset":0,   "hora":"08:00", "cor":"#22C55E"},
+                {"chave":"v_fechamento", "label":"⏰ Fechamento — urgência",          "data_key":"v_data_fechamento","offset":0,  "hora":"08:00", "cor":"#EF4444"},
+            ]
+            horas_cpl = d.get('agenda_horas_cpl', {})
+            st.markdown("**Datas e horários do seu lançamento CPL:**")
+            st.caption("Ajuste os horários e exporte para o calendário. O lembrete chega 30 min antes.")
+
+            for item in CPL_AGENDA:
+                data_base = d.get(item["data_key"], date.today())
+                data_ev = data_base + timedelta(days=item["offset"])
+                col_l, col_h = st.columns([4,1])
+                with col_l:
+                    cor = item["cor"]
+                    st.markdown(
+                        f"<div style='padding:5px 0;font-size:0.87em;color:#1E293B;'>"
+                        f"<span style='display:inline-block;width:12px;height:12px;border-radius:3px;"
+                        f"background:{cor};margin-right:6px;vertical-align:middle;'></span>"
+                        f"<span style='color:#64748B;font-size:0.8em;font-weight:600;margin-right:6px;'>"
+                        f"{data_ev.strftime('%d/%m')}</span>{item['label']}</div>",
+                        unsafe_allow_html=True
+                    )
+                with col_h:
+                    h_val = horas_cpl.get(item["chave"], item["hora"])
+                    horas_cpl[item["chave"]] = st.text_input("h", value=h_val,
+                        key=f"hcpl_{item['chave']}", label_visibility="collapsed", placeholder="HH:MM")
+            d['agenda_horas_cpl'] = horas_cpl
+
+            if st.button("📅 EXPORTAR CALENDÁRIO CPL (.ics)", use_container_width=True):
+                eventos_cpl = []
+                for item in CPL_AGENDA:
+                    data_base = d.get(item["data_key"], date.today())
+                    data_ev = data_base + timedelta(days=item["offset"])
+                    texto = limpar_html(d.get(item["chave"], ""))
+                    if not texto: continue
+                    eventos_cpl.append({
+                        "chave": item["chave"],
+                        "titulo": f"[Nexus CPL] {item['label']}",
+                        "data": data_ev,
+                        "hora": horas_cpl.get(item["chave"], item["hora"]),
+                        "descricao": texto,
+                    })
+                ics = gerar_ics(eventos_cpl)
+                nome_v = d.get('v_produto','curso').replace(' ','_')
+                st.download_button("⬇️ Baixar .ics", data=ics.encode('utf-8'),
+                    file_name=f"{nome_v}_cpl.ics", mime="text/calendar", use_container_width=True)
+                st.success("Importe no Google Calendar, Apple Calendar ou Outlook. Lembrete 30 min antes.")
 
         if st.button("🔙 Voltar à escolha de lançamento"):
             st.session_state.etapa = "Escolha_Tipo"; st.rerun()
