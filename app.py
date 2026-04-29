@@ -62,99 +62,143 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- SUPABASE PERSISTENCE ---
+# --- PERSISTÊNCIA: SUPABASE → GOOGLE SHEETS → MEMÓRIA ---
 import os, json
 
+# ── SUPABASE ──────────────────────────────────────────────────
 def _get_supabase():
-    """Returns supabase client if configured, else None."""
     try:
         url = os.environ.get("SUPABASE_URL","").strip()
         key = os.environ.get("SUPABASE_KEY","").strip()
-        if not url or not key:
-            return None
+        if not url or not key: return None
         from supabase import create_client
         return create_client(url, key)
     except Exception:
         return None
 
-def _ensure_table(sb):
-    """Creates projects table if not exists (runs once)."""
-    try:
-        sb.table("projetos").select("id").limit(1).execute()
-    except Exception:
-        pass  # table already exists or will be created via Supabase dashboard
-
-def db_carregar_projetos(sb):
-    """Load all projects from Supabase."""
+def sb_carregar(sb):
     try:
         res = sb.table("projetos").select("nome, dados").execute()
         return {r["nome"]: json.loads(r["dados"]) for r in (res.data or [])}
-    except Exception:
-        return {}
+    except Exception: return {}
 
-def db_salvar_projeto(sb, nome, dados):
-    """Upsert a project."""
+def sb_salvar(sb, nome, dados):
     try:
-        payload = {"nome": nome, "dados": json.dumps(dados, default=str)}
-        sb.table("projetos").upsert(payload, on_conflict="nome").execute()
+        sb.table("projetos").upsert({"nome": nome, "dados": json.dumps(dados, default=str)}, on_conflict="nome").execute()
         return True
-    except Exception as e:
-        st.warning(f"⚠️ Supabase: {e}")
-        return False
+    except Exception: return False
 
-def db_deletar_projeto(sb, nome):
-    """Delete a project."""
+def sb_deletar(sb, nome):
     try:
         sb.table("projetos").delete().eq("nome", nome).execute()
         return True
+    except Exception: return False
+
+# ── GOOGLE SHEETS ─────────────────────────────────────────────
+def _get_sheets():
+    """Returns gspread worksheet if configured, else None."""
+    try:
+        sheet_id = os.environ.get("GSHEET_ID","").strip()
+        creds_json = os.environ.get("GSHEET_CREDS","").strip()
+        if not sheet_id or not creds_json: return None
+        import gspread
+        from google.oauth2.service_account import Credentials
+        scopes = ["https://spreadsheets.google.com/feeds","https://www.googleapis.com/auth/drive"]
+        creds_dict = json.loads(creds_json)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        gc = gspread.authorize(creds)
+        sh = gc.open_by_key(sheet_id)
+        try:
+            ws = sh.worksheet("projetos")
+        except Exception:
+            ws = sh.add_worksheet(title="projetos", rows=1000, cols=3)
+            ws.append_row(["nome","dados","criado_em"])
+        return ws
     except Exception:
+        return None
+
+def gs_carregar(ws):
+    try:
+        rows = ws.get_all_records()
+        result = {}
+        for r in rows:
+            if r.get("nome") and r.get("dados"):
+                try: result[r["nome"]] = json.loads(r["dados"])
+                except: pass
+        return result
+    except Exception: return {}
+
+def gs_salvar(ws, nome, dados):
+    try:
+        dados_str = json.dumps(dados, default=str)
+        from datetime import datetime as _dt
+        agora = _dt.now().strftime("%Y-%m-%d %H:%M")
+        # find existing row
+        cell = None
+        try: cell = ws.find(nome, in_column=1)
+        except: pass
+        if cell:
+            ws.update(f"B{cell.row}", [[dados_str]])
+        else:
+            ws.append_row([nome, dados_str, agora])
+        return True
+    except Exception as e:
         return False
 
-# --- CACHE FALLBACK (quando Supabase não está configurado) ---
+def gs_deletar(ws, nome):
+    try:
+        cell = ws.find(nome, in_column=1)
+        if cell: ws.delete_rows(cell.row)
+        return True
+    except Exception: return False
+
+# ── CACHE FALLBACK ────────────────────────────────────────────
 @st.cache_resource
 def get_cache_store():
     return {"projetos": {}}
 
 _cache = get_cache_store()
-_sb = _get_supabase()
+_sb   = _get_supabase()
+_gs   = _get_sheets() if not _sb else None  # only try sheets if no supabase
 
-# --- INICIALIZAÇÃO DE ESTADO ---
+def _backend():
+    if _sb:   return "supabase"
+    if _gs:   return "sheets"
+    return "memoria"
+
+# ── INICIALIZAÇÃO DE ESTADO ───────────────────────────────────
 _defaults = {'etapa': "Login", 'dados': {}, 'chat_hist': [],
              'usuario': '', 'api_key': '', 'chat_input_key': 0,
-             'projetos': {}, '_sb_carregado': False}
+             'projetos': {}, '_db_carregado': False}
 for k, v in _defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# Load from Supabase once per session
-if _sb and not st.session_state._sb_carregado:
-    st.session_state.projetos = db_carregar_projetos(_sb)
+if not st.session_state._db_carregado:
+    if _sb:
+        st.session_state.projetos = sb_carregar(_sb)
+    elif _gs:
+        st.session_state.projetos = gs_carregar(_gs)
+    else:
+        st.session_state.projetos = _cache["projetos"]
     _cache["projetos"] = st.session_state.projetos
-    st.session_state._sb_carregado = True
-elif not _sb:
-    # fallback: cache in memory
-    st.session_state.projetos = _cache["projetos"]
+    st.session_state._db_carregado = True
 
 def salvar_projeto(nome, dados):
-    """Save project to Supabase or cache."""
     dados_copy = dados.copy()
     if _sb:
-        ok = db_salvar_projeto(_sb, nome, dados_copy)
-        if ok:
-            st.session_state.projetos[nome] = dados_copy
-            _cache["projetos"][nome] = dados_copy
-    else:
-        st.session_state.projetos[nome] = dados_copy
-        _cache["projetos"][nome] = dados_copy
+        sb_salvar(_sb, nome, dados_copy)
+    elif _gs:
+        gs_salvar(_gs, nome, dados_copy)
+    st.session_state.projetos[nome] = dados_copy
+    _cache["projetos"][nome] = dados_copy
 
 def deletar_projeto(nome):
-    """Delete project from Supabase or cache."""
-    if _sb:
-        db_deletar_projeto(_sb, nome)
-    if nome in st.session_state.projetos:
-        del st.session_state.projetos[nome]
-    if nome in _cache["projetos"]:
-        del _cache["projetos"][nome]
+    if _sb:   sb_deletar(_sb, nome)
+    elif _gs: gs_deletar(_gs, nome)
+    st.session_state.projetos.pop(nome, None)
+    _cache["projetos"].pop(nome, None)
+
 
 # --- ETAPAS ---
 ETAPAS_LABELS = {
@@ -798,50 +842,54 @@ if st.session_state.etapa == "Login":
         sb_url = os.environ.get("SUPABASE_URL","").strip()
         sb_key = os.environ.get("SUPABASE_KEY","").strip()
         if not sb_url or not sb_key:
-            st.markdown("""<div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;
-            padding:10px 14px;font-size:0.82em;color:#78350F;">
-            🟡 <strong>Banco de dados:</strong> não configurado<br>
-            <span style="font-size:0.9em;">Projetos salvos apenas em memória — somem se o servidor reiniciar.</span>
-            </div>""", unsafe_allow_html=True)
-            with st.expander("📋 Como configurar o Supabase — passo a passo"):
-                st.markdown("""
-**1. Crie sua conta gratuita**
-Acesse [supabase.com](https://supabase.com) → clique em **Start your project** → entre com o Google ou crie uma conta.
-
-**2. Crie um projeto**
-Clique em **New project** → dê um nome (ex: nexus-launcher) → escolha uma senha forte → selecione a região **South America (São Paulo)** → clique em **Create new project**.
-Aguarde ~2 minutos enquanto o projeto é criado.
-
-**3. Crie a tabela de projetos**
-No menu lateral, clique em **SQL Editor** → clique em **New query** → cole o código abaixo e clique em **Run**:
-
-```sql
-CREATE TABLE projetos (
-  id SERIAL PRIMARY KEY,
-  nome TEXT UNIQUE NOT NULL,
-  dados TEXT NOT NULL,
-  criado_em TIMESTAMP DEFAULT NOW()
-);
-```
-
-**4. Pegue suas chaves**
-No menu lateral, clique em **Settings** → **API**.
-Copie:
-- **Project URL** — começa com `https://`
-- **anon public** — chave longa embaixo de "Project API keys"
-
-**5. Configure no Streamlit Cloud**
-Acesse [share.streamlit.io](https://share.streamlit.io) → encontre seu app → clique nos **3 pontos** → **Settings** → **Secrets**.
-Cole exatamente assim (substituindo pelos seus valores):
-```
-SUPABASE_URL = "https://xxxxxxxxxxx.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-Clique em **Save** → o app reinicia automaticamente.
-
-**6. Pronto!**
-Volte aqui, recarregue a página e o semáforo ficará 🟢. Seus projetos agora são permanentes.
-                """)
+            backend_atual = _backend()
+            if backend_atual == "supabase":
+                st.markdown("""<div style='background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 14px;font-size:0.82em;color:#064E3B;'>
+                🟢 <strong>Banco de dados:</strong> Supabase conectado — projetos salvos permanentemente.
+                </div>""", unsafe_allow_html=True)
+            elif backend_atual == "sheets":
+                st.markdown("""<div style='background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 14px;font-size:0.82em;color:#064E3B;'>
+                🟢 <strong>Banco de dados:</strong> Google Sheets conectado — projetos salvos na sua planilha.
+                </div>""", unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style='background:#FEF3C7;border:1px solid #FCD34D;border-radius:8px;padding:10px 14px;font-size:0.82em;color:#78350F;'>
+                🟡 <strong>Banco de dados:</strong> não configurado — projetos somem se o servidor reiniciar.
+                </div>""", unsafe_allow_html=True)
+                tab_gs, tab_sb = st.tabs(["📊 Google Sheets (recomendado)", "🗄️ Supabase (avançado)"])
+                with tab_gs:
+                    st.markdown(
+                        "**Por que Google Sheets?** Mais simples — seus projetos ficam numa planilha do Drive que você já conhece.\n\n"
+                        "**PASSO 1** — Acesse [sheets.google.com](https://sheets.google.com) e crie uma planilha nova. "
+                        "Dê o nome **Nexus Launcher Projetos**. Copie o ID da URL — é o trecho longo entre `/d/` e `/edit`.\n\n"
+                        "**PASSO 2** — Acesse [console.cloud.google.com](https://console.cloud.google.com). "
+                        "Crie um projeto. No menu lateral: **APIs e serviços** → **Ativar APIs** → ative **Google Sheets API** e **Google Drive API**.\n\n"
+                        "**PASSO 3** — Ainda no Cloud Console: **Credenciais** → **Criar credenciais** → **Conta de serviço** → dê um nome → **Concluído**. "
+                        "Clique na conta criada → aba **Chaves** → **Adicionar chave** → **JSON** → baixe o arquivo.\n\n"
+                        "**PASSO 4** — Abra o JSON baixado, copie o campo `client_email`. "
+                        "Volte na planilha → **Compartilhar** → cole o e-mail → permissão **Editor** → confirme.\n\n"
+                        "**PASSO 5** — No [Streamlit Cloud](https://share.streamlit.io): seu app → 3 pontos → **Settings** → **Secrets**. Cole:\n"
+                        "```\nGSHEET_ID = seu-id-da-planilha\n"
+                        "GSHEET_CREDS = conteudo-do-arquivo-json-em-uma-linha\n```\n"
+                        "Para colocar o JSON em uma linha: abra o arquivo JSON num editor, selecione tudo, copie e cole como valor de GSHEET_CREDS.\n\n"
+                        "**Clique em Save** — o semáforo ficará 🟢."
+                    )
+                with tab_sb:
+                    st.markdown(
+                        "**PASSO 1** — Crie conta em [supabase.com](https://supabase.com) com Google.\n\n"
+                        "**PASSO 2** — Crie um projeto: nome nexus-launcher → região South America (São Paulo).\n\n"
+                        "**PASSO 3** — SQL Editor → New query → execute:\n"
+                        "```sql\nCREATE TABLE projetos (\n"
+                        "  id SERIAL PRIMARY KEY,\n"
+                        "  nome TEXT UNIQUE NOT NULL,\n"
+                        "  dados TEXT NOT NULL,\n"
+                        "  criado_em TIMESTAMP DEFAULT NOW()\n"
+                        ");\n```\n\n"
+                        "**PASSO 4** — Settings → API → copie **Project URL** e **anon public**.\n\n"
+                        "**PASSO 5** — Streamlit Cloud → Settings → Secrets:\n"
+                        "```\nSUPABASE_URL = https://xxx.supabase.co\n"
+                        "SUPABASE_KEY = eyJ...\n```\n"
+                        "Salve — semáforo 🟢."
+                    )
         else:
             try:
                 from supabase import create_client as _cc
