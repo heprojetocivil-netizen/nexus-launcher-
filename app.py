@@ -495,16 +495,39 @@ def barra_navegacao():
             st.session_state.dados = {}; st.session_state.chat_hist = []; st.session_state.etapa = "Formulario"; st.rerun()
     with col2:
         with st.expander("📂 MEUS PROJETOS"):
-            if not st.session_state.projetos: st.write("Nenhum projeto salvo.")
-            for nome in list(st.session_state.projetos.keys()):
-                c_abrir, c_deletar = st.columns([4,1])
-                if c_abrir.button(f"📄 {nome}", key=f"abrir_{nome}"):
-                    st.session_state.dados = st.session_state.projetos[nome].copy(); st.session_state.etapa = "Visualizacao"; st.rerun()
-                st.markdown('<div class="btn-perigo">', unsafe_allow_html=True)
-                if c_deletar.button("🗑️", key=f"del_{nome}", help="Excluir projeto"):
-                    deletar_projeto(nome)
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+            # ── PROJETOS SALVOS NA SESSÃO ─────────────────────
+            if st.session_state.projetos:
+                for nome in list(st.session_state.projetos.keys()):
+                    c_abrir, c_deletar = st.columns([4,1])
+                    if c_abrir.button(f"📄 {nome}", key=f"abrir_{nome}"):
+                        st.session_state.dados = st.session_state.projetos[nome].copy()
+                        st.session_state.etapa = "Visualizacao"; st.rerun()
+                    st.markdown('<div class="btn-perigo">', unsafe_allow_html=True)
+                    if c_deletar.button("🗑️", key=f"del_{nome}", help="Excluir projeto"):
+                        deletar_projeto(nome); st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.markdown("""<div style="background:#FEF9C3;border:1px solid #FDE047;border-radius:8px;padding:10px 12px;font-size:0.82em;color:#713F12;margin-bottom:8px;">
+                Nenhum projeto na memória.<br>Carregue seu arquivo .json abaixo.
+                </div>""", unsafe_allow_html=True)
+
+            # ── CARREGAR DO COMPUTADOR ────────────────────────
+            st.divider()
+            st.markdown("**📥 Carregar projeto do computador**")
+            st.caption("Selecione o arquivo .json que você salvou antes.")
+            arq = st.file_uploader("", type=["json"], key="upload_nav", label_visibility="collapsed")
+            if arq is not None:
+                try:
+                    dados_imp = json.load(arq)
+                    nome_imp = dados_imp.get('nome_eb', arq.name)
+                    st.success(f"✅ **{nome_imp}** — pronto para carregar!")
+                    if st.button("📂 ABRIR ESTE PROJETO", key="btn_carregar_nav", use_container_width=True):
+                        st.session_state.dados = dados_imp
+                        salvar_projeto(nome_imp, dados_imp)
+                        st.session_state.etapa = "Visualizacao"
+                        st.rerun()
+                except Exception:
+                    st.error("Arquivo inválido. Use o .json gerado pelo Nexus Launcher.")
 
 # =============================================================
 # PROMPTS
