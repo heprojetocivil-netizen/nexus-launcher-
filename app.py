@@ -1377,33 +1377,28 @@ elif st.session_state.etapa == "Mensagens_Grupo":
 
         st.divider()
 
-        # ── SALVAR LOCAL (download .json) ──────────────────────
+        # ── SALVAR NO COMPUTADOR ───────────────────────────────
         nome_projeto = st.session_state.dados.get('nome_eb', 'meu_projeto')
         nome_arquivo = nome_projeto.replace(' ', '_').lower()
         json_projeto = gerar_json_projeto(st.session_state.dados)
-        st.markdown("""<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 16px;margin-bottom:10px;color:#1E3A5F;font-size:0.87em;line-height:1.6;">
-        💾 <strong>Salve uma cópia no seu computador</strong> — clique abaixo para baixar o projeto como arquivo JSON.<br>
-        Para reabrir: vá em "Meus Projetos" → clique em "📂 Carregar projeto local (.json)".
+        salvar_projeto(nome_projeto, st.session_state.dados)
+
+        st.markdown("""<div style="background:#F0FDF4;border:2px solid #22C55E;border-radius:12px;padding:18px 20px;margin-bottom:14px;color:#14532D;font-size:0.92em;line-height:1.8;">
+        💾 <strong>Projeto pronto! Salve agora no seu computador.</strong><br>
+        <span style="font-size:0.88em;">Clique no botão abaixo para baixar o arquivo. Da próxima vez que acessar o app, faça o upload do arquivo em <strong>📂 Meus Projetos → Carregar projeto (.json)</strong> e tudo estará lá do jeito que você deixou.</span>
         </div>""", unsafe_allow_html=True)
-        col_dl, col_sv = st.columns(2)
-        with col_dl:
-            st.download_button(
-                label="💾 BAIXAR PROJETO (.json)",
-                data=json_projeto,
-                file_name=f"{nome_arquivo}_nexus.json",
-                mime="application/json",
-                use_container_width=True,
-            )
-        with col_sv:
-            if st.button("💾 SALVAR NO SERVIDOR", use_container_width=True):
-                salvar_projeto(nome_projeto, st.session_state.dados)
-                if _sb:
-                    st.success(f"✅ Salvo no Supabase — permanente!")
-                elif _gs:
-                    st.success(f"✅ Salvo no Google Sheets!")
-                else:
-                    st.success(f"✅ Salvo em memória (temporário — baixe o .json acima para garantir).")
-                st.session_state.etapa = "Visualizacao"; st.rerun()
+
+        st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
+        st.download_button(
+            label="💾 SALVAR PROJETO NO COMPUTADOR (.json)",
+            data=json_projeto,
+            file_name=f"{nome_arquivo}_nexus.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.caption("📌 Guarde esse arquivo em um lugar seguro — ele contém todo o seu projeto de lançamento.")
+        st.session_state.etapa = "Visualizacao"
 
 # ── VISUALIZAÇÃO FINAL ────────────────────────────────────────
 elif st.session_state.etapa == "Visualizacao":
@@ -1445,30 +1440,44 @@ PREÇO: R${d.get('preco',47)}
     nome_arquivo = nome_projeto.replace(' ', '_').lower()
     json_projeto = gerar_json_projeto(d)
 
-    col_txt, col_json = st.columns(2)
-    with col_txt:
-        st.markdown('<div class="btn-verde">', unsafe_allow_html=True)
-        st.download_button(label="⬇️ BAIXAR PROJETO COMPLETO (.txt)", data=texto_completo,
-            file_name=f"{nome_arquivo}_lancamento.txt", mime="text/plain", use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with col_json:
-        st.markdown('<div class="btn-verde">', unsafe_allow_html=True)
-        st.download_button(label="💾 SALVAR NO COMPUTADOR (.json)", data=json_projeto,
-            file_name=f"{nome_arquivo}_nexus.json", mime="application/json", use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # ── BOTÃO PRINCIPAL — SALVAR NO COMPUTADOR ────────────────
+    st.markdown("""<div style="background:#F0FDF4;border:2px solid #22C55E;border-radius:12px;padding:16px 20px;margin-bottom:14px;color:#14532D;font-size:0.9em;line-height:1.7;">
+    💾 <strong>Salve seu projeto no computador</strong> — é a forma mais segura de guardar tudo.<br>
+    <span style="font-size:0.88em;">Da próxima vez que acessar, vá em <strong>📂 Meus Projetos → Carregar projeto (.json)</strong> e continue de onde parou.</span>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-verde15">', unsafe_allow_html=True)
+    st.download_button(
+        label="💾 SALVAR PROJETO NO COMPUTADOR (.json)",
+        data=json_projeto,
+        file_name=f"{nome_arquivo}_nexus.json",
+        mime="application/json",
+        use_container_width=True,
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="btn-secundario">', unsafe_allow_html=True)
+    st.download_button(
+        label="⬇️ Baixar projeto completo em texto (.txt)",
+        data=texto_completo,
+        file_name=f"{nome_arquivo}_lancamento.txt",
+        mime="text/plain",
+        use_container_width=True,
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ── CARREGAR PROJETO LOCAL ────────────────────────────────
-    with st.expander("📂 Carregar projeto local (.json)"):
-        st.caption("Abra um arquivo .json salvo anteriormente para continuar de onde parou.")
+    with st.expander("📂 Meus Projetos — Carregar projeto (.json)"):
+        st.caption("Selecione o arquivo .json salvo anteriormente para continuar de onde parou.")
         arquivo_json = st.file_uploader("Selecione o arquivo .json do projeto:", type=["json"], key="upload_json")
         if arquivo_json is not None:
             try:
                 dados_importados = json.load(arquivo_json)
+                st.success(f"✅ Arquivo reconhecido: **{dados_importados.get('nome_eb', arquivo_json.name)}**")
                 if st.button("✅ Carregar este projeto"):
                     st.session_state.dados = dados_importados
                     nome_imp = dados_importados.get('nome_eb', arquivo_json.name)
                     salvar_projeto(nome_imp, dados_importados)
-                    st.success(f"Projeto '{nome_imp}' carregado com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro ao ler o arquivo: {e}")
