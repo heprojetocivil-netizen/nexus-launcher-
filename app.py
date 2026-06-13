@@ -836,8 +836,8 @@ def system_msg():
 # ── LOGIN ─────────────────────────────────────────────────────
 if st.session_state.etapa == "Login":
     st.title("NEXUS LAUNCHER")
-    st.subheader("ACESSO RESTRITO A ASSOCIADOS DO QUIZ MAIS PRÊMIOS")
-    st.markdown('<p style="margin-top:-8px;margin-bottom:20px;font-size:0.95em;">🔗 <a href="https://www.quizmaispremios.com.br" target="_blank" style="color:#00BFFF;text-decoration:none;font-weight:600;">www.quizmaispremios.com.br</a></p>', unsafe_allow_html=True)
+    st.subheader("ACESSO RESTRITO A ASSOCIADOS DO QUIZ COM PRÊMIOS")
+    st.markdown('<p style="margin-top:-8px;margin-bottom:20px;font-size:0.95em;">🔗 <a href="https://quizcompremios.com.br/" target="_blank" style="color:#00BFFF;text-decoration:none;font-weight:600;">quizcompremios.com.br</a></p>', unsafe_allow_html=True)
     st.session_state.usuario = st.text_input("Nome")
     st.session_state.api_key = st.text_input("Chave Groq", type="password")
     with st.expander("🚀 Primeira vez aqui? Veja como funciona em 3 passos"):
@@ -908,6 +908,18 @@ if st.session_state.etapa == "Login":
 elif st.session_state.etapa == "Escolha_Tipo":
     st.title("NEXUS LAUNCHER")
     st.markdown(f"### Olá, {st.session_state.usuario}! O que você vai lançar?")
+    st.markdown("")
+
+    st.markdown("### 🗺️ Como funciona o Nexus Launcher")
+    guia_nx = {
+        "📚 Lançamento de E-book":    "Programa gratuito 15 dias → aquecimento no grupo → venda do e-book com funil completo de mensagens",
+        "🎬 Lançamento de Videoaulas":"Método CPL: 3 vídeos estratégicos de pré-lançamento → abertura de carrinho → fechamento com urgência",
+    }
+    for etapa, desc in guia_nx.items():
+        st.markdown(f"**{etapa}** — {desc}")
+    st.markdown("")
+    st.markdown("**O que é gerado automaticamente:**")
+    st.markdown("📚 E-book com 60 cartões · 🎁 3 Bônus · 📣 Anúncio · 🌐 Landing Page · 💬 Funil de Mensagens completo")
     st.markdown("")
     col1, col2 = st.columns(2)
     with col1:
