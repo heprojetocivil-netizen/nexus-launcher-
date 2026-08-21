@@ -634,9 +634,11 @@ def prompt_lp():
 
 def system_lp():
     return ("Você é um especialista em Landing Pages de diagnóstico. "
+            "Gere o TEXTO da landing page — não gere código HTML. "
+            "Use formatação simples em markdown: **negrito**, títulos com ##, bullets com -. "
             "A LP cria curiosidade sobre o problema real da pessoa e posiciona o grupo gratuito "
             "como o lugar onde ela vai descobrir o que está travando seus resultados. "
-            "Use tag HTML <strong> para negrito. Nunca asteriscos. Tom humano e direto.")
+            "Tom humano e direto. Não mencione código, HTML ou programação.")
 
 def prompt_msg():
     d = st.session_state.dados
@@ -1325,7 +1327,22 @@ elif st.session_state.etapa == "Copy_LP":
     if 'lp_copy' in st.session_state.dados:
         bloco_conteudo('lp_copy', 'Landing Page', prompt_lp, system_lp)
 
-        # ── MODIFICAÇÃO: segundo texto + instrução Gamma ──
+        st.markdown("""
+        <div style="background:#EFF6FF;border:1px solid #93C5FD;border-radius:10px;padding:14px 18px;margin-top:16px;">
+        <strong style="color:#1E3A8A;">🎨 Como criar sua Landing Page gratuitamente</strong><br><br>
+        Use o <strong>Gamma.app</strong> ou <strong>Carrd.co</strong> para montar sua página em minutos:<br><br>
+        <strong>No Gamma.app:</strong><br>
+        1. Acesse <a href="https://gamma.app" target="_blank">gamma.app</a> e crie uma conta gratuita<br>
+        2. Clique em <strong>New → Paste in text</strong><br>
+        3. Cole o texto gerado acima<br>
+        4. Escolha um tema visual e clique em <strong>Generate</strong><br>
+        5. Adicione uma imagem sua ou do nicho na seção do autor<br>
+        6. Configure o botão CTA com o link do seu grupo<br>
+        7. Publique e copie o link gerado<br><br>
+        <strong>💡 Dica:</strong> No Gamma, você pode adicionar imagens, mudar cores e personalizar tudo visualmente sem saber programar.
+        </div>
+        """, unsafe_allow_html=True)
+
         link_grupo_atual = st.session_state.dados.get('link_grupo','')
         if link_grupo_atual:
             st.markdown(f"""<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:12px 16px;font-size:0.85em;color:#064E3B;margin-bottom:10px;">
@@ -1546,6 +1563,13 @@ PREÇO: R${d.get('preco',47)}
     st.divider()
     with st.expander("📅 AGENDADOR — Calendário de envio das mensagens"):
         data_lancto = d.get('data_lancto')
+        # Corrigir: ao carregar JSON, data pode vir como string
+        if isinstance(data_lancto, str):
+            try:
+                from datetime import date as _date
+                data_lancto = _date.fromisoformat(data_lancto)
+                d['data_lancto'] = data_lancto
+            except: data_lancto = None
 
         if not data_lancto:
             st.warning("Defina a data de lançamento no formulário para usar o agendador.")
@@ -1553,16 +1577,16 @@ PREÇO: R${d.get('preco',47)}
             st.info("Gere as mensagens primeiro para usar o agendador.")
         else:
             AGENDA_DEF = [
-                {"chave": "DESCRICAO_GRUPO", "label": "Descrição (bio)",      "emoji": "📋", "offset": -15, "hora_pad": "08:00", "cor": "#64748B"},
-                {"chave": "BOAS_VINDAS",     "label": "Boas-vindas",          "emoji": "💬", "offset": -8,  "hora_pad": "08:00", "cor": "#0EA5E9"},
-                {"chave": "DIA_7",           "label": "D-9 Abertura",         "emoji": "📅", "offset": -7,  "hora_pad": "08:00", "cor": "#0EA5E9"},
-                {"chave": "DIA_6",           "label": "D-10 Enquete",         "emoji": "🎯", "offset": -6,  "hora_pad": "08:00", "cor": "#8B5CF6"},
-                {"chave": "DIA_5",           "label": "D-11 Dica",            "emoji": "🔥", "offset": -5,  "hora_pad": "08:00", "cor": "#8B5CF6"},
-                {"chave": "DIA_4",           "label": "D-12 Atividade",       "emoji": "📌", "offset": -4,  "hora_pad": "08:00", "cor": "#8B5CF6"},
-                {"chave": "DIA_3",           "label": "D-13 Prova social",    "emoji": "💡", "offset": -3,  "hora_pad": "08:00", "cor": "#8B5CF6"},
-                {"chave": "VESPERA",         "label": "D-14 Véspera",         "emoji": "⏳", "offset": -1,  "hora_pad": "08:00", "cor": "#B45309"},
-                {"chave": "VENDA_MANHA",     "label": "Lançamento manhã",     "emoji": "🚀", "offset":  0,  "hora_pad": "08:00", "cor": "#22C55E"},
-                {"chave": "VENDA_NOITE",     "label": "Lançamento noite",     "emoji": "⏰", "offset":  0,  "hora_pad": "19:00", "cor": "#22C55E"},
+                {"chave": "DESCRICAO_GRUPO", "label": "📋 Descrição do grupo (bio)",          "emoji": "📋", "offset": -15, "hora_pad": "08:00", "cor": "#64748B", "quando": "15 dias antes do lançamento"},
+                {"chave": "BOAS_VINDAS",     "label": "💬 Boas-vindas ao grupo",              "emoji": "💬", "offset": -8,  "hora_pad": "08:00", "cor": "#0EA5E9", "quando": "8 dias antes do lançamento"},
+                {"chave": "DIA_7",           "label": "📅 Abertura — 7 dias antes",           "emoji": "📅", "offset": -7,  "hora_pad": "08:00", "cor": "#0EA5E9", "quando": "7 dias antes do lançamento"},
+                {"chave": "DIA_6",           "label": "🎯 Enquete — 6 dias antes",            "emoji": "🎯", "offset": -6,  "hora_pad": "08:00", "cor": "#8B5CF6", "quando": "6 dias antes do lançamento"},
+                {"chave": "DIA_5",           "label": "🔥 Dica — 5 dias antes",              "emoji": "🔥", "offset": -5,  "hora_pad": "08:00", "cor": "#8B5CF6", "quando": "5 dias antes do lançamento"},
+                {"chave": "DIA_4",           "label": "📌 Atividade — 4 dias antes",          "emoji": "📌", "offset": -4,  "hora_pad": "08:00", "cor": "#8B5CF6", "quando": "4 dias antes do lançamento"},
+                {"chave": "DIA_3",           "label": "💡 Prova social — 3 dias antes",       "emoji": "💡", "offset": -3,  "hora_pad": "08:00", "cor": "#8B5CF6", "quando": "3 dias antes do lançamento"},
+                {"chave": "VESPERA",         "label": "⏳ Véspera do lançamento",             "emoji": "⏳", "offset": -1,  "hora_pad": "08:00", "cor": "#B45309", "quando": "Véspera — 1 dia antes"},
+                {"chave": "VENDA_MANHA",     "label": "🚀 Dia do lançamento — manhã",        "emoji": "🚀", "offset":  0,  "hora_pad": "08:00", "cor": "#22C55E", "quando": "Dia do lançamento (manhã)"},
+                {"chave": "VENDA_NOITE",     "label": "⏰ Dia do lançamento — noite",        "emoji": "⏰", "offset":  0,  "hora_pad": "19:00", "cor": "#22C55E", "quando": "Dia do lançamento (noite)"},
             ]
 
             secoes_map = {s['chave']: limpar_html(s['conteudo']) for s in parsear_mensagens(d['msg_grupo'])}
@@ -1573,6 +1597,7 @@ PREÇO: R${d.get('preco',47)}
                 chave = item['chave']
                 data_msg = data_lancto + timedelta(days=item['offset'])
                 data_str = data_msg.strftime('%d/%m')
+                quando = item.get('quando', item['label'])
                 col_label, col_hora = st.columns([4, 1])
                 with col_label:
                     st.markdown(
@@ -1580,9 +1605,8 @@ PREÇO: R${d.get('preco',47)}
                         f"<span style='display:inline-block;width:14px;height:14px;"
                         f"border-radius:3px;background:{item['cor']};margin-right:6px;"
                         f"vertical-align:middle;'></span>"
-                        f"<span style='color:#64748B;font-size:0.8em;font-weight:600;"
-                        f"margin-right:6px;'>{data_str}</span>"
-                        f"{item['emoji']} {item['label']}</div>",
+                        f"<strong>{quando}</strong> <span style='color:#94A3B8;'>({data_str})</span>"
+                        f"</div>",
                         unsafe_allow_html=True
                     )
                 with col_hora:
