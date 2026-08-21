@@ -9,60 +9,80 @@ st.set_page_config(page_title="NEXUS LAUNCHER", layout="wide")
 # --- ESTILO CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    [data-testid="stSidebar"] { display: none; }
-    body, .stApp { font-family: 'Inter', sans-serif; }
-    h1, h2, h3 { font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; }
+    .stApp { background-color:#F6FBF4; font-family:'Inter',sans-serif; }
+    [data-testid="stSidebar"] { display:none; }
+
+    .stTextInput>div>div>input, .stTextArea>div>textarea,
+    .stSelectbox>div>div>div, .stNumberInput>div>div>input {
+        background-color:#FFFFFF !important; color:#1A1A2E !important;
+        border:1px solid #CED4DA !important; font-family:'Inter',sans-serif !important;
+    }
 
     .stButton>button {
-        width: 100%; border-radius: 8px; height: 3.5em;
-        background-color: #00BFFF !important; color: white !important;
-        font-weight: bold; border: none; font-family: 'Rajdhani', sans-serif;
-        letter-spacing: 1px; font-size: 1em; transition: background-color 0.2s ease;
+        width:100%; border-radius:10px; height:3.2em;
+        background:linear-gradient(135deg,#16A34A,#15803D) !important; color:white !important;
+        font-weight:600; border:none; box-shadow:2px 2px 8px rgba(0,0,0,0.1);
+        font-family:'Inter',sans-serif !important; transition:all 0.2s ease;
     }
-    .stButton>button:hover { background-color: #0099CC !important; }
+    .stButton>button:hover { background:linear-gradient(135deg,#15803D,#166534) !important; transform:translateY(-1px); }
+    .stApp .stButton>button, .stApp .stButton>button p,
+    .stApp .stButton>button span, .stApp .stButton>button div { color:white !important; }
 
-    .caixa-texto {
-        background-color: #F8FAFC; padding: 25px; border-radius: 12px;
-        border-left: 6px solid #00BFFF; margin-bottom: 20px;
-        white-space: pre-wrap; color: #1E293B; line-height: 1.6;
-    }
-    .chat-bubble {
-        background-color: #F1F5F9; padding: 15px; border-radius: 10px;
-        border: 1px solid #E2E8F0; margin-bottom: 10px;
-    }
-    .btn-perigo>button  { background-color: #ef4444 !important; height: 2em !important; }
-    .btn-secundario>button { background-color: #64748B !important; height: 2.5em !important; font-size: 0.85em !important; }
-    .btn-verde>button   { background-color: #22c55e !important; height: 2.5em !important; font-size: 0.85em !important; }
-    .btn-roxo>button    { background-color: #7C3AED !important; height: 3.5em !important; }
-    .btn-roxo>button:hover { background-color: #5B21B6 !important; }
-    .btn-verde15>button { background-color: #059669 !important; height: 3.5em !important; }
-    .btn-verde15>button:hover { background-color: #047857 !important; }
+    .stApp h1, .stApp h2, .stApp h3 { color:#14532D !important; font-family:'Inter',sans-serif !important; font-weight:700 !important; }
 
-    .footer { text-align: center; padding: 60px; color: #94A3B8; font-size: 0.8em; opacity: 0.4; margin-top: 100px; font-style: italic; }
+    .card { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); padding:20px; border-radius:14px; border:1px solid #86EFAC; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card, .stApp .card p, .stApp .card span, .stApp .card div, .stApp .card strong, .stApp .card em { color:#14532D !important; }
 
-    .step-indicator { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .step-badge { background: #E2E8F0; color: #64748B; padding: 4px 12px; border-radius: 999px; font-size: 0.75em; font-weight: 600; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; }
-    .step-badge.ativo { background: #00BFFF; color: white; }
+    .card-dark { background:linear-gradient(135deg,#DCFCE7,#D1FAE5); padding:20px; border-radius:14px; border:1px solid #6EE7B7; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-dark, .stApp .card-dark p, .stApp .card-dark span, .stApp .card-dark div, .stApp .card-dark strong { color:#14532D !important; }
 
-    .preview-box { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 20px; margin: 15px 0; color: #1E3A5F; line-height: 1.7; }
-    .exemplo-btn>button { background-color: #F1F5F9 !important; color: #334155 !important; border: 1px solid #CBD5E1 !important; height: 2.2em !important; font-size: 0.8em !important; font-family: 'Inter', sans-serif !important; letter-spacing: 0 !important; }
+    .card-green { background:linear-gradient(135deg,#DCFCE7,#BBF7D0); padding:20px; border-radius:14px; border:1px solid #4ADE80; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-green, .stApp .card-green p, .stApp .card-green span, .stApp .card-green div { color:#14532D !important; }
 
-    .checklist-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #E2E8F0; }
+    .card-blue { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); padding:20px; border-radius:14px; border:1px solid #93C5FD; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-blue, .stApp .card-blue p, .stApp .card-blue span, .stApp .card-blue div { color:#1E3A8A !important; }
 
-    .bonus-card-header { background: linear-gradient(135deg, #0EA5E9, #0284C7); color: white; border-radius: 8px; padding: 12px 18px; margin-bottom: 16px; font-family: 'Rajdhani', sans-serif; font-size: 1.1em; font-weight: 700; letter-spacing: 0.5px; }
-    .bonus-descricao { background: #EFF6FF; border-left: 4px solid #0EA5E9; border-radius: 6px; padding: 12px 16px; margin-bottom: 14px; color: #1E3A5F; font-size: 0.92em; line-height: 1.6; }
-    .bonus-conteudo { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px 20px; color: #334155; font-size: 0.88em; line-height: 1.7; white-space: pre-wrap; }
+    .card-red { background:linear-gradient(135deg,#FFF5F5,#FEE2E2); padding:20px; border-radius:14px; border:1px solid #FECACA; margin-bottom:14px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-red, .stApp .card-red p, .stApp .card-red span, .stApp .card-red div { color:#7F1D1D !important; }
 
-    /* MENSAGENS */
-    .msg-dia-header { background: linear-gradient(135deg, #059669, #047857); color: white; border-radius: 8px; padding: 10px 16px; margin: 14px 0 8px 0; font-family: 'Rajdhani', sans-serif; font-size: 1.0em; font-weight: 700; letter-spacing: 0.5px; }
-    .msg-conteudo { background: #FFFFFF; border: 1px solid #D1FAE5; border-radius: 8px; padding: 14px 18px; color: #1E293B; font-size: 0.88em; line-height: 1.75; white-space: pre-wrap; }
-    .msg-alerta { background: #ECFDF5; border: 1px solid #6EE7B7; border-radius: 8px; padding: 12px 16px; color: #064E3B; font-size: 0.85em; margin-bottom: 16px; }
+    .card-yellow { background:linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:18px; border-radius:12px; border:1px solid #FCD34D; margin-bottom:12px; white-space:normal; word-wrap:break-word; }
+    .stApp .card-yellow, .stApp .card-yellow p, .stApp .card-yellow span, .stApp .card-yellow div { color:#78350F !important; }
 
-    /* DICA DE FERRAMENTA */
-    .dica-ferramenta { background: #FEF9C3; border: 1px solid #FDE047; border-radius: 10px; padding: 16px 20px; margin: 12px 0; color: #713F12; font-size: 0.87em; line-height: 1.7; }
-    .dica-ferramenta strong { color: #92400E; }
+    .stat-box { background:#FFFFFF; border-radius:12px; padding:16px; text-align:center; border:1px solid #86EFAC; }
+    .stApp .stat-box div, .stApp .stat-box span, .stApp .stat-box p { color:#14532D !important; }
+    .stApp .stat-numero, .stat-numero { font-size:2em; font-weight:700; color:#166534 !important; }
+
+    .hist-item { background:#FFFFFF; border-radius:10px; padding:12px 16px; margin-bottom:8px; border-left:4px solid #86EFAC; }
+    .stApp .hist-item, .stApp .hist-item p, .stApp .hist-item span, .stApp .hist-item div, .stApp .hist-item small { color:#14532D !important; }
+
+    .badge { background:#166534; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-verde { background:#059669; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-amarelo { background:#B45309; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-azul { background:#1D4ED8; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+    .badge-roxo { background:#6D28D9; color:white !important; padding:4px 12px; border-radius:20px; font-size:0.78em; font-weight:600; display:inline-block; margin:2px; }
+
+    .divider { border:none; height:1px; background:linear-gradient(to right,transparent,#86EFAC,transparent); margin:18px 0; }
+
+    .chat-user { background:#FFFFFF; border:1px solid #86EFAC; border-radius:12px 12px 4px 12px; padding:12px 16px; margin:8px 0; }
+    .stApp .chat-user, .stApp .chat-user p, .stApp .chat-user span, .stApp .chat-user div { color:#14532D !important; }
+
+    .chat-persona { background:#F6FBF4; border:1px solid #86EFAC; border-radius:4px 12px 12px 12px; padding:12px 16px; margin:8px 0; }
+    .stApp .chat-persona, .stApp .chat-persona p, .stApp .chat-persona span, .stApp .chat-persona div { color:#14532D !important; }
+
+    .questao-box { background:#FFFFFF; border:2px solid #86EFAC; border-radius:12px; padding:18px; margin-bottom:14px; }
+    .stApp .questao-box, .stApp .questao-box p, .stApp .questao-box span, .stApp .questao-box div { color:#14532D !important; }
+
+    .avaliacao-box { background:#FFFFFF; border:2px solid #86EFAC; border-radius:14px; padding:18px; margin-bottom:12px; }
+    .stApp .avaliacao-box, .stApp .avaliacao-box p, .stApp .avaliacao-box span, .stApp .avaliacao-box div { color:#14532D !important; }
+
+    .meta-box { background:#FFFFFF; border:2px solid #86EFAC; border-radius:12px; padding:16px; text-align:center; margin:10px 0; }
+    .stApp .meta-box, .stApp .meta-box div, .stApp .meta-box span { color:#14532D !important; }
+    .stApp .meta-numero { font-size:2em; font-weight:700; color:#166534 !important; }
+
+    .chat-scroll-container { max-height:40vh; overflow-y:auto; display:flex; flex-direction:column; scroll-behavior:smooth; padding-bottom:4px; }
+    .chat-scroll-container > * { flex-shrink:0; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -264,7 +284,7 @@ def chamar_ia(prompt: str, system_prompt: str) -> str:
         client = Groq(api_key=st.session_state.api_key)
         response = client.chat.completions.create(
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -287,7 +307,7 @@ def corrigir_texto(texto: str) -> str:
         client = Groq(api_key=st.session_state.api_key)
         resp = client.chat.completions.create(
             messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
-            model="llama-3.3-70b-versatile"
+            model="openai/gpt-oss-120b"
         )
         return resp.choices[0].message.content.strip()
     except Exception as e:
@@ -437,7 +457,6 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
             if b['descricao']:
                 st.markdown(f"<div class='bonus-descricao'><strong>Descrição:</strong><br>{b['descricao']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='bonus-conteudo'>{normalizar_markdown(b['conteudo'])}</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
 
     elif chave == 'msg_grupo':
         secoes = parsear_mensagens(conteudo)
@@ -453,7 +472,6 @@ def bloco_conteudo(chave: str, titulo: str, prompt_fn=None, system_fn=None):
                 key=f"copy_msg_{i}_{chave}",
                 use_container_width=False,
             )
-            st.markdown("<br>", unsafe_allow_html=True)
 
     else:
         st.markdown(f"<div class='caixa-texto'>{normalizar_markdown(conteudo)}</div>", unsafe_allow_html=True)
@@ -837,7 +855,7 @@ def system_msg():
 if st.session_state.etapa == "Login":
     st.title("NEXUS LAUNCHER")
     st.subheader("ACESSO RESTRITO A ASSOCIADOS DO QUIZ COM PRÊMIOS")
-    st.markdown('<p style="margin-top:-8px;margin-bottom:20px;font-size:0.95em;">🔗 <a href="https://quizcompremios.com.br/" target="_blank" style="color:#00BFFF;text-decoration:none;font-weight:600;">quizcompremios.com.br</a></p>', unsafe_allow_html=True)
+    st.markdown('<p style="margin-top:-8px;margin-bottom:20px;font-size:0.95em;">🔗 <a href="https://quizcompremios.com.br/" target="_blank" style="color:#0369A1;text-decoration:none;font-weight:600;">quizcompremios.com.br</a></p>', unsafe_allow_html=True)
     st.session_state.usuario = st.text_input("Nome")
     st.session_state.api_key = st.text_input("Chave Groq", type="password")
     with st.expander("🚀 Primeira vez aqui? Veja como funciona em 3 passos"):
@@ -872,7 +890,7 @@ if st.session_state.etapa == "Login":
                 _gc = Groq(api_key=st.session_state.api_key)
                 _gc.chat.completions.create(
                     messages=[{"role":"user","content":"ok"}],
-                    model="llama-3.3-70b-versatile", max_tokens=1
+                    model="openai/gpt-oss-120b", max_tokens=1
                 )
                 st.markdown("""<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;
                 padding:10px 14px;font-size:0.82em;color:#064E3B;">
@@ -898,7 +916,6 @@ if st.session_state.etapa == "Login":
             ⚪ <strong>Groq API:</strong> aguardando chave
             </div>""", unsafe_allow_html=True)
 
-    st.markdown("")
     if st.button("ENTRAR"):
         if not st.session_state.usuario.strip(): st.error("Informe seu nome.")
         elif not st.session_state.api_key.strip(): st.error("Informe sua chave de API.")
@@ -908,7 +925,6 @@ if st.session_state.etapa == "Login":
 elif st.session_state.etapa == "Escolha_Tipo":
     st.title("NEXUS LAUNCHER")
     st.markdown(f"### Olá, {st.session_state.usuario}! O que você vai lançar?")
-    st.markdown("")
 
     st.markdown("### 🗺️ Como funciona o Nexus Launcher")
     guia_nx = {
@@ -917,10 +933,8 @@ elif st.session_state.etapa == "Escolha_Tipo":
     }
     for etapa, desc in guia_nx.items():
         st.markdown(f"**{etapa}** — {desc}")
-    st.markdown("")
     st.markdown("**O que é gerado automaticamente:**")
     st.markdown("📚 E-book com 60 cartões · 🎁 3 Bônus · 📣 Anúncio · 🌐 Landing Page · 💬 Funil de Mensagens completo")
-    st.markdown("")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("""<div style="background:#EFF6FF;border:2px solid #3B82F6;border-radius:16px;padding:30px;text-align:center;min-height:220px;">
@@ -928,7 +942,6 @@ elif st.session_state.etapa == "Escolha_Tipo":
         <div style="font-family:Rajdhani,sans-serif;font-size:1.4em;font-weight:700;color:#1E3A5F;margin:10px 0 8px;">Lançamento de E-book</div>
         <div style="font-size:0.88em;color:#64748B;line-height:1.5;">Programa gratuito de 15 dias → aquecimento → venda do e-book no grupo do WhatsApp</div>
         </div>""", unsafe_allow_html=True)
-        st.markdown("")
         if st.button("📚 LANÇAR E-BOOK", use_container_width=True):
             st.session_state.dados['tipo_lancamento'] = 'ebook'
             st.session_state.etapa = "Formulario"; st.rerun()
@@ -938,7 +951,6 @@ elif st.session_state.etapa == "Escolha_Tipo":
         <div style="font-family:Rajdhani,sans-serif;font-size:1.4em;font-weight:700;color:#4A1D7A;margin:10px 0 8px;">Lançamento de Videoaulas</div>
         <div style="font-size:0.88em;color:#64748B;line-height:1.5;">Método CPL: pré-lançamento com 3 vídeos estratégicos → abertura de carrinho → fechamento com urgência</div>
         </div>""", unsafe_allow_html=True)
-        st.markdown("")
         if st.button("🎬 LANÇAR VIDEOAULAS", use_container_width=True):
             st.session_state.dados['tipo_lancamento'] = 'video'
             st.session_state.etapa = "Video_Formulario"; st.rerun()
@@ -1096,11 +1108,11 @@ elif st.session_state.etapa == "Potencial_Nicho":
         except:
             nota = 0
 
-        cor_nota = "#22C55E" if nota >= 7 else "#F59E0B" if nota >= 5 else "#EF4444"
+        cor_nota = "#22C55E" if nota >= 7 else "#B45309" if nota >= 5 else "#B91C1C"
         st.markdown(
             f"<div style='display:flex;align-items:center;gap:20px;background:#F8FAFC;"
             f"border:2px solid {cor_nota};border-radius:12px;padding:18px 24px;margin-bottom:20px;'>"
-            f"<div style='font-size:3em;font-weight:900;color:{cor_nota};font-family:Rajdhani,sans-serif;'>{nota:.0f}<span style='font-size:0.4em;color:#94A3B8;'>/10</span></div>"
+            f"<div style='font-size:3em;font-weight:900;color:{cor_nota};font-family:Rajdhani,sans-serif;'>{nota:.0f}<span style='font-size:0.4em;color:#475569;'>/10</span></div>"
             f"<div><div style='font-size:1.1em;font-weight:700;color:#1E293B;'>Potencial geral do nicho</div>"
             f"<div style='font-size:0.88em;color:#64748B;margin-top:4px;'>{veredicto}</div></div>"
             f"</div>", unsafe_allow_html=True
@@ -1108,7 +1120,7 @@ elif st.session_state.etapa == "Potencial_Nicho":
 
         def nivel_badge(txt):
             txt = txt.split("—")[0].strip().split()[0].strip()
-            cor = {"Alta":"#22C55E","Média":"#F59E0B","Baixa":"#EF4444"}.get(txt, "#94A3B8")
+            cor = {"Alta":"#22C55E","Média":"#B45309","Baixa":"#B91C1C"}.get(txt, "#475569")
             return f"<span style='background:{cor};color:white;padding:2px 10px;border-radius:999px;font-size:0.8em;font-weight:700;'>{txt}</span>"
 
         c1, c2, c3 = st.columns(3)
@@ -1548,7 +1560,7 @@ PREÇO: R${d.get('preco',47)}
                 {"chave": "DIA_5",           "label": "D-11 Dica",            "emoji": "🔥", "offset": -5,  "hora_pad": "08:00", "cor": "#8B5CF6"},
                 {"chave": "DIA_4",           "label": "D-12 Atividade",       "emoji": "📌", "offset": -4,  "hora_pad": "08:00", "cor": "#8B5CF6"},
                 {"chave": "DIA_3",           "label": "D-13 Prova social",    "emoji": "💡", "offset": -3,  "hora_pad": "08:00", "cor": "#8B5CF6"},
-                {"chave": "VESPERA",         "label": "D-14 Véspera",         "emoji": "⏳", "offset": -1,  "hora_pad": "08:00", "cor": "#F59E0B"},
+                {"chave": "VESPERA",         "label": "D-14 Véspera",         "emoji": "⏳", "offset": -1,  "hora_pad": "08:00", "cor": "#B45309"},
                 {"chave": "VENDA_MANHA",     "label": "Lançamento manhã",     "emoji": "🚀", "offset":  0,  "hora_pad": "08:00", "cor": "#22C55E"},
                 {"chave": "VENDA_NOITE",     "label": "Lançamento noite",     "emoji": "⏰", "offset":  0,  "hora_pad": "19:00", "cor": "#22C55E"},
             ]
@@ -1754,7 +1766,7 @@ PREÇO: R${d.get('preco',47)}
                         messages.append({"role": "user", "content": q_hist})
                         messages.append({"role": "assistant", "content": r_hist})
                     messages.append({"role": "user", "content": pergunta})
-                    response = client.chat.completions.create(messages=messages, model="llama-3.3-70b-versatile")
+                    response = client.chat.completions.create(messages=messages, model="openai/gpt-oss-120b")
                     resp = response.choices[0].message.content
                 except Exception as e:
                     resp = f"⚠️ Erro na API: {e}"
@@ -1975,11 +1987,11 @@ FECHAMENTO\n{'-'*40}\n{limpar_html(d.get('v_fechamento',''))}"""
         with st.expander("📅 AGENDADOR CPL — Calendário de envio"):
             CPL_AGENDA = [
                 {"chave":"v_pre_pre",    "label":"🔥 Pré-pré-lançamento",   "data_key":"v_data_cpl1",      "offset":-7, "hora":"09:00", "cor":"#64748B"},
-                {"chave":"v_cpl1",       "label":"🎬 CPL 1 — Oportunidade", "data_key":"v_data_cpl1",      "offset":0,  "hora":"10:00", "cor":"#3B82F6"},
+                {"chave":"v_cpl1",       "label":"🎬 CPL 1 — Oportunidade", "data_key":"v_data_cpl1",      "offset":0,  "hora":"10:00", "cor":"#1D4ED8"},
                 {"chave":"v_cpl2",       "label":"🎬 CPL 2 — Transformação","data_key":"v_data_cpl2",      "offset":0,  "hora":"10:00", "cor":"#8B5CF6"},
-                {"chave":"v_cpl3",       "label":"🎬 CPL 3 — Objeções",     "data_key":"v_data_cpl3",      "offset":0,  "hora":"10:00", "cor":"#F59E0B"},
+                {"chave":"v_cpl3",       "label":"🎬 CPL 3 — Objeções",     "data_key":"v_data_cpl3",      "offset":0,  "hora":"10:00", "cor":"#B45309"},
                 {"chave":"v_abertura",   "label":"🛒 Abertura do carrinho", "data_key":"v_data_abertura",  "offset":0,  "hora":"08:00", "cor":"#22C55E"},
-                {"chave":"v_fechamento", "label":"⏰ Fechamento",            "data_key":"v_data_fechamento","offset":0,  "hora":"08:00", "cor":"#EF4444"},
+                {"chave":"v_fechamento", "label":"⏰ Fechamento",            "data_key":"v_data_fechamento","offset":0,  "hora":"08:00", "cor":"#B91C1C"},
             ]
             horas_cpl = d.get('agenda_horas_cpl', {})
             for item in CPL_AGENDA:
